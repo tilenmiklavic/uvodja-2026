@@ -1,0 +1,769 @@
+{
+  "generatedAt": "2026-10-17T19:16:19+02:00",
+  "procedure": "scripts/COVERAGE.md",
+  "temas": {
+    "jaz-vodja": {
+      "title": "Jaz, vodja",
+      "programKey": "jaz, vodja",
+      "status": "potrebuje_dopolnitev",
+      "counts": {
+        "vkljuceno": 4,
+        "delno": 1,
+        "manjka": 0,
+        "total": 5
+      },
+      "items": [
+        {
+          "text": "razlika med voditeljem veje, menedžerjem in vodjo",
+          "status": "vkljuceno",
+          "evidence": "Potek 1–2: zgled dobrega vodje in razlaga razlike med voditeljem veje, menedžerjem in vodjo."
+        },
+        {
+          "text": "stili vodenja",
+          "status": "vkljuceno",
+          "evidence": "Aktivnost s pingpong žogico (kakšen stil vodenja) in točka STILI VODENJA – 20 min (5 ladij s kapitani)."
+        },
+        {
+          "text": "pregled korakov opazovanja vodstvene vloge (obvezna vsebina)",
+          "status": "vkljuceno",
+          "evidence": "Točka Pregled korakov opazovanja – 20 min: po 3 »ocenjujejo« svoje vodje."
+        },
+        {
+          "text": "osebni razmislek o sebi kot vodji (vizualizacija, meditacija, psihološki test …)",
+          "status": "vkljuceno",
+          "evidence": "Točka Test 16 osebnosti – 30 min: spoznajo sebe in kakšni vodje so/želijo biti."
+        },
+        {
+          "text": "poklicanost in drža vodje",
+          "status": "delno",
+          "evidence": "Navedeno v Vsebini; v Poteku le nakazano v zaključku (kakšni vodje želimo biti), brez lastne aktivnosti."
+        }
+      ],
+      "contentsHash": "1330783078db0309",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1xILb1e1lY9o8MfN1WzNxAxXfmx9itPs8QzlV5z1TTWM",
+        "modifiedTime": "2026-10-07T19:28:31.635Z",
+        "textHash": "9117c52c9711d05d",
+        "cacheFile": "jaz-vodja.txt"
+      },
+      "judgedAt": "2026-10-08T07:30:00+02:00"
+    },
+    "razseznost-zdruzenja": {
+      "title": "Razsežnost Združenja",
+      "programKey": "razsežnost združenja",
+      "status": "pripravljeno",
+      "counts": {
+        "vkljuceno": 5,
+        "delno": 0,
+        "manjka": 0,
+        "total": 5
+      },
+      "items": [
+        {
+          "text": "poznavanje vizije in poslanstva ZSKSS",
+          "status": "vkljuceno",
+          "evidence": "Vsebina 1 + Potek: ZSKSS (30 min) — vizija (smer cele flote), poslanstvo (kodeks)."
+        },
+        {
+          "text": "strateški načrt Združenja",
+          "status": "vkljuceno",
+          "evidence": "Vsebina 2 + Potek: ZSKSS (30 min) — strateški načrt."
+        },
+        {
+          "text": "struktura Združenja (državna, ognjiščna, lokalna) – vloge in naloge",
+          "status": "vkljuceno",
+          "evidence": "Vsebina 3 + Potek: Struktura Združenja (15 min) — ladje in čolni na zemljevidu morja."
+        },
+        {
+          "text": "umeščenost in različne vloge vodij",
+          "status": "vkljuceno",
+          "evidence": "Vsebina 4 + Potek: Umeščenost Vodje v ZSKSS (5 min) — vsak čoln/ladja potrebuje kapitana; udeleženci se postavijo na zemljevid."
+        },
+        {
+          "text": "ZSKSS in mednarodno skavtstvo – osnove",
+          "status": "vkljuceno",
+          "evidence": "Vsebina 5 + Potek: Skavti osnove (30 min) — mednarodno skavtstvo (kako so se skavti širili po svetu)."
+        }
+      ],
+      "contentsHash": "200612cd6bde4641",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "13m6WRKL0qCAl-zm5B1cUFkpFFy640EEuLNvFN4JH0FI",
+        "modifiedTime": "2026-10-06T18:25:36.679Z",
+        "textHash": "d9d6a5d9e369ef9d",
+        "cacheFile": "razseznost-zdruzenja.txt"
+      },
+      "judgedAt": "2026-10-07T07:20:00+02:00"
+    },
+    "skavtska-pot": {
+      "title": "Skavtska pot",
+      "programKey": "skavtska pot",
+      "status": "potrebuje_dopolnitev",
+      "counts": {
+        "vkljuceno": 2,
+        "delno": 2,
+        "manjka": 0,
+        "total": 4
+      },
+      "items": [
+        {
+          "text": "shema usposabljanja",
+          "status": "delno",
+          "evidence": "Vsebina: »shema usposabljanja«; v Poteku le obris (»Od tu naprej - imenovan skavtski voditelj, lahko greš naprej (ne vem še kako ta del prirediva)«), brez jasne aktivnosti."
+        },
+        {
+          "text": "sistem osebnega napredovanja",
+          "status": "vkljuceno",
+          "evidence": "Vsebina: »sistem osebnega napredovanja«; Potek: igra z otoki in zemljevidom (»OSVOJEN OTOK se jim obarva na zemljevidu«), zbiranje vseh točk (PRISTEN, SAMOSTOJEN, ODGOVOREN, ZDRAV, STROKOVEN, UPRAVLJALEN) in ocena lastnih kompetenc 1–3."
+        },
+        {
+          "text": "VSKM – primer uporabe",
+          "status": "vkljuceno",
+          "evidence": "Potek: »Kratka razlaga VSKM?«, nato na otokih razvrščajo kompetence pod vodila, se samoocenijo 1–3 in na koncu povzamejo, zakaj katera kompetenca spada k vodilu. Primer z življenjepisom/mnenjem stegovodje je le v seznamu Vsebina."
+        },
+        {
+          "text": "korak: Vodenje skavtskih voditeljev",
+          "status": "delno",
+          "evidence": "Cilji: »pripravi osnutek načrta izvajanja koraka«; Vsebina ga našteva, Potek pa koraka ne razčleni v aktivnost."
+        }
+      ],
+      "contentsHash": "1df4c7c25adfe566",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "12X-dAbjE2zfRjjTLwsqi-vqtbjD4xjwCdn5nIcTeeUs",
+        "modifiedTime": "2026-10-15T17:21:46.585Z",
+        "textHash": "a8b43f6191f4b531",
+        "cacheFile": "skavtska-pot.txt"
+      },
+      "judgedAt": "2026-10-16T07:23:21+02:00"
+    },
+    "katolisko-skavtstvo": {
+      "title": "Katoliško skavtstvo",
+      "programKey": "katoliško skavtstvo",
+      "status": "potrebuje_dopolnitev",
+      "counts": {
+        "vkljuceno": 0,
+        "delno": 5,
+        "manjka": 0,
+        "total": 5
+      },
+      "items": [
+        {
+          "text": "Listina katoliškega skavtstva, Listina slovenskega katoliškega skavtstva, Zaveza Združenja",
+          "status": "delno",
+          "evidence": "Vsebina lists the three listine/Zaveza; Potek is empty — no activity."
+        },
+        {
+          "text": "skavti in Cerkev",
+          "status": "delno",
+          "evidence": "Vsebina: »skavti in Cerkev - kje smo skavti«; Potek empty."
+        },
+        {
+          "text": "sodelovanje z DA-jem in župnijami",
+          "status": "delno",
+          "evidence": "Vsebina: »sodelovanje z DA-jem in župnijami«; Potek empty."
+        },
+        {
+          "text": "opolnomočenje na področju duhovnosti",
+          "status": "delno",
+          "evidence": "Vsebina: »kako voditelj poskrbi za opolnomočenje na področju duhovnosti« (+ note on Vodja role); Potek empty."
+        },
+        {
+          "text": "odpiranje prostora za debate",
+          "status": "delno",
+          "evidence": "Vsebina: »odpiranje prostora za debate«; Potek empty."
+        }
+      ],
+      "contentsHash": "841437e9ed15d6ae",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1dii4q614ezORIQruyn6mxl0t6ZUsaRWn31iVJ_8N9Eg",
+        "modifiedTime": "2026-10-11T19:33:14.627Z",
+        "textHash": "24aa1d4397de84a8",
+        "cacheFile": "katolisko-skavtstvo.txt"
+      },
+      "judgedAt": "2026-10-12T07:15:00+02:00"
+    },
+    "vodenje-voditeljev": {
+      "title": "Vodenje voditeljev",
+      "programKey": "vodenje voditeljev",
+      "status": "pripravljeno",
+      "counts": {
+        "vkljuceno": 5,
+        "delno": 0,
+        "manjka": 0,
+        "total": 5
+      },
+      "items": [
+        {
+          "text": "vloge v timu, razvoj tima",
+          "status": "vkljuceno",
+          "evidence": "Potek: Skupina vs. tim (Barbara); Razvoj tima (Nejka); Vloge v timu – modna revija (Nejka)."
+        },
+        {
+          "text": "situacijsko vodenje (poudarek na delegiranje)",
+          "status": "vkljuceno",
+          "evidence": "Potek: Situacijsko vodenje (Barbara) – model po skupinah, povzetek na grafu; stili dajanje navodil, učenje, sodelovanje, delegiranje."
+        },
+        {
+          "text": "komunikacija",
+          "status": "vkljuceno",
+          "evidence": "Potek: Komunikacija (Nejka) – igra vlog (tipi oseb), šumi, načini komunikacije."
+        },
+        {
+          "text": "reševanje konfliktov (+ čustvena inteligenca)",
+          "status": "vkljuceno",
+          "evidence": "Potek: Reševanje konfliktov (Nejka) – impro liga + shema; Čustvena inteligenca + vprašalnik; tudi 5 disfunkcij tima (Barbara)."
+        },
+        {
+          "text": "Cikel prostovoljstva",
+          "status": "vkljuceno",
+          "evidence": "Potek: Cikel prostovoljstva (Barbara) – zgodbica o skavtu Petru, faze cikla; Vsebina: kako vodja vodi skozi faze."
+        }
+      ],
+      "contentsHash": "caae5b55786fd454",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "11mlgwpAotvYVGRp_20yRxrXHToJNrhFZ1uV2mGAIDyY",
+        "modifiedTime": "2026-10-08T18:30:38.983Z",
+        "textHash": "934b1a6e9465d0ea",
+        "cacheFile": "vodenje-voditeljev.txt"
+      },
+      "judgedAt": "2026-10-17T07:30:00+02:00"
+    },
+    "skavti-v-mladinskem-delu": {
+      "title": "Skavti v mladinskem delu",
+      "programKey": "skavti v mladinskem delu",
+      "status": "pripravljeno",
+      "counts": {
+        "vkljuceno": 5,
+        "delno": 0,
+        "manjka": 0,
+        "total": 5
+      },
+      "items": [
+        {
+          "text": "kdo so mladi – specifike mladinskega dela",
+          "status": "vkljuceno",
+          "evidence": "Vsebina: »kdo so mladi« + »specifike mladinskega dela«; Potek: »Male sive celice« in »Spomin o lastnostih mladinskega dela«."
+        },
+        {
+          "text": "shema družbe – trikotnik družbene blaginje",
+          "status": "vkljuceno",
+          "evidence": "Vsebina: »trikotnik družbene blaginje«; Potek: aktivnost »Trikotnik družbene blaginje« (Tilen)."
+        },
+        {
+          "text": "umeščanje skavtov kot mladinske organizacije",
+          "status": "vkljuceno",
+          "evidence": "Vsebina: umeščanje skavtov (MSS, MC …); Potek: »MSS, skavti v mladinskem okolju« (mind-map)."
+        },
+        {
+          "text": "zagovorništvo in vrednote",
+          "status": "vkljuceno",
+          "evidence": "Vsebina: zagovorništvo; Potek zaključek »Zagovorništvo in naše vrednote«."
+        },
+        {
+          "text": "sodelovanje z drugimi organizacijami",
+          "status": "vkljuceno",
+          "evidence": "Vsebina: partnerstva; Potek: inPlaninec, lokalne org. (lovci, oratorij, CSD)."
+        }
+      ],
+      "contentsHash": "4824b6a6b8e576aa",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1V3AWbdAkxW3DyaWq9W0hOPUza9rFRfIiT-XaYLZuSQs",
+        "modifiedTime": "2026-10-05T19:45:18.937Z",
+        "textHash": "f9d939fea7dbff16",
+        "cacheFile": "skavti-v-mladinskem-delu.txt"
+      },
+      "judgedAt": "2026-10-06T10:00:00+02:00"
+    },
+    "osebno-spremljanje-voditeljev": {
+      "title": "Osebno spremljanje voditeljev",
+      "programKey": "osebno spremljanje voditeljev",
+      "status": "potrebuje_dopolnitev",
+      "counts": {
+        "vkljuceno": 1,
+        "delno": 1,
+        "manjka": 0,
+        "total": 2
+      },
+      "items": [
+        {
+          "text": "koncept in tehnike osebnega spremljanja voditeljev",
+          "status": "vkljuceno",
+          "evidence": "Potek 2026: Uvod (Jakob, 20 min; »Kdo te je naučil vozlov?«, razlike med OS člana in voditelja) in Osnova OS (Barbara, 30 min; kaj je OS, vloge in naloge osebnega spremljevalca), nato igra vlog."
+        },
+        {
+          "text": "sopotništvo/mentorstvo – povezava s Ciklom prostovoljstva",
+          "status": "delno",
+          "evidence": "Sopotništvo in mentorstvo jasno pokrita v Poteku (tabela Sopotništvo vs. Mentorstvo v Osnovi OS, igra vlog 30 min). Cikel prostovoljstva je le v Vsebini in med Tehničnimi pripomočki (PDF), brez aktivnosti v Poteku."
+        }
+      ],
+      "contentsHash": "c82e0b0848137ffd",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1Hu6KOesXxELele1H_8Y1N9uS2UtZsLJYPu1BDJE26fc",
+        "modifiedTime": "2026-10-12T17:23:53.626Z",
+        "textHash": "941aff3836ad6053",
+        "cacheFile": "osebno-spremljanje-voditeljev.txt"
+      },
+      "judgedAt": "2026-10-13T07:20:00+02:00"
+    },
+    "vodenje-procesov": {
+      "title": "Vodenje procesov",
+      "programKey": "vodenje procesov",
+      "status": "pripravljeno",
+      "counts": {
+        "vkljuceno": 4,
+        "delno": 0,
+        "manjka": 0,
+        "total": 4
+      },
+      "items": [
+        {
+          "text": "kadrovski načrt",
+          "status": "vkljuceno",
+          "evidence": "Potek 2026: Delo z voditelji – NAČRTOVANJE (Petra, 45 min): dinamika o čustvih ob kadrovanju, utemeljitev (razporejanje prostovoljcev, pogled dlje kot eno leto), svetovna kavarna z dobrimi praksami ter 10 zapovedi za kadrovanje v stegu in 5 zapovedi na državni ravni; komentar v Vsebini opredeli dolgoročni kadrovski načrt."
+        },
+        {
+          "text": "upravljanje s prioritetami (časom)",
+          "status": "vkljuceno",
+          "evidence": "Potek 2026: Organizacija (svojega) dela in upravljanje s časom – ORGANIZIRANJE (Petra, 20 min): matrika problemov upravljanja časa in prioritet (npr. »Imam težave s postavljanjem prioritet.«, »Čas mi kar zbeži.«) z rešitvami; dodatno pasti upravljanja s časom pri sestankih (time keeper, varovalni čas)."
+        },
+        {
+          "text": "vodenje sestankov",
+          "status": "vkljuceno",
+          "evidence": "Potek 2026: Vodenje sestankov – VODENJE (Barbara, 40 min): skupine uprizorijo pasti vodenja sestankov in upravljanja s časom, sledi skupna analiza; seznam pasti (dnevni red, termin in trajanje, ostalo) in »haklci« za vodenje sestankov."
+        },
+        {
+          "text": "organizacija (svojega) dela",
+          "status": "vkljuceno",
+          "evidence": "Potek 2026: Organizacija (svojega) dela in upravljanje s časom – ORGANIZIRANJE (Petra, 20 min): matrika s problemi organizacije lastnega dela in možnimi rešitvami, UU vsak zase izpišejo relevantne probleme in rešitve."
+        }
+      ],
+      "contentsHash": "eddba8f778a6bd43",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1Nhdq9GuWldZeD8KqiNn9IX-DzQfvOgsJW-gZS00lDuM",
+        "modifiedTime": "2026-10-13T16:37:52.023Z",
+        "textHash": "ccac4494bf538738",
+        "cacheFile": "vodenje-procesov.txt"
+      },
+      "judgedAt": "2026-10-17T15:25:00+02:00"
+    },
+    "upravljanje-in-spremljanje-sprememb": {
+      "title": "Upravljanje in spremljanje sprememb",
+      "programKey": "upravljanje in spremljanje sprememb",
+      "status": "potrebuje_dopolnitev",
+      "counts": {
+        "vkljuceno": 3,
+        "delno": 2,
+        "manjka": 0,
+        "total": 5
+      },
+      "items": [
+        {
+          "text": "analiza stanja potreb",
+          "status": "vkljuceno",
+          "evidence": "1. korak – Poslanstvo: razlaga potreb na treh nivojih (skupina, organizacija, družba) in 3. korak – Analiza stanja."
+        },
+        {
+          "text": "faze strateškega načrtovanja",
+          "status": "vkljuceno",
+          "evidence": "Prvi del, koraki 1–7: poslanstvo, vizija, analiza stanja, ključna področja (SWOT), strateški izzivi, cilji in strategije, izvedba in spremljanje."
+        },
+        {
+          "text": "monitoring",
+          "status": "vkljuceno",
+          "evidence": "7. korak – Izvedba in spremljanje: letni pregled strateškega načrta in ciljev; drugi del Vrednotenje strateških načrtov."
+        },
+        {
+          "text": "operativni plan, vzgojno in projektno načrtovanje",
+          "status": "delno",
+          "evidence": "7. korak omenja letno izbiro ciljev in projektni načrt za posamezen cilj; prenos v vzgojno načrtovanje ni posebej obdelan."
+        },
+        {
+          "text": "projektno delo",
+          "status": "delno",
+          "evidence": "Le omemba v 7. koraku (za cilj se po potrebi pripravi projektni načrt in določi odgovornega); brez lastne aktivnosti."
+        }
+      ],
+      "contentsHash": "b814e67deb020c95",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1-96_g0x1e9U16_w6apEkE02lAlQ8YUwpuqSHfIpK34A",
+        "modifiedTime": "2026-10-07T20:07:47.725Z",
+        "textHash": "4a42ad093f98967a",
+        "cacheFile": "upravljanje-in-spremljanje-sprememb.txt"
+      },
+      "judgedAt": "2026-10-08T07:30:00+02:00"
+    },
+    "krizno-komuniciranje-in-stiske": {
+      "title": "Krizno komuniciranje in stiske",
+      "programKey": "krizno komuniciranje in stiske",
+      "status": "pripravljeno",
+      "counts": {
+        "vkljuceno": 3,
+        "delno": 0,
+        "manjka": 0,
+        "total": 3
+      },
+      "items": [
+        {
+          "text": "cikel kriznega upravljanja",
+          "status": "vkljuceno",
+          "evidence": "Potek: PREDSTAVITEV CIKLA KRIZNEGA UPRAVLJANJA — predkrizno obdobje, odgovor na KS, po krizi."
+        },
+        {
+          "text": "delo z realnimi primeri",
+          "status": "vkljuceno",
+          "evidence": "Potek: Odgovor na KS — realni primeri (poškodba, neurje, požar, sum zlorabe, samomorilne misli)."
+        },
+        {
+          "text": "dokument ZOM",
+          "status": "vkljuceno",
+          "evidence": "Potek: STISKE, ZOM — predstavitev ZOM dokumentov + Kahoot (kviz iz ZOM-a)."
+        }
+      ],
+      "contentsHash": "e5a1667f5c7f16d6",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1pyLvkImgaPnVDrHhiOa4pXe0BtHW8GzDpgH11lvSNO4",
+        "modifiedTime": "2026-10-06T16:40:10.171Z",
+        "textHash": "5e4d523010159b96",
+        "cacheFile": "krizno-komuniciranje-in-stiske.txt"
+      },
+      "judgedAt": "2026-10-06T18:50:00+02:00"
+    },
+    "odnosi-z-javnostmi": {
+      "title": "Odnosi z javnostmi",
+      "programKey": "odnosi z javnostmi",
+      "status": "pripravljeno",
+      "counts": {
+        "vkljuceno": 5,
+        "delno": 0,
+        "manjka": 0,
+        "total": 5
+      },
+      "items": [
+        {
+          "text": "pristopi in strategije komuniciranja z javnostmi",
+          "status": "vkljuceno",
+          "evidence": "Vsebina točka 1; Potek: »Različne javnosti« (svetovna kavarna / plakati)."
+        },
+        {
+          "text": "vloga CGP-ja ZSKSS",
+          "status": "vkljuceno",
+          "evidence": "Vsebina točka 2; Potek: »Kviz o CGP« (poudarek zakaj je potreben)."
+        },
+        {
+          "text": "družbena omrežja, zgodbarjenje, vizualna podoba",
+          "status": "vkljuceno",
+          "evidence": "Vsebina točka 3; Potek: »SOCIALNA OMREŽJA« – dobre/slabe objave, brainstorming kanalov."
+        },
+        {
+          "text": "GDPR, varovanje podatkov",
+          "status": "vkljuceno",
+          "evidence": "Vsebina točka 4 (GDPR, varovanje podatkov, primerne slike); Potek »Primernost objav«: opozorimo na primerne fotografije (golota …), vsebina na storijih."
+        },
+        {
+          "text": "gradnja skupnosti skozi komunikacijske kanale",
+          "status": "vkljuceno",
+          "evidence": "Vsebina točka 5 (Skavtič, uradni profili Združenja); Potek: predstavljamo cel ZSKSS, profili opremljeni s CGP."
+        }
+      ],
+      "contentsHash": "bfa05f1c7598c97b",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c",
+        "modifiedTime": "2026-10-05T19:38:49.330Z",
+        "textHash": "48350c249023f6d6",
+        "cacheFile": "odnosi-z-javnostmi.txt"
+      },
+      "judgedAt": "2026-10-14T07:30:00+02:00"
+    },
+    "administrativno-vodenje-stega": {
+      "title": "Administrativno vodenje stega",
+      "programKey": "administrativno vodenje",
+      "status": "pripravljeno",
+      "counts": {
+        "vkljuceno": 2,
+        "delno": 0,
+        "manjka": 0,
+        "total": 2
+      },
+      "items": [
+        {
+          "text": "tips and tricks za urejanje dokumentacije, obvezni roki",
+          "status": "vkljuceno",
+          "evidence": "Vsebina: tips and tricks za urejanje dokumentacije, obvezni roki. Potek: Časovnica dogodkov in dokumentacije (30 min, časovna os skavtskega leta z roki) in Dobre prakse stegov (20 min: Shared drive, uradni zapisnik, Google tasks in koledar)."
+        },
+        {
+          "text": "proračun, gradivo ob začetku leta, članstvo, članarine, samoanaliza, izjave, primopredajni zapisniki",
+          "status": "vkljuceno",
+          "evidence": "Vsebina našteje proračun, gradivo ob začetku skavtskega leta, članstvo, članarine, samoanalizo stega, pristopne izjave, izjave o prostovoljstvu, primopredajne zapisnike. Potek: Časovnica dogodkov in dokumentacije umesti ključne dokumente (proračun stega, dogovor o prostovoljnem delu, lista prisotnosti) z izročki in powerpointom."
+        }
+      ],
+      "contentsHash": "8f2aec6a9b84446b",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1Vhp4SE5wTdF4e9OaHrNcQiKRvyNAKBUja-q1ICxcPio",
+        "modifiedTime": null,
+        "textHash": null,
+        "cacheFile": "administrativno-vodenje-stega.txt"
+      },
+      "judgedAt": "2026-10-17T19:20:00+02:00"
+    },
+    "pridobivanje-sredstev": {
+      "title": "Pridobivanje sredstev",
+      "programKey": "pridobivanje sredstev",
+      "status": "ni_mikronacrta",
+      "counts": {
+        "vkljuceno": 0,
+        "delno": 0,
+        "manjka": 5,
+        "total": 5
+      },
+      "items": [
+        {
+          "text": "načini pridobivanja sredstev",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "prijavljanje na razpise",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "proaktivnost vodje",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "povezava med programom in pridobivanjem sredstev",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "dobre prakse",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        }
+      ],
+      "contentsHash": "a5155c4dc8f88d20",
+      "mikronacrt": {
+        "status": "missing",
+        "fileId": null,
+        "modifiedTime": null,
+        "textHash": null,
+        "cacheFile": null
+      },
+      "judgedAt": null
+    },
+    "retorika": {
+      "title": "Retorika",
+      "programKey": "retorika",
+      "status": "potrebuje_dopolnitev",
+      "counts": {
+        "vkljuceno": 0,
+        "delno": 2,
+        "manjka": 0,
+        "total": 2
+      },
+      "items": [
+        {
+          "text": "teorija o retoriki",
+          "status": "delno",
+          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
+        },
+        {
+          "text": "načini komunikacije, tehnike in orodja",
+          "status": "delno",
+          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
+        }
+      ],
+      "contentsHash": "6c44ae1257e56b38",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1v_Sxn_JW1jqSGg-BbNV0I-OzaMHQTn4g3RNdr6oOOd4",
+        "modifiedTime": "2026-10-07T17:36:52.211Z",
+        "textHash": "90a02a71b4fb4267",
+        "cacheFile": "retorika.txt"
+      },
+      "judgedAt": "2026-10-08T07:30:00+02:00"
+    },
+    "priprava-in-vodenje-proracuna": {
+      "title": "Priprava in vodenje proračuna",
+      "programKey": "priprava in vodenje proračuna",
+      "status": "ni_mikronacrta",
+      "counts": {
+        "vkljuceno": 0,
+        "delno": 0,
+        "manjka": 3,
+        "total": 3
+      },
+      "items": [
+        {
+          "text": "osnove denarnega poslovanja",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "proračun (prihodki, odhodki, fiksni/variabilni stroški)",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "koncept »nič ne nesemo s sabo«",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        }
+      ],
+      "contentsHash": "54f7902f4e951d00",
+      "mikronacrt": {
+        "status": "missing",
+        "fileId": null,
+        "modifiedTime": null,
+        "textHash": null,
+        "cacheFile": null
+      },
+      "judgedAt": null
+    },
+    "drzavna-raven-skavti-na-mednarodni-ravni": {
+      "title": "Državna raven / Skavti na mednarodni ravni",
+      "programKey": "državna raven",
+      "status": "potrebuje_dopolnitev",
+      "counts": {
+        "vkljuceno": 1,
+        "delno": 2,
+        "manjka": 0,
+        "total": 3
+      },
+      "items": [
+        {
+          "text": "zgodovina svetovnega skavtstva",
+          "status": "delno",
+          "evidence": "V Vsebini: ključne letnice/dogodki; v Poteku ni ločene aktivnosti za zgodovino (le uvod/izkušnje)."
+        },
+        {
+          "text": "WAGGGS, WOSM, ICCG, ICCS",
+          "status": "vkljuceno",
+          "evidence": "Potek »Kaj je«: WAGGGS (+ Helen Storrow, JLS, centri), WOSM, ICCG, ICCS; tudi pričevanja (Academy, ICCG, Jamboree)."
+        },
+        {
+          "text": "medkulturni dialog",
+          "status": "delno",
+          "evidence": "V Vsebini: teorija o medkulturnem dialogu; Potek ima uvod o mednarodnem povezovanju in pogovor po otočkih, brez eksplicitne teorije."
+        }
+      ],
+      "contentsHash": "360e61aa0c10aa2a",
+      "mikronacrt": {
+        "status": "exists",
+        "fileId": "1nKHTS1DMnggOEIb26BvCCWJ1KXdfVHmXlXeJzJZeTmE",
+        "modifiedTime": "2026-10-08T18:36:24.655Z",
+        "textHash": "a1446ccef2e28786",
+        "cacheFile": "drzavna-raven-skavti-na-mednarodni-ravni.txt"
+      },
+      "judgedAt": "2026-10-09T07:16:25+02:00"
+    },
+    "pricevanje-svod-a": {
+      "title": "Pričevanje SVOD-a",
+      "programKey": "pričevanje svod-a",
+      "status": "ni_mikronacrta",
+      "counts": {
+        "vkljuceno": 0,
+        "delno": 0,
+        "manjka": 2,
+        "total": 2
+      },
+      "items": [
+        {
+          "text": "deljenje izkušenj članov SVOD-a",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "oblika primerna UU",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        }
+      ],
+      "contentsHash": "7f252845c6f7937a",
+      "mikronacrt": {
+        "status": "missing",
+        "fileId": null,
+        "modifiedTime": null,
+        "textHash": null,
+        "cacheFile": null
+      },
+      "judgedAt": null
+    },
+    "ziva-knjiznica-z-io-jem": {
+      "title": "Živa knjižnica z IO-jem",
+      "programKey": "živa knjižnica z io-jem",
+      "status": "ni_mikronacrta",
+      "counts": {
+        "vkljuceno": 0,
+        "delno": 0,
+        "manjka": 3,
+        "total": 3
+      },
+      "items": [
+        {
+          "text": "obisk članov izvršnega odbora",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "možnost pogovora UU s poverjeniki in načelništvom",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        },
+        {
+          "text": "odpiranje aktualnih tematik",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        }
+      ],
+      "contentsHash": "3f8a032bf5a431c3",
+      "mikronacrt": {
+        "status": "missing",
+        "fileId": null,
+        "modifiedTime": null,
+        "textHash": null,
+        "cacheFile": null
+      },
+      "judgedAt": null
+    },
+    "zacetki-skavtstva-v-sloveniji": {
+      "title": "Začetki skavtstva v Sloveniji",
+      "programKey": "začetki skavtstva",
+      "status": "ni_mikronacrta",
+      "counts": {
+        "vkljuceno": 0,
+        "delno": 0,
+        "manjka": 1,
+        "total": 1
+      },
+      "items": [
+        {
+          "text": "gost: Janez Kobal, Milena Pačnik",
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
+        }
+      ],
+      "contentsHash": "66bf17d06e2a718f",
+      "mikronacrt": {
+        "status": "missing",
+        "fileId": null,
+        "modifiedTime": null,
+        "textHash": null,
+        "cacheFile": null
+      },
+      "judgedAt": null
+    }
+  }
+}

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>U Vodja 2026 · Na lovu za zakladom</title>
+  <meta name="description" content="Časovnica in gradivo usposabljanja U Vodja, jesen 2026 – ZSKSS · Pirati" />
+  <meta name="theme-color" content="#0b1622" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32.png" />
+  <link rel="icon" type="image/png" href="assets/logos/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png" />
+  <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
+  <link rel="stylesheet" href="css/styles.css?v=81" />
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;1,6..12,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skoči na vsebino</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#domov" data-tab-link="domov">
+        <img class="brand-wordmark brand-grb" src="assets/logos/grb-vodja-2026.svg" width="300" height="340" alt="Vodja 2026 – Na lovu za zakladom" />
+      </a>
+      <nav class="tabs" id="main-nav" aria-label="Glavna navigacija">
+        <button type="button" class="tab" data-tab="domov" aria-selected="false">Domov</button>
+        <button type="button" class="tab" data-tab="casovnica" aria-selected="true">Časovnica</button>
+        <button type="button" class="nav-more-toggle" id="nav-more-toggle" aria-expanded="false" aria-controls="nav-more" aria-label="Več zavihkov">≡</button>
+        <div class="nav-more" id="nav-more">
+          <button type="button" class="tab" data-tab="teme" aria-selected="false">Teme</button>
+          <button type="button" class="tab" data-tab="zadolzitve" aria-selected="false">Zadolžitve</button>
+          <button type="button" class="tab" data-tab="izrocki" aria-selected="false">Izročki</button>
+          <button type="button" class="tab" data-tab="gradiva" aria-selected="false">Gradiva</button>
+          <button type="button" class="tab" data-tab="ekipa" aria-selected="false">Ekipa</button>
+          <button type="button" class="tab" data-tab="os" aria-selected="false">OS</button>
+          <button type="button" class="tab" data-tab="preverbe" aria-selected="false">Preverbe</button>
+          <button type="button" class="tab" data-tab="zabava" aria-selected="false">Zabava</button>
+          <button type="button" class="tab" data-tab="analitika" aria-selected="false">Analitika</button>
+          <div class="nav-user" id="nav-user" hidden></div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <section id="auth-gate" class="auth-gate" hidden>
+    <div class="card auth-card">
+      <img class="auth-art" src="assets/logos/signin-4c.webp" alt="Vodja 2026 – Na lovu za zakladom" width="440" height="440" />
+      <h2>Prijava</h2>
+      <p class="muted-text">Vpiši se z skavti.si mail računom</p>
+      <div id="gsi-button" class="gsi-button"></div>
+      <p class="muted-text auth-note" id="auth-note"></p>
+    </div>
+  </section>
+  <main id="main">
+    <section id="tab-noaccess" class="tab-panel" hidden>
+      <div class="card noaccess-card">
+        <h2>Nimate dostopa</h2>
+        <p class="muted-text">Ta stran za tvoj račun ni na voljo. Če misliš, da je to napaka, piši Tilnu.</p>
+        <p class="noaccess-who muted-text" id="noaccess-who"></p>
+        <p class="hero-actions"><a class="btn primary" href="#domov" data-tab-link="domov" id="noaccess-home">Na Domov</a> <button type="button" class="btn ghost" data-signout>Odjava</button></p>
+      </div>
+    </section>
+    <section id="tab-domov" class="tab-panel" hidden>
+      <div class="home-hero card">
+        <div class="home-hero-top">
+          <img class="home-badge-sm" src="assets/logos/vodja-badge.png" alt="" width="64" height="64" />
+          <div>
+            <p class="brand-kicker">ZSKSS · U Vodja jesen 2026</p>
+            <h2>Na lovu za zakladom</h2>
+          </div>
+        </div>
+        <div id="countdown" class="countdown" aria-live="polite">
+          <p class="countdown-label" id="countdown-label">Do začetka</p>
+          <div class="countdown-units" id="countdown-units"></div>
+        </div>
+        <p class="muted-text home-dates" id="home-dates"></p>
+        <p class="hero-actions">
+          <a class="btn primary" href="#casovnica" data-tab-link="casovnica">Časovnica</a>
+          <a class="btn ghost" href="#teme" data-tab-link="teme">Teme</a>
+          <a class="btn ghost" href="#zadolzitve" data-tab-link="zadolzitve">Zadolžitve</a>
+        </p>
+      </div>
+      <div class="home-progress-grid">
+        <a class="progress-card card" href="#teme" data-tab-link="teme" id="prog-teme">
+          <div class="progress-head">
+            <h3>Mikronačrti</h3>
+            <span class="progress-count" id="prog-teme-count">—</span>
+          </div>
+          <div class="progress-track" aria-hidden="true"><div class="progress-fill gold" id="prog-teme-fill"></div></div>
+          <p class="muted-text progress-caption" id="prog-teme-cap"></p>
+        </a>
+        <a class="progress-card card" href="#zadolzitve" data-tab-link="zadolzitve" id="prog-zad">
+          <div class="progress-head">
+            <h3>Zadolžitve</h3>
+            <span class="progress-count" id="prog-zad-count">—</span>
+          </div>
+          <div class="progress-track" aria-hidden="true"><div class="progress-fill purple" id="prog-zad-fill"></div></div>
+          <p class="muted-text progress-caption" id="prog-zad-cap"></p>
+        </a>
+      </div>
+      <div class="card-grid two" id="home-weekends"></div>
+      <div class="account-row" id="account-row" hidden></div>
+      <div class="theme-row">
+        <span class="theme-label" id="theme-label">Videz: CGP Vodja 2026</span>
+        <button type="button" class="switch" id="theme-toggle" role="switch" aria-checked="false" aria-labelledby="theme-label"><span class="switch-knob"></span></button>
+      </div>
+    </section>
+
+    <section id="tab-casovnica" class="tab-panel">
+      <div class="tt-layout">
+        <aside class="tt-sidebar" aria-label="Navigacija po dnevih">
+          <h2 class="sidebar-title">Dnevi</h2>
+          <nav id="day-nav" class="day-nav"></nav>
+          <div class="sidebar-tools">
+            <label class="search-label" for="tt-search">Iskanje</label>
+            <div class="search-row">
+              <input id="tt-search" type="search" placeholder="Išči..." autocomplete="off" />
+              <button type="button" class="icon-toggle tema-only-btn" id="btn-tema-only" aria-pressed="false" title="Prikaži samo teme" aria-label="Prikaži samo teme"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3 5h18l-7 8v6l-4-2v-4z"/></svg></button>
+            </div>
+            <label class="check">
+              <input type="checkbox" id="hide-logistics" checked />
+              Skrij logistiko (bujenje, obroki …)
+            </label>
+          </div>
+        </aside>
+        <div class="tt-main">
+          <nav id="day-strip" class="day-strip" aria-label="Izberi dan"></nav>
+          <div class="tt-toolbar">
+            <h2>Časovnica</h2>
+            <p class="muted-text" id="tt-summary"></p>
+          </div>
+          <div id="timetable-tree" class="timeline"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-teme" class="tab-panel" hidden>
+      <div id="teme-list-view">
+        <h2>Teme</h2>
+        <p class="muted-text teme-legend">Status: <span class="cov-badge pripravljeno">Pripravljeno</span>
+          <span class="cov-badge ni_pripravljeno">Ni pripravljeno</span></p>
+        <div id="teme-overview" class="teme-overview"></div>
+      </div>
+      <div id="tema-view" hidden>
+        <p class="person-back"><a href="#teme" data-tab-link="teme" id="tema-back-link">← Nazaj na teme</a></p>
+        <header class="tema-header card">
+          <div class="tema-title-row">
+            <h2 id="tema-name">Tema</h2>
+            <div id="tema-badges" class="tema-badges"></div>
+          </div>
+          <p class="muted-text" id="tema-summary"></p>
+        </header>
+        <div id="tema-body" class="tema-body"></div>
+      </div>
+    </section>
+
+    <section id="tab-zadolzitve" class="tab-panel" hidden>
+      <h2>Zadolžitve</h2>
+      <div id="zadolzitve-list" class="zd-list"></div>
+    </section>
+
+    <section id="tab-izrocki" class="tab-panel" hidden>
+      <h2>Izročki</h2>
+      <p class="muted-text lede" id="izrocki-lede">Pregled izročkov po temah (mapa Izročki v Drive).</p>
+      <div class="iz-charts">
+        <section class="card iz-chart-card" aria-labelledby="iz-ready-title">
+          <h3 id="iz-ready-title">Pripravljenost</h3>
+          <div class="progress-head">
+            <span class="muted-text">Teme z izročkom</span>
+            <span class="progress-count" id="iz-ready-count">—</span>
+          </div>
+          <div class="progress-track" aria-hidden="true"><div class="progress-fill gold" id="iz-ready-fill"></div></div>
+          <p class="muted-text progress-caption" id="iz-ready-cap"></p>
+          <div class="iz-ready-bars" id="iz-ready-bars" role="img" aria-label="Pripravljenost izročkov"></div>
+        </section>
+        <section class="card iz-chart-card" aria-labelledby="iz-pages-title">
+          <h3 id="iz-pages-title">Število strani</h3>
+          <p class="muted-text" id="iz-pages-note">Po temah z znanim številom strani.</p>
+          <div id="iz-pages-chart" class="iz-pages-chart" role="img" aria-label="Strani na temo"></div>
+        </section>
+      </div>
+      <h3 class="iz-list-title">Po temah</h3>
+      <div id="izrocki-list" class="iz-list"></div>
+    </section>
+
+    <section id="tab-gradiva" class="tab-panel" hidden>
+      <h2>Gradiva</h2>
+      <div id="materials-list" class="materials-list"></div>
+    </section>
+
+
+    <section id="tab-ekipa" class="tab-panel" hidden>
+      <div id="ekipa-list-view">
+        <h2>Ekipa</h2>
+        <p class="lede">Vsi, ki so v virih navedeni kot odgovorni, time keeperji, gosti ali ob SVOD prihodih. Klikni ime za seznam odgovornosti.</p>
+        <section class="workload-card card" aria-labelledby="workload-title">
+          <h3 id="workload-title">Primerjava obremenitev</h3>
+          <p class="muted-text workload-note">Teme in zadolžitve po osebi (urejeno po vsoti). Štetje tem je enako kot na strani osebe: ista Tema v več delih (pt.1/pt.2) ali v 1. in 2. sklopu šteje <strong>enkrat</strong> (oznaka »1. in 2. del«). Klikni vrstico za stran osebe.</p>
+          <div class="workload-legend" aria-hidden="true">
+            <span class="wl-legend-group" title="Teme">
+              <span class="wl-item"><span class="wl-swatch teme-obvezne"></span>Obvezne</span>
+              <span class="wl-item"><span class="wl-swatch teme-izbirne"></span>Izbirne</span>
+              <span class="wl-item"><span class="wl-swatch teme-ostale"></span>Ostale</span>
+            </span>
+            <span class="wl-item"><span class="wl-swatch zad-pre"></span>Zad. · pred</span>
+            <span class="wl-item"><span class="wl-swatch zad-during"></span>Zad. · med</span>
+          </div>
+          <div id="workload-chart" class="workload-chart" role="img" aria-label="Vodoravni stolpčni diagram tem in zadolžitev"></div>
+          <div id="workload-tooltip" class="workload-tooltip" hidden></div>
+        </section>
+        <div id="ekipa-grid" class="ekipa-grid"></div>
+      </div>
+      <div id="person-view" hidden>
+        <p class="person-back"><a href="#ekipa" data-tab-link="ekipa">← Nazaj na ekipo</a></p>
+        <header class="person-header card">
+          <div class="person-title-row">
+            <div id="person-avatar" class="person-avatar"></div>
+            <h2 id="person-name">Oseba</h2>
+            <div id="person-tk-badges" class="person-tk-badges"></div>
+          </div>
+          <p class="muted-text" id="person-summary"></p>
+        </header>
+        <div id="person-roles" class="person-roles"></div>
+      </div>
+    </section>
+    <section id="tab-os" class="tab-panel" hidden>
+      <div id="os-list-view">
+        <div class="os-head">
+          <h2>OS – skupine</h2>
+          <p class="muted-text" id="os-sub"></p>
+        </div>
+        <div class="os-grid" id="os-groups"></div>
+      </div>
+      <div id="os-detail-view" hidden>
+        <p class="person-back"><a href="#os" data-tab-link="os">← Nazaj na skupine</a></p>
+        <div id="os-detail"></div>
+      </div>
+    </section>
+    <section id="tab-analitika" class="tab-panel" hidden>
+      <section class="card visits" id="visits" aria-labelledby="visits-title">
+        <h2 id="visits-title">Analitika – obiski</h2>
+        <div id="visits-body"></div>
+      </section>
+    </section>
+    <section id="tab-preverbe" class="tab-panel" hidden>
+      <div class="card placeholder-card">
+        <h2>Preverbe</h2>
+        <p class="muted-text">Dnevne preverbe bodo objavljene kmalu.</p>
+      </div>
+    </section>
+    <section id="tab-zabava" class="tab-panel" hidden>
+      <div class="wordle" id="wordle">
+        <div class="wd-head">
+          <h2>Wordle</h2>
+          <p class="muted-text wd-sub" id="wd-sub"></p>
+        </div>
+        <p class="wd-msg" id="wd-msg" role="status" aria-live="polite"></p>
+        <div class="wd-board" id="wd-board" aria-label="Igralna plošča"></div>
+        <div class="wd-actions" id="wd-actions" hidden></div>
+        <div class="wd-kb" id="wd-kb" aria-label="Tipkovnica"></div>
+        <div class="wd-stats" id="wd-stats"></div>
+        <section class="wd-score" id="wd-score" hidden>
+          <div class="wd-score-tabs" role="tablist">
+            <button type="button" role="tab" class="wd-stab" data-stab="danes" aria-selected="true">Danes</button>
+            <button type="button" role="tab" class="wd-stab" data-stab="skupno" aria-selected="false">Skupno</button>
+          </div>
+          <div id="wd-score-body" class="wd-score-body"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
+    <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
+    <p class="footer-sub">Podatki iz Drive časovnice in PROGRAM U VODJA_2026</p>
+  </footer>
+  <script src="js/app.js?v=81" type="module"></script>
+</body>
+</html>
