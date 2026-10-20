@@ -1311,3 +1311,16 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .os-person-txt { display: flex; flex-direction: column; min-width: 0; }
 .os-person .os-name { font-size: 1.02rem; }
 #tab-os .person-back a { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* —— OS: content per day —— */
+.os-days { margin-top: 1.5rem; }
+.os-day { padding: 0; margin-bottom: .6rem; }
+.os-day summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .75rem; padding: .8rem 1rem; min-height: 44px; cursor: pointer; }
+.os-day[open] summary { border-bottom: 1px solid var(--line); }
+.os-day-n { font-weight: 700; color: var(--gold-soft); }
+.os-day-title { font-weight: 600; overflow-wrap: anywhere; }
+.os-day-extra { margin: .6rem 1rem 0; }
+.os-day-body { padding: .6rem 1rem 1rem; overflow-wrap: anywhere; }
+.os-day-body p { margin: .5rem 0; line-height: 1.5; }
+.os-day-body ul { margin: .3rem 0 .6rem; padding-left: 1.2rem; }
+.os-day-body li { margin: .25rem 0; line-height: 1.5; }

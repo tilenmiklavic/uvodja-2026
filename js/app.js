@@ -2084,7 +2084,38 @@ async function renderVisits() {
 }
 
 /* —— OS: participant groups per spremljevalec (data/os.json ← Drive 02_Program/OS/skupine) —— */
-let osData;
+let osData, osDays;
+/** OS content per day (data/os_days.json ← Drive 02_Program/OS, doc »OS«). */
+async function renderOsDays() {
+  const el = $("#os-days-list");
+  if (!el) return;
+  if (osDays === undefined) {
+    try { const r = await fetch("data/os_days.json", { cache: "no-store" }); osDays = r.ok ? await r.json() : null; } catch { osDays = null; }
+  }
+  const segHtml = (segs) => segs.map((s) => {
+    const t = esc(s.t).replace(/\n/g, "<br>");
+    return s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${t}</a>` : t;
+  }).join("");
+  const body = (paras) => {
+    let html = "", open = false;
+    for (const p of paras) {
+      if (p.bullet && !open) { html += "<ul>"; open = true; }
+      if (!p.bullet && open) { html += "</ul>"; open = false; }
+      html += p.bullet ? `<li>${segHtml(p.segs)}</li>` : `<p>${segHtml(p.segs)}</p>`;
+    }
+    return html + (open ? "</ul>" : "");
+  };
+  if (!osDays?.days?.length) { el.innerHTML = `<p class="muted-text">Vsebina še ni objavljena.</p>`; return; }
+  el.innerHTML = osDays.days.map((d) => {
+    const extra = (d.extra || []).map((x) => x.url
+      ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.text)}</a>` : esc(x.text)).join(" · ");
+    return `<details class="card os-day"><summary><span class="os-day-n">${d.n}. dan</span>
+        <span class="os-day-title">${esc(d.title || "")}</span></summary>
+      ${extra ? `<p class="muted-text os-day-extra">${extra}</p>` : ""}
+      <div class="os-day-body">${body(d.content)}</div></details>`;
+  }).join("");
+}
+
 async function renderOs(groupN = null) {
   const box = $("#os-groups"), list = $("#os-list-view"), detail = $("#os-detail-view");
   if (!box) return;
@@ -2096,6 +2127,7 @@ async function renderOs(groupN = null) {
   const sprLabel = (g) => esc(g.slug && people[g.slug] ? displayName(people[g.slug]) : displayName(g.spremljevalec));
   const g = groupN && osData?.groups?.find((x) => String(x.n) === String(groupN));
   list.hidden = !!g; detail.hidden = !g;
+  if (!g) renderOsDays();
   if (g) {
     const p = g.slug && people[g.slug];
     const who = p && canSee("ekipa") ? `<a class="os-spr-link" href="#oseba-${esc(g.slug)}">${avatarHtml(p, "avatar-sm")}<span>${sprLabel(g)}</span></a>`
