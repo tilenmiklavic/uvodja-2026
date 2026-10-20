@@ -2096,14 +2096,25 @@ async function renderOsDays() {
     const t = esc(s.t).replace(/\n/g, "<br>");
     return s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${t}</a>` : t;
   }).join("");
-  const body = (paras) => {
+  const para = (p) => p.bullet ? `<li>${segHtml(p.segs)}</li>` : `<p>${segHtml(p.segs)}</p>`;
+  const group = (paras) => {
     let html = "", open = false;
     for (const p of paras) {
       if (p.bullet && !open) { html += "<ul>"; open = true; }
       if (!p.bullet && open) { html += "</ul>"; open = false; }
-      html += p.bullet ? `<li>${segHtml(p.segs)}</li>` : `<p>${segHtml(p.segs)}</p>`;
+      html += para(p);
     }
     return html + (open ? "</ul>" : "");
+  };
+  const labels = osDays.sections || {};
+  const body = (paras) => {
+    const blocks = [];
+    for (const p of paras) {
+      const last = blocks[blocks.length - 1];
+      if (last && last.sec === p.sec) last.items.push(p); else blocks.push({ sec: p.sec, items: [p] });
+    }
+    return blocks.map((b) => `<section class="os-sec os-sec-${esc(b.sec || "")}">
+      ${b.sec ? `<h4 class="os-sec-label">${esc(labels[b.sec] || b.sec)}</h4>` : ""}${group(b.items)}</section>`).join("");
   };
   if (!osDays?.days?.length) { el.innerHTML = `<p class="muted-text">Vsebina še ni objavljena.</p>`; return; }
   el.innerHTML = osDays.days.map((d) => {

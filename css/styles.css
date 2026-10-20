@@ -1324,3 +1324,9 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .os-day-body p { margin: .5rem 0; line-height: 1.5; }
 .os-day-body ul { margin: .3rem 0 .6rem; padding-left: 1.2rem; }
 .os-day-body li { margin: .25rem 0; line-height: 1.5; }
+.os-sec { margin: .9rem 0; padding-left: .8rem; border-left: 3px solid var(--line); }
+.os-sec-label { display: inline-block; margin: 0 0 .2rem -.8rem; padding: .1rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--line); color: #fff; }
+.os-sec-uvod { border-left-color: #4aa3df; } .os-sec-uvod .os-sec-label { background: #4aa3df; color: #08202f; }
+.os-sec-vprasanja { border-left-color: var(--gold); } .os-sec-vprasanja .os-sec-label { background: var(--gold); color: #2a1c00; }
+.os-sec-aktivnosti { border-left-color: #5fbf8a; } .os-sec-aktivnosti .os-sec-label { background: #5fbf8a; color: #06231a; }
+.os-sec-zakljucek { border-left-color: #b98ae0; } .os-sec-zakljucek .os-sec-label { background: #b98ae0; color: #1e0d30; }

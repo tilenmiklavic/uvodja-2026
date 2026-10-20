@@ -11,17 +11,11 @@
     {
      "segs": [
       {
-       "t": "Uvod"
-      }
-     ]
-    },
-    {
-     "segs": [
-      {
        "t": "Vsak UU se še enkrat predstavi, pove, iz kje prihaja, kaj počne, kako se počuti itd."
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "uvod"
     },
     {
      "segs": [
@@ -29,7 +23,8 @@
        "t": "Poudariti, da:"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "uvod"
     },
     {
      "segs": [
@@ -37,7 +32,8 @@
        "t": "je OS varen mehurček,"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "uvod"
     },
     {
      "segs": [
@@ -45,7 +41,8 @@
        "t": "si voditelji usposabljanja ne delimo, kaj kdo pove, razen, če je kaj bistvenega za boljšo izvedbo programa,"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "uvod"
     },
     {
      "segs": [
@@ -53,7 +50,8 @@
        "t": "ima vsak pravico med OS govoriti ali pa molčati,"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "uvod"
     },
     {
      "segs": [
@@ -61,56 +59,64 @@
        "t": "si ne skačemo v besedo."
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "uvod"
     },
     {
      "segs": [
       {
        "t": "Kaj prinašaš s seboj na ladjo?"
       }
-     ]
+     ],
+     "sec": "vprasanja"
     },
     {
      "segs": [
       {
        "t": "Odgovore na vprašanje zapišejo v knjižice (na eno stran). \nNaj imajo nekaj časa za razmislek in zapišejo res celostno s čim prihajajo na to usposabljanje: \n- izkušnje, ki so si jih nabrali v dosedanjem življenju in na skavtski poti (konkretno in nekonkretno)), "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "- skrbi, ki jih imajo (glede usposabljanja ali nasplošno) "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "- pričakovanja, "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "- spomine, ki jih ženejo"
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "- kaj jih žene, da so danes tu (na U Vodja)"
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "- … "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
@@ -120,14 +126,16 @@
       {
        "t": "razdelijo na težje - tiste, ki jih bremenijo, skrbijo, ovirajo na njihovi poti - in na lahke - tiste, ki so jim v oporo, spodbudo, jih razveseljujejo."
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Podelite med seboj."
       }
-     ]
+     ],
+     "sec": "zakljucek"
     }
    ]
   },
@@ -144,7 +152,8 @@
       {
        "t": "spoznavni razvoj, čustveni razvoj, socialni razvoj, moralni razvoj, duhovni razvoj, biološki razvoj. "
       }
-     ]
+     ],
+     "sec": "uvod"
     },
     {
      "segs": [
@@ -160,49 +169,56 @@
       {
        "t": "Lahko so vsi v središču, lahko pogrupirani, vsak zase,... glede na dinamiko njihove skupine."
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Ob svojo glavo napišejo področja osebni rasti, ki so pri njih najbolj razvita in ob roke področja, ki jih ustavljajo. "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Narišejo jadro in nanj področja, ki so močna področja osebnega razvoja v njihovem SKVO/tropu/DV…"
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Narišejo še okenca v trupu ladje in vanje napišejo tista področja osebnega razvoja, ki šepajo v njihovi skupini (tu naj bo fokus na skupnosti, ne na posamezniku)"
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Vsak predstavi."
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Skušamo ugotoviti povezavo med njimi in njihovo skupino. Ali se njihove točke preslikajo tudi v SKVO, se pravi če lahko njihove šibke točke preslikajo v šibke točke SKVO-ja."
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Debata z vprašanji:"
       }
-     ]
+     ],
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -210,7 +226,8 @@
        "t": "Se ti zdi, da si ti odgovoren, če so okna razbita? Se počutiš dovolj kompetentnega, da jih popraviš/zakrpaš?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -218,7 +235,8 @@
        "t": "Je kaj takega kar piratom na ladji manjka, ti pa jim tega ne moreš dati?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -226,7 +244,8 @@
        "t": "Je kaj takega kar bi ti potreboval, česar tvoji pirati nimajo?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -234,7 +253,8 @@
        "t": "Kdaj se ti zdi, da si na svoji skavtski poti najbolj zrasel? Kdaj na tvoji skavtski poti si se zavedel kaj vse premore tvoja ladja in kakšen potencial ima?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -242,14 +262,16 @@
        "t": "Kdo v SKVO je odgovoren za OR voditeljev in a se ti zdi nujno, da je to stegovodja? Namignemo na velikobratovstvo in to, da ni nujno, da je stegovodja vedno tisti, ki poskrbi za OR vseh članov."
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
       {
        "t": "Če napredujem jaz, napreduje celotna skupina."
       }
-     ]
+     ],
+     "sec": "zakljucek"
     }
    ]
   },
@@ -268,28 +290,32 @@
       {
        "t": "Popotovanje med odnosi z njihovimi SKVOjevci in v tropu/državno vodstvo."
       }
-     ]
+     ],
+     "sec": "uvod"
     },
     {
      "segs": [
       {
        "t": "Vsi naj se udobno namestijo, lahko si kaj zapišejo, sicer pa samo poslušajo. "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Glede na to kakšna skupina je (kako se odločijo skupaj), uvod prebere OS ali pa ga preberejo sami (natisnemo dovolj za vse)."
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Debata:"
       }
-     ]
+     ],
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -297,7 +323,8 @@
        "t": "Pokomentirajo kako so se počutili …"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -305,7 +332,8 @@
        "t": "Kakšni odnosi vladajo v tvojem SKVO/tropu..?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -313,7 +341,8 @@
        "t": "Si v SKVO/tropu zaupate med seboj?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -321,7 +350,8 @@
        "t": "Kako poteka komunikacija?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -329,7 +359,8 @@
        "t": "Prihaja do grupiranja in obrekovanja?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -337,7 +368,8 @@
        "t": "Se ti zdi, da vas odnosi ovirajo pri uresničevanju načrtov?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -351,7 +383,8 @@
        "t": " Kako biti njihov prijatelj, a hkrati tudi vodja?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -359,7 +392,8 @@
        "t": "Kako kot stegovodja vplivaš na odnose? Se ti zdi, da jih usmerjaš in “urejaš” ali si nemi opazovalec?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -369,7 +403,8 @@
       {
        "t": "“Pri delu za skavte torej pričakujte razočaranje in neuspeh. Bodite potrpežljivi: mnogo več je tistih, ki imajo uničeno kariero zaradi pomanjkanja potrpežljivosti, kot pa zaradi pitja ali drugih razvad. Potrpežljivo boste morali prenašati - vsaj do neke mere - kritike, ki vas bodo ranile in birokratske ovire, vendar ne boste ostali brez plačila.”"
       }
-     ]
+     ],
+     "sec": "zakljucek"
     }
    ]
   },
@@ -386,42 +421,48 @@
       {
        "t": " Nariši Združenje, kaj je zate ZSKSS? (poudarimo naj ne rišejo organigrama!)"
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Nariši sebe, kje misliš, da si v tem Združenju. "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Predstavijo kaj so narisali, povejo kakšen odnos imajo oni osebno do Združenja."
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Predstavimo model pripadnosti: "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Kateri del pripadnosti je pri njih najbolj močen, kje so oni in kdaj pride kateri vidik bolj v ospredje in zakaj. "
       }
-     ]
+     ],
+     "sec": "aktivnosti"
     },
     {
      "segs": [
       {
        "t": "Kaj vpliva na pripadnost ZSKSS v vašem SKVO/stegu/tropu? Kaj bi lahko naredili vi in kaj lahko naredi državna raven? "
       }
-     ]
+     ],
+     "sec": "vprasanja"
     }
    ]
   },
@@ -439,7 +480,8 @@
       {
        "t": "Smernice za pomoč:"
       }
-     ]
+     ],
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -447,7 +489,8 @@
        "t": "Teme, ki se odprejo tekom tedna?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -455,7 +498,8 @@
        "t": "Imajo še kakšno dilemo/strah/vprašanje v povezavi s funkcijo vodje?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -463,7 +507,8 @@
        "t": "“Vsako veliko potovanje se začne s prvim korakom.” … ali so pripravljeni narediti Korak: vodenje? Kako se ga bodo lotili?"
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     },
     {
      "segs": [
@@ -471,9 +516,16 @@
        "t": "Vprašaj, če imajo kakšen komentar, vprašanje, pomislek, ki so ga dobili na usposabljanju in bi ga radi razjasnili."
       }
      ],
-     "bullet": true
+     "bullet": true,
+     "sec": "vprasanja"
     }
    ]
   }
- ]
+ ],
+ "sections": {
+  "uvod": "Uvod",
+  "vprasanja": "Vprašanja",
+  "aktivnosti": "Aktivnosti",
+  "zakljucek": "Zaključek"
+ }
 }
