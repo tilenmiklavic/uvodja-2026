@@ -5905,8 +5905,8 @@
         "url": "https://docs.google.com/document/d/1dii4q614ezORIQruyn6mxl0t6ZUsaRWn31iVJ_8N9Eg/edit",
         "fileId": "1dii4q614ezORIQruyn6mxl0t6ZUsaRWn31iVJ_8N9Eg",
         "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-11T19:33:14.627Z",
-        "textHash": "0afebcdc3edba4e9",
+        "modifiedTime": "2026-10-18T21:22:14.846Z",
+        "textHash": "54b959d1080c25ef",
         "cacheFile": "katolisko-skavtstvo.txt"
       },
       "occurrences": [
@@ -6040,8 +6040,8 @@
         "url": "https://docs.google.com/document/d/11mlgwpAotvYVGRp_20yRxrXHToJNrhFZ1uV2mGAIDyY/edit",
         "fileId": "11mlgwpAotvYVGRp_20yRxrXHToJNrhFZ1uV2mGAIDyY",
         "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-08T18:30:38.983Z",
-        "textHash": "934b1a6e9465d0ea",
+        "modifiedTime": "2026-10-16T18:56:46.985Z",
+        "textHash": "b992fc194892c662",
         "cacheFile": "vodenje-voditeljev.txt"
       },
       "occurrences": [
@@ -6199,8 +6199,8 @@
         "url": "https://docs.google.com/document/d/1V3AWbdAkxW3DyaWq9W0hOPUza9rFRfIiT-XaYLZuSQs/edit",
         "fileId": "1V3AWbdAkxW3DyaWq9W0hOPUza9rFRfIiT-XaYLZuSQs",
         "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-05T19:45:18.937Z",
-        "textHash": "2be0a9412dfffa1e",
+        "modifiedTime": "2026-10-18T14:05:21.593Z",
+        "textHash": "afc9d5453b48d5ee",
         "cacheFile": "skavti-v-mladinskem-delu.txt"
       },
       "occurrences": [
@@ -6329,8 +6329,8 @@
         "url": "https://docs.google.com/document/d/1Hu6KOesXxELele1H_8Y1N9uS2UtZsLJYPu1BDJE26fc/edit",
         "fileId": "1Hu6KOesXxELele1H_8Y1N9uS2UtZsLJYPu1BDJE26fc",
         "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-12T17:23:53.626Z",
-        "textHash": "3269984e2f405bb0",
+        "modifiedTime": "2026-10-17T19:07:27.966Z",
+        "textHash": "d2bc97027da00ac0",
         "cacheFile": "osebno-spremljanje-voditeljev.txt"
       },
       "occurrences": [
@@ -6440,8 +6440,8 @@
         "url": "https://docs.google.com/document/d/1Nhdq9GuWldZeD8KqiNn9IX-DzQfvOgsJW-gZS00lDuM/edit",
         "fileId": "1Nhdq9GuWldZeD8KqiNn9IX-DzQfvOgsJW-gZS00lDuM",
         "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-13T16:37:52.023Z",
-        "textHash": "ccac4494bf538738",
+        "modifiedTime": "2026-10-17T12:39:41.543Z",
+        "textHash": "bb259420828dfaa2",
         "cacheFile": "vodenje-procesov.txt"
       },
       "occurrences": [
@@ -6853,8 +6853,8 @@
         "url": "https://docs.google.com/document/d/1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c/edit",
         "fileId": "1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c",
         "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-05T19:38:49.330Z",
-        "textHash": "48350c249023f6d6",
+        "modifiedTime": "2026-10-13T17:30:52.956Z",
+        "textHash": "04bffb08ca8ab7e6",
         "cacheFile": "odnosi-z-javnostmi.txt"
       },
       "occurrences": [
@@ -6998,7 +6998,7 @@
         "url": "https://docs.google.com/document/d/1Vhp4SE5wTdF4e9OaHrNcQiKRvyNAKBUja-q1ICxcPio/edit",
         "fileId": "1Vhp4SE5wTdF4e9OaHrNcQiKRvyNAKBUja-q1ICxcPio",
         "label": "Odpri mikronačrt",
-        "modifiedTime": null,
+        "modifiedTime": "2026-10-17T13:18:34.369Z",
         "textHash": null,
         "cacheFile": "administrativno-vodenje-stega.txt"
       },
@@ -8040,12 +8040,13 @@
     "folderId": "1IsQ6Ojl0j6j-SzhFkJo_pVyi2fN-uKmx",
     "folderUrl": "https://drive.google.com/drive/folders/1IsQ6Ojl0j6j-SzhFkJo_pVyi2fN-uKmx",
     "folderTitle": "Izročki",
-    "updatedAt": "2026-10-18T19:25:00+02:00",
-    "generatedAt": "2026-10-18T17:23:04.480395+00:00",
-    "ready": 7,
+    "updatedAt": "2026-10-19T22:33:00+02:00",
+    "generatedAt": "2026-10-20T06:10:00+00:00",
+    "ready": 8,
     "total": 19,
     "readySlugs": [
       "jaz-vodja",
+      "katolisko-skavtstvo",
       "krizno-komuniciranje-in-stiske",
       "osebno-spremljanje-voditeljev",
       "razseznost-zdruzenja",
@@ -8072,10 +8073,10 @@
         "url": "https://docs.google.com/document/d/1irtPpWda6-RYP6Rgk_LM6zeMOsXHRc6UIstlFYhKEj0/edit",
         "mimeType": "application/vnd.google-apps.document",
         "type": "gdoc",
-        "modifiedTime": "2026-10-18T14:59:29.624Z",
+        "modifiedTime": "2026-10-18T20:54:50.574Z",
         "temaSlug": "skavti-v-mladinskem-delu",
         "temaTitle": "Skavti v mladinskem delu",
-        "pageCount": 2,
+        "pageCount": 6,
         "pageCountSource": "pdf_export+pdfinfo"
       },
       {
@@ -8151,15 +8152,15 @@
         "pageCountSource": "pdf_export+pdfinfo"
       },
       {
-        "id": "13fLLS8cl2EFVjKJR5zMZw1Vy2EWpyco05waPgungDw0",
+        "id": "1cDhLZ6NQdUyKy2ccBQzzBWom2R5lrp-CfFA-5n6CQbE",
         "title": "09_Krizno komuniciranje",
-        "url": "https://docs.google.com/document/d/13fLLS8cl2EFVjKJR5zMZw1Vy2EWpyco05waPgungDw0/edit",
+        "url": "https://docs.google.com/document/d/1cDhLZ6NQdUyKy2ccBQzzBWom2R5lrp-CfFA-5n6CQbE/edit",
         "mimeType": "application/vnd.google-apps.document",
         "type": "gdoc",
-        "modifiedTime": "2026-10-07T09:26:29.970Z",
+        "modifiedTime": "2026-10-19T20:33:24.213Z",
         "temaSlug": "krizno-komuniciranje-in-stiske",
         "temaTitle": "Krizno komuniciranje in stiske",
-        "pageCount": 1,
+        "pageCount": 4,
         "pageCountSource": "pdf_export+pdfinfo"
       },
       {
@@ -8185,6 +8186,30 @@
         "temaTitle": "Vodenje procesov",
         "pageCount": 3,
         "pageCountSource": "pdf_export+pdfinfo"
+      },
+      {
+        "id": "1TCnnurhYKq9LSjk48WZQr_q0zMXk4riD",
+        "title": "03_Katoliško skavtstvo_izroček 1",
+        "url": "https://drive.google.com/file/d/1TCnnurhYKq9LSjk48WZQr_q0zMXk4riD/view",
+        "mimeType": "application/pdf",
+        "type": "pdf",
+        "modifiedTime": "2026-10-18T20:47:35.746Z",
+        "temaSlug": "katolisko-skavtstvo",
+        "temaTitle": "Katoliško skavtstvo",
+        "pageCount": 3,
+        "pageCountSource": "pdfinfo"
+      },
+      {
+        "id": "14WvxiyAX-UREcvvBQ8jXhRu_hAlB_pBj",
+        "title": "03_Katoliško skavtstvo_izroček 2",
+        "url": "https://drive.google.com/file/d/14WvxiyAX-UREcvvBQ8jXhRu_hAlB_pBj/view",
+        "mimeType": "application/pdf",
+        "type": "pdf",
+        "modifiedTime": "2026-10-18T20:47:41.376Z",
+        "temaSlug": "katolisko-skavtstvo",
+        "temaTitle": "Katoliško skavtstvo",
+        "pageCount": 1,
+        "pageCountSource": "pdfinfo"
       }
     ],
     "perTema": [
@@ -8214,14 +8239,14 @@
         "slug": "krizno-komuniciranje-in-stiske",
         "title": "Krizno komuniciranje in stiske",
         "fileCount": 1,
-        "pageCount": 1,
+        "pageCount": 4,
         "files": [
           {
-            "id": "13fLLS8cl2EFVjKJR5zMZw1Vy2EWpyco05waPgungDw0",
+            "id": "1cDhLZ6NQdUyKy2ccBQzzBWom2R5lrp-CfFA-5n6CQbE",
             "title": "09_Krizno komuniciranje",
-            "url": "https://docs.google.com/document/d/13fLLS8cl2EFVjKJR5zMZw1Vy2EWpyco05waPgungDw0/edit",
+            "url": "https://docs.google.com/document/d/1cDhLZ6NQdUyKy2ccBQzzBWom2R5lrp-CfFA-5n6CQbE/edit",
             "type": "gdoc",
-            "pageCount": 1
+            "pageCount": 4
           }
         ]
       },
@@ -8259,14 +8284,14 @@
         "slug": "skavti-v-mladinskem-delu",
         "title": "Skavti v mladinskem delu",
         "fileCount": 1,
-        "pageCount": 2,
+        "pageCount": 6,
         "files": [
           {
             "id": "1irtPpWda6-RYP6Rgk_LM6zeMOsXHRc6UIstlFYhKEj0",
             "title": "06_Skavti v mladinskem delu_izročki",
             "url": "https://docs.google.com/document/d/1irtPpWda6-RYP6Rgk_LM6zeMOsXHRc6UIstlFYhKEj0/edit",
             "type": "gdoc",
-            "pageCount": 2
+            "pageCount": 6
           }
         ]
       },
@@ -8318,6 +8343,28 @@
             "url": "https://docs.google.com/document/d/1xHch-XRN_EDEKQFnbOV268fIkvuZEbQXgLoXpTYpICU/edit",
             "type": "gdoc",
             "pageCount": 3
+          }
+        ]
+      },
+      {
+        "slug": "katolisko-skavtstvo",
+        "title": "Katoliško skavtstvo",
+        "fileCount": 2,
+        "pageCount": 4,
+        "files": [
+          {
+            "id": "1TCnnurhYKq9LSjk48WZQr_q0zMXk4riD",
+            "title": "03_Katoliško skavtstvo_izroček 1",
+            "url": "https://drive.google.com/file/d/1TCnnurhYKq9LSjk48WZQr_q0zMXk4riD/view",
+            "type": "pdf",
+            "pageCount": 3
+          },
+          {
+            "id": "14WvxiyAX-UREcvvBQ8jXhRu_hAlB_pBj",
+            "title": "03_Katoliško skavtstvo_izroček 2",
+            "url": "https://drive.google.com/file/d/14WvxiyAX-UREcvvBQ8jXhRu_hAlB_pBj/view",
+            "type": "pdf",
+            "pageCount": 1
           }
         ]
       }
