@@ -30,7 +30,6 @@
         <div class="nav-more" id="nav-more">
           <button type="button" class="tab" data-tab="teme" aria-selected="false">Teme</button>
           <button type="button" class="tab" data-tab="zadolzitve" aria-selected="false">Zadolžitve</button>
-          <button type="button" class="tab" data-tab="izrocki" aria-selected="false">Izročki</button>
           <button type="button" class="tab" data-tab="gradiva" aria-selected="false">Gradiva</button>
           <button type="button" class="tab" data-tab="ekipa" aria-selected="false">Ekipa</button>
           <button type="button" class="tab" data-tab="os" aria-selected="false">OS</button>
@@ -160,8 +159,10 @@
       <div id="zadolzitve-list" class="zd-list"></div>
     </section>
 
-    <section id="tab-izrocki" class="tab-panel" hidden>
-      <h2>Izročki</h2>
+    <section id="tab-gradiva" class="tab-panel" hidden>
+      <h2>Gradiva</h2>
+      <div id="materials-list" class="materials-list"></div>
+      <h3 class="gr-section-title">Izročki</h3>
       <p class="muted-text lede" id="izrocki-lede">Pregled izročkov po temah (mapa Izročki v Drive).</p>
       <div class="iz-charts">
         <section class="card iz-chart-card" aria-labelledby="iz-ready-title">
@@ -180,13 +181,8 @@
           <div id="iz-pages-chart" class="iz-pages-chart" role="img" aria-label="Strani na temo"></div>
         </section>
       </div>
-      <h3 class="iz-list-title">Po temah</h3>
+      <h4 class="iz-list-title">Po temah</h4>
       <div id="izrocki-list" class="iz-list"></div>
-    </section>
-
-    <section id="tab-gradiva" class="tab-panel" hidden>
-      <h2>Gradiva</h2>
-      <div id="materials-list" class="materials-list"></div>
     </section>
 
 

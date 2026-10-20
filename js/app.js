@@ -206,7 +206,7 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
-const ALL_PAGES = ["domov", "casovnica", "teme", "zadolzitve", "izrocki", "gradiva", "ekipa", "os", "preverbe", "zabava", "analitika"];
+const ALL_PAGES = ["domov", "casovnica", "teme", "zadolzitve", "gradiva", "ekipa", "os", "preverbe", "zabava", "analitika"];
 
 function loadUser() {
   try { const u = JSON.parse(localStorage.getItem("uvodja.user") || "null"); return u?.email ? u : null; } catch { return null; }
@@ -1566,8 +1566,9 @@ function openPerson(slug) {
 function applyHash() {
   const hash = location.hash.replace(/^#/, "");
   if (!hash || hash === "casovnica") { setTab("casovnica"); return; }
+  if (hash === "izrocki") { setTab("gradiva"); history.replaceState(null, "", "#gradiva"); return; }
   if (hash === "info") { setTab("domov"); history.replaceState(null, "", "#domov"); return; }
-  if (["domov", "gradiva", "ekipa", "teme", "zadolzitve", "izrocki", "os", "preverbe", "zabava", "analitika"].includes(hash)) {
+  if (["domov", "gradiva", "ekipa", "teme", "zadolzitve", "os", "preverbe", "zabava", "analitika"].includes(hash)) {
     setTab(hash);
     if (hash === "ekipa") showEkipaList();
     if (hash === "teme") showTemeList();

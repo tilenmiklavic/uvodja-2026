@@ -934,6 +934,7 @@ a.person-tk-day:hover { color: #fff; border-bottom-color: var(--gold); }
 }
 .iz-chart-card h3 { margin: 0 0 .55rem; font-size: 1.05rem; color: #fff; }
 .iz-list-title { margin: 1.25rem 0 .65rem; font-family: var(--serif); font-size: 1.15rem; color: #fff; }
+.gr-section-title { margin: 2rem 0 .4rem; font-family: var(--serif); font-size: 1.4rem; color: #fff; }
 .iz-list {
   display: grid;
   gap: .65rem;
