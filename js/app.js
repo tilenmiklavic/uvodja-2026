@@ -375,8 +375,13 @@ function setTab(name) {
     panel.hidden = panel.id !== `tab-${name}`;
   });
   if (name === "ekipa") ensureWorkloadChart();
-  state.wordleActive = name === "zabava";
-  if (name === "zabava") renderWordle();
+  const zb = /^zabava\/(stavnica)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "wordle";
+  state.wordleActive = name === "zabava" && zb === "wordle";
+  if (name === "zabava") {
+    $$("[data-zb-tab]").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.zbTab === zb)));
+    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica";
+    if (zb === "wordle") renderWordle(); else renderStavnica();
+  }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
   closeNavMore();
   const hash = location.hash.replace(/^#/, "");
@@ -386,7 +391,7 @@ function setTab(name) {
   if (name === "uu") renderUU(/^uu\/(.+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   currentTab = name;
-  if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("uu/") && !hash.startsWith("preverbe/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
+  if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("uu/") && !hash.startsWith("preverbe/") && !hash.startsWith("zabava/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
     history.replaceState(null, "", name === "casovnica" ? "#casovnica" : `#${name}`);
   }
 }
@@ -1626,6 +1631,7 @@ function applyHash() {
   }
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno)$/.test(hash)) { setTab("preverbe"); return; }
+  if (/^zabava\/(wordle|stavnica)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -2182,6 +2188,90 @@ async function renderOsDays() {
   }).join("");
 }
 
+/* —— Zabava → Stavnica: Polymarket-style bets with virtual dukati via Apps Script (apps-script/stavnica.gs) —— */
+const sv = { state: null, loading: false, open: null, error: "" };
+async function svCall(extra = {}) {
+  const cfg = await wdConfig();
+  if (!cfg?.scriptUrl) throw new Error("stavnica ni povezana");
+  const credential = await wdFreshToken();
+  if (!credential) throw new Error("prijava je potekla – osveži stran");
+  const res = await wdPost(cfg.scriptUrl, { type: "stavnica", action: "state", name: state.user?.name || "", ...extra }, credential);
+  if (!res?.ok) throw new Error(res?.error || "napaka strežnika");
+  return res;
+}
+async function renderStavnica(force = false) {
+  const box = $("#stavnica");
+  if (!box) return;
+  if (!sv.state || force) {
+    if (sv.loading) return;
+    sv.loading = true;
+    if (!sv.state) box.innerHTML = `<p class="muted-text">Nalagam stavnico …</p>`;
+    try { sv.state = await svCall(); sv.error = ""; } catch (err) { sv.error = err.message || String(err); }
+    sv.loading = false;
+  }
+  if (!sv.state) { box.innerHTML = `<div class="card sv-empty"><p>Stavnice ni bilo mogoče naložiti.</p><p class="muted-text">${esc(sv.error)}</p><button type="button" class="btn ghost" data-sv-reload>Poskusi znova</button></div>`; return; }
+  const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
+  const pct = (q, o) => (q.total ? Math.round(((q.pool[o] || 0) / q.total) * 100) : Math.round(100 / q.options.length));
+  const label = (q, o) => q.type === "boolean" ? ({ yes: "Da", no: "Ne" }[o.toLowerCase()] || o) : o;
+  const card = (q, i) => {
+    const open = sv.open?.q === i && !q.result;
+    const sel = open ? sv.open.o : null;
+    const lead = q.total ? q.options.reduce((a, b) => ((q.pool[b] || 0) > (q.pool[a] || 0) ? b : a)) : null;
+    return `<article class="card sv-card${q.result ? " is-resolved" : ""}">
+      <h3 class="sv-q">${esc(q.question)}</h3>
+      <p class="sv-meta muted-text">${q.total} dukatov v bazenu · ${q.bettors} ${q.bettors === 1 ? "stavitelj" : "staviteljev"}${q.result ? ` · <strong class="sv-res">Rezultat: ${esc(label(q, q.result))}</strong>` : ""}</p>
+      <div class="sv-opts">${q.options.map((o) => `<button type="button" class="sv-opt${o === sel ? " is-sel" : ""}${q.result === o ? " is-win" : ""}${o === lead && !q.result ? " is-lead" : ""}" data-sv-q="${i}" data-sv-o="${esc(o)}"${q.result ? " disabled" : ""}>
+          <span class="sv-bar" style="width:${pct(q, o)}%"></span>
+          <span class="sv-opt-label">${esc(label(q, o))}</span><span class="sv-pct">${pct(q, o)} %</span>
+        </button>`).join("")}</div>
+      ${open ? `<form class="sv-bet" data-sv-q="${i}" data-sv-o="${esc(sel)}">
+        <p class="sv-bet-title">Stava: <strong>${esc(label(q, sel))}</strong></p>
+        <div class="sv-chips">${[5, 10, 25].filter((n) => n <= me.balance).map((n) => `<button type="button" class="sv-chip" data-sv-amt="${n}">${n}</button>`).join("")}${me.balance ? `<button type="button" class="sv-chip" data-sv-amt="${me.balance}">Vse</button>` : ""}</div>
+        <div class="sv-bet-row"><input type="number" name="amount" min="1" max="${me.balance}" step="1" value="${Math.min(10, me.balance)}" inputmode="numeric" aria-label="Vložek v dukatih" />
+          <button type="submit" class="btn primary"${me.balance ? "" : " disabled"}>Stavi</button><button type="button" class="btn ghost sv-cancel" data-sv-cancel>Prekliči</button></div>
+        <p class="sv-payout muted-text" data-sv-payout></p>
+        <p class="sv-status" role="status" aria-live="polite"></p>
+      </form>` : ""}
+    </article>`;
+  };
+  const who = (b) => wdWho("", b.name);
+  const optLabel = (b) => { const q = st.questions.find((x) => x.id === b.question); return q ? label(q, b.option) : b.option; };
+  box.innerHTML = `<div class="sv-top card"><div><span class="sv-bal-label">Tvoje stanje</span><strong class="sv-bal">💰 ${me.balance} <small>/ ${st.budget} dukatov</small></strong></div>
+      <button type="button" class="btn ghost sv-refresh" data-sv-reload>Osveži</button></div>
+    <p class="muted-text sv-help">Vsak ima ${st.budget} dukatov. Odstotek je delež vseh vložkov na to opcijo; ko je rezultat znan, si zmagovalci razdelijo celoten bazen.</p>
+    ${st.questions.length ? st.questions.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p></div>`}
+    ${me.bets.length ? `<section class="card sv-list"><h3>Moje stave</h3><ul>${me.bets.map((b) => `<li><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 💰</span>${b.payout === null ? "" : `<span class="sv-l-p${b.payout ? " is-win" : ""}">${b.payout ? `+${b.payout}` : "0"}</span>`}</li>`).join("")}</ul></section>` : ""}
+    ${st.recent.length ? `<section class="card sv-list"><h3>Zadnje stave</h3><ul>${st.recent.map((b) => { const w = who(b); return `<li>${w.av}<span class="sv-l-who" title="${esc(w.title)}">${esc(w.label)}</span><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 💰</span></li>`; }).join("")}</ul></section>` : ""}`;
+  svUpdatePayout();
+}
+function svUpdatePayout() {
+  const f = $("#stavnica form.sv-bet"), q = f && sv.state?.questions[f.dataset.svQ];
+  if (!q) return;
+  const amt = Math.max(0, Math.floor(Number(f.amount.value) || 0)), o = f.dataset.svO;
+  const p = (q.pool[o] || 0) + amt, t = q.total + amt;
+  $("[data-sv-payout]", f).textContent = amt ? `Če zmaga, trenutno prejmeš ~${Math.floor((amt * t) / p)} dukatov (×${(t / p).toFixed(2)}).` : "";
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#stavnica")) return;
+  const opt = e.target.closest(".sv-opt"), chip = e.target.closest("[data-sv-amt]");
+  if (opt) { sv.open = { q: Number(opt.dataset.svQ), o: opt.dataset.svO }; renderStavnica(); $("#stavnica form.sv-bet input")?.focus(); }
+  else if (chip) { const f = chip.closest("form"); f.amount.value = chip.dataset.svAmt; svUpdatePayout(); }
+  else if (e.target.closest("[data-sv-cancel]")) { sv.open = null; renderStavnica(); }
+  else if (e.target.closest("[data-sv-reload]")) renderStavnica(true);
+});
+document.addEventListener("input", (e) => { if (e.target.closest("#stavnica form.sv-bet")) svUpdatePayout(); });
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest("#stavnica form.sv-bet");
+  if (!f) return;
+  e.preventDefault();
+  const q = sv.state.questions[f.dataset.svQ], amount = Math.floor(Number(f.amount.value)), status = $(".sv-status", f), btn = $("button[type=submit]", f);
+  if (!(amount >= 1) || amount > sv.state.me.balance) { status.className = "sv-status is-err"; status.textContent = `Vložek mora biti med 1 in ${sv.state.me.balance}.`; return; }
+  btn.disabled = true; status.className = "sv-status"; status.textContent = "Stavim …";
+  try {
+    sv.state = await svCall({ action: "bet", question: q.id, option: f.dataset.svO, amount });
+    sv.open = null; renderStavnica();
+  } catch (err) { status.className = "sv-status is-err"; status.textContent = `Stava ni uspela (${err.message || err}).`; btn.disabled = false; }
+});
 /* —— Preverbe: Teme = today's tema feedback forms (embedded Google Forms), Generalno = 3 free-text forms → Apps Script → Preverbe/Vprašanja sheets —— */
 let pvData;
 async function renderPreverbe(sub = "teme") {

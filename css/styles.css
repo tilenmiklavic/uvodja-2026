@@ -1430,3 +1430,51 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .pv-status { margin: 0; font-size: .88rem; min-height: 1.2em; }
 .pv-status.is-ok { color: var(--band-green); }
 .pv-status.is-err { color: var(--warn); }
+
+/* —— Zabava: Wordle / Stavnica —— */
+.zb-head { margin-bottom: 1rem; }
+.stavnica { max-width: 720px; margin: 0 auto; }
+.sv-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1.2rem; margin-bottom: .5rem; }
+.sv-bal-label { display: block; font-size: .78rem; color: var(--ink-muted); }
+.sv-bal { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.sv-bal small { font-size: .8rem; font-weight: 600; color: var(--ink-muted); }
+.btn.sv-refresh { flex: none; }
+.sv-help { font-size: .85rem; margin: 0 0 .9rem; }
+.sv-card { padding: 1rem 1.2rem; margin-bottom: .8rem; }
+.sv-q { margin: 0 0 .2rem; font-size: 1.05rem; }
+.sv-q::first-letter { text-transform: uppercase; }
+.sv-meta { margin: 0 0 .7rem; font-size: .8rem; }
+.sv-res { color: var(--band-green); }
+.sv-opts { display: grid; gap: .45rem; }
+.sv-opt { position: relative; display: flex; align-items: center; justify-content: space-between; gap: .8rem; min-height: 46px; padding: 0 .9rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; overflow: hidden; text-align: left; }
+.sv-opt:hover:not(:disabled) { border-color: var(--gold); }
+.sv-opt:disabled { cursor: default; }
+.sv-bar { position: absolute; inset: 0 auto 0 0; background: rgba(250,204,21,.16); transition: width .4s ease; }
+.sv-opt.is-lead .sv-bar { background: rgba(250,204,21,.28); }
+.sv-opt.is-sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.sv-opt.is-win { border-color: var(--band-green); }
+.sv-opt.is-win .sv-bar { background: rgba(107,142,35,.4); }
+.sv-opt-label, .sv-pct { position: relative; }
+.sv-pct { font-variant-numeric: tabular-nums; color: var(--gold-soft); }
+.sv-bet { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--line); display: grid; gap: .5rem; }
+.sv-bet-title { margin: 0; }
+.sv-chips { display: flex; gap: .4rem; flex-wrap: wrap; }
+.sv-chip { min-width: 3rem; min-height: 36px; padding: 0 .7rem; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.06); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+.sv-chip:hover { border-color: var(--gold); }
+.sv-bet-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.sv-bet-row input { width: 6.5rem; min-height: 44px; box-sizing: border-box; padding: 0 .7rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.06); color: var(--ink); font: inherit; font-weight: 700; }
+.sv-bet-row .btn { flex: none; min-height: 44px; }
+.sv-payout { margin: 0; font-size: .85rem; }
+.sv-status { margin: 0; font-size: .88rem; }
+.sv-status.is-err { color: var(--warn); }
+.sv-empty { padding: 1.2rem; }
+.sv-list { padding: 1rem 1.2rem; margin-bottom: .8rem; }
+.sv-list h3 { margin: 0 0 .5rem; font-size: 1rem; }
+.sv-list ul { list-style: none; margin: 0; padding: 0; }
+.sv-list li { display: flex; align-items: center; gap: .5rem; padding: .45rem 0; border-top: 1px solid rgba(251,241,214,.07); font-size: .88rem; }
+.sv-list li:first-child { border-top: 0; }
+.sv-l-who { font-weight: 700; flex: none; }
+.sv-l-q { flex: 1; min-width: 0; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-l-o { flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sv-l-p { flex: none; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.sv-l-p.is-win { color: var(--band-green); font-weight: 800; }
