@@ -2139,7 +2139,7 @@ async function renderOsDays() {
 }
 
 /* —— UU: Gantt of participant presence (data/prisotnost.json, derived from the UU sheet "Opombe") —— */
-let uuAbsences;
+let uuAbsences, uuSheet;
 const hm = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 const hh = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 const uuSlug = (name) => String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -2152,6 +2152,9 @@ async function renderUU(slug = null) {
   }
   if (uuAbsences === undefined) {
     try { const r = await fetch("data/prisotnost.json", { cache: "no-store" }); uuAbsences = r.ok ? (await r.json()).absences : null; } catch { uuAbsences = null; }
+  }
+  if (uuSheet === undefined) {
+    try { const r = await fetch("data/uu_sheet.json", { cache: "no-store" }); uuSheet = r.ok ? await r.json() : null; } catch { uuSheet = null; }
   }
   const days = (state.data?.days || []).map((d) => {
     const ss = d.sessions.filter((s) => !/^Spanje/.test(s.title));
@@ -2189,9 +2192,12 @@ async function renderUU(slug = null) {
         <div class="uu-dbody"><div class="uu-cell uu-big"><i class="uu-bar uu-present" style="left:0;width:100%"></i>${barsFor(m, d)}</div><div class="uu-ticks">${ticks.join("")}</div>${text}</div></div>`;
     }).join("");
     const presentPct = Math.round(((total - away) / total) * 100);
+    /* Contact details stay in Drive (repo is public): link to the participant's row in the UU sheet */
+    const row = uuSheet?.rows?.[m.name];
+    const contact = row ? ` · <a href="https://docs.google.com/spreadsheets/d/${uuSheet.spreadsheetId}/edit#gid=${uuSheet.gid}&range=A${row}:G${row}" target="_blank" rel="noopener" title="E-naslov in telefon v tabeli UU (Drive)">Kontakt ↗</a>` : "";
     detail.innerHTML = `<p class="person-back"><a href="#uu" data-tab-link="uu">← Nazaj na prisotnost</a></p>
       <header class="card uu-person"><div class="uu-person-head">${avatarHtml(m, "avatar-os")}<div><h2>${esc(m.name)}</h2>
-        <p class="muted-text">${m.steg ? `${esc(m.steg)} · ` : ""}<a href="#os/${m.group}">Skupina ${m.group}</a> · spremljevalec ${esc(sp ? displayName(sp) : displayName(m.spr))}</p></div></div>
+        <p class="muted-text">${m.steg ? `${esc(m.steg)} · ` : ""}<a href="#os/${m.group}">Skupina ${m.group}</a> · spremljevalec ${esc(sp ? displayName(sp) : displayName(m.spr))}${contact}</p></div></div>
         <p class="uu-summary">Prisotnost: <strong>${presentPct} %</strong> programa${(byName.get(m.name) || []).some((a) => a.tentative) ? ` <span class="muted-text">(brez nepotrjenih odsotnosti)</span>` : ""}</p></header>
       <div class="uu-legend" aria-hidden="true"><span><i class="uu-key uu-present"></i>prisoten/a</span><span><i class="uu-key uu-tentative"></i>odsotnost ni potrjena</span><span><i class="uu-key uu-absent"></i>odsoten/a</span></div>
       <div class="card uu-days-detail">${rows}</div>`;
