@@ -1964,8 +1964,8 @@ document.addEventListener("click", (e) => {
 async function init() {
   await loadData();
   state.mobileDay = upcomingDayId() || ttDays()[0]?.id;
-  setInterval(placeNowLine, 60000);
-  window.addEventListener("resize", placeNowLine);
+  setInterval(() => { placeNowLine(); placeUuNow(); }, 60000);
+  window.addEventListener("resize", () => { placeNowLine(); placeUuNow(); });
   state.user = loadUser();
   bindControls();
   applyTheme(document.documentElement.dataset.theme === "cgp" ? "cgp" : "default");
@@ -2202,7 +2202,7 @@ async function renderUU(slug = null) {
   }
   const days = (state.data?.days || []).map((d) => {
     const ss = d.sessions.filter((s) => !/^Spanje/.test(s.title));
-    return { id: d.id, label: d.label, weekend: d.weekend, start: Math.min(...ss.map((s) => hm(s.start))), end: Math.max(...ss.map((s) => hm(s.end))) };
+    return { id: d.id, date: d.date, label: d.label, weekend: d.weekend, start: Math.min(...ss.map((s) => hm(s.start))), end: Math.max(...ss.map((s) => hm(s.end))) };
   });
   const members = (osData?.groups || []).flatMap((g) => g.members.map((m) => ({ ...m, group: g.n, spr: g.spremljevalec, sprSlug: g.slug, slug: uuSlug(m.name) })));
   if (!days.length || !members.length) { box.innerHTML = `<p class="muted-text">Podatki še niso na voljo.</p>`; return; }
@@ -2233,7 +2233,7 @@ async function renderUU(slug = null) {
         ? `<ul class="uu-abs-list">${segs.map(({ a, from, to }) => `<li class="${a.tentative ? "is-tentative" : ""}"><strong>${a.from || a.to ? `${hh(from)}–${hh(to)}` : "ves dan"}</strong>${a.tentative ? " <span class=\"muted-text\">(ni potrjeno)</span>" : ""} · ${esc(a.note)}</li>`).join("")}</ul>`
         : `<p class="muted-text uu-allday">Prisoten/a ves čas</p>`;
       return `<div class="uu-drow"><div class="uu-dlabel"><strong>${esc(shortDay(d.label))}</strong><span class="muted-text">${hh(d.start)}–${hh(d.end)}</span></div>
-        <div class="uu-dbody"><div class="uu-cell uu-big"><i class="uu-bar uu-present" style="left:0;width:100%"></i>${barsFor(m, d)}</div><div class="uu-ticks">${ticks.join("")}</div>${text}</div></div>`;
+        <div class="uu-dbody"><div class="uu-cell uu-big" data-uu-date="${d.date}" data-uu-span="${d.start}-${d.end}"><i class="uu-bar uu-present" style="left:0;width:100%"></i>${barsFor(m, d)}</div><div class="uu-ticks">${ticks.join("")}</div>${text}</div></div>`;
     }).join("");
     const presentPct = Math.round(((total - away) / total) * 100);
     const known = uuContacts?.get(uuNorm(m.name));
@@ -2247,6 +2247,7 @@ async function renderUU(slug = null) {
       <div class="uu-legend" aria-hidden="true"><span><i class="uu-key uu-present"></i>prisoten/a</span><span><i class="uu-key uu-tentative"></i>odsotnost ni potrjena</span><span><i class="uu-key uu-absent"></i>odsoten/a</span></div>
       <div class="card uu-days-detail">${rows}</div>`;
     window.scrollTo(0, 0);
+    placeUuNow();
     return;
   }
   // Short labels: "Anže M."; extend the surname prefix only when two people would collide
@@ -2266,7 +2267,34 @@ async function renderUU(slug = null) {
   }).join("");
   $("#uu-sub").textContent = `${members.length} udeležencev · ${new Set((uuAbsences || []).map((a) => a.name)).size} z odsotnostmi`;
   box.innerHTML = `<div class="uu-scroll"><div class="uu-row uu-head"><div class="uu-name">Ime</div>
-    <div class="uu-days">${weekends.map((ds, i) => `<div class="uu-weekend" style="flex:${wkFlex(ds)}"><div class="uu-wk-title">${i + 1}. vikend</div><div class="uu-daysrow">${ds.map((d) => `<div class="uu-cell uu-dayhead" style="flex:${d.end - d.start}"><strong>${esc(shortDay(d.label))}</strong></div>`).join("")}</div></div>`).join("")}</div></div>${body}</div>`;
+    <div class="uu-days">${weekends.map((ds, i) => `<div class="uu-weekend" style="flex:${wkFlex(ds)}"><div class="uu-wk-title">${i + 1}. vikend</div><div class="uu-daysrow">${ds.map((d) => `<div class="uu-cell uu-dayhead" data-uu-date="${d.date}" data-uu-span="${d.start}-${d.end}" style="flex:${d.end - d.start}"><strong>${esc(shortDay(d.label))}</strong></div>`).join("")}</div></div>`).join("")}</div></div>${body}</div>`;
+  placeUuNow();
+}
+/* Live "now" marker (Europe/Ljubljana) on the UU chart: inside today's column, or in the gap between weekends on non-event days */
+function placeUuNow() {
+  $$(".uu-now, .uu-now-d").forEach((n) => n.remove());
+  const now = ljNow();
+  const frac = (el) => { const [a, b] = el.dataset.uuSpan.split("-").map(Number); return Math.min(1, Math.max(0, (now.min - a) / (b - a))); };
+  const big = $(`#uu-detail-view:not([hidden]) .uu-big[data-uu-date="${now.date}"]`);
+  if (big) big.insertAdjacentHTML("beforeend", `<i class="uu-now-d" style="left:${frac(big) * 100}%" title="Zdaj ${now.label}"></i>`);
+  const scroll = $("#uu-chart .uu-scroll");
+  if (!scroll || !scroll.offsetParent) return;
+  const heads = $$(".uu-dayhead[data-uu-date]", scroll), x0 = scroll.getBoundingClientRect().left - scroll.scrollLeft;
+  const today = heads.find((h) => h.dataset.uuDate === now.date);
+  let x;
+  if (today) { const r = today.getBoundingClientRect(); x = r.left - x0 + frac(today) * r.width; }
+  else {
+    const i = heads.findIndex((h) => h.dataset.uuDate > now.date);
+    if (i <= 0) return; // before the first or after the last day
+    x = (heads[i - 1].getBoundingClientRect().right + heads[i].getBoundingClientRect().left) / 2 - x0;
+  }
+  const line = document.createElement("div");
+  line.className = "uu-now";
+  line.style.left = `${x}px`;
+  line.style.height = `${scroll.scrollHeight}px`;
+  line.setAttribute("aria-label", `Zdaj ${now.label}`);
+  line.innerHTML = `<span class="uu-now-label">${today ? now.label : "Danes"}</span>`;
+  scroll.appendChild(line);
 }
 async function renderOs(groupN = null) {
   const box = $("#os-groups"), list = $("#os-list-view"), detail = $("#os-detail-view");
