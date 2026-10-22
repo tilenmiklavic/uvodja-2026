@@ -44,3 +44,10 @@ function handlePreverba(body) {
     return out({ ok: false, error: String(err && err.message || err) });
   }
 }
+
+/** Run once from the editor (select it → ▶ Run) to grant the permissions these handlers need. */
+function authorizeSiteHandlers() {
+  Object.keys(PREVERBA_SHEETS).forEach((k) => Logger.log(SpreadsheetApp.openById(PREVERBA_SHEETS[k].id).getName()));
+  Logger.log(SpreadsheetApp.openById(STAVNICA_SHEET_ID).getSheetByName("questions").getLastRow() + " vrstic v questions");
+  Logger.log(UrlFetchApp.fetch("https://oauth2.googleapis.com/tokeninfo?id_token=x", { muteHttpExceptions: true }).getResponseCode() + " (400 je pričakovan)");
+}
