@@ -2194,6 +2194,11 @@ async function renderUU(slug = null) {
   }
   if (uuAbsences === undefined) {
     try { const r = await fetch("data/prisotnost.json", { cache: "no-store" }); uuAbsences = r.ok ? (await r.json()).absences : null; } catch { uuAbsences = null; }
+    // Late on the 2nd-weekend Friday (absent from the start of the day) ⇒ not there on Thursday evening either
+    (uuAbsences || []).filter((a) => a.day === "vikend2-petek" && !a.from).forEach((a) => {
+      if (!uuAbsences.some((x) => x.name === a.name && x.day === "vikend2-cetrtek"))
+        uuAbsences.push({ name: a.name, day: "vikend2-cetrtek", ...(a.tentative ? { tentative: true } : {}), note: `četrtek 5. 11. ni (zaradi petka: ${a.note})` });
+    });
   }
   const days = (state.data?.days || []).map((d) => {
     const ss = d.sessions.filter((s) => !/^Spanje/.test(s.title));
