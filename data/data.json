@@ -24,12 +24,12 @@
       "programId": "10xDmjgoYQrPWPA_PTVzpI-o4Hxot0_urdb5xK4rtjx4",
       "folderId": "166EnwAANG6DbhPG8EwAfIYS7jc3rgz6i"
     },
-    "generatedAt": "2026-10-06",
+    "generatedAt": "2026-10-22",
     "matchStats": {
       "matched": 19,
       "unmatched_program": 9,
       "logistics": 47,
-      "sessions_total": 75
+      "sessions_total": 76
     },
     "notes": [
       "Vsebina vzeta iz časovnice (zavihek »Časovnica - akutalna 2026«) in dokumenta PROGRAM U VODJA_2026.",
@@ -278,10 +278,28 @@
           "isTema": false
         },
         {
-          "id": "vikend1-petek-jaz-vodja-2h-1000",
-          "title": "Jaz, vodja",
+          "id": "vikend1-petek-sveta-masa-1000",
+          "title": "Sveta maša ✝️",
           "start": "10:00",
-          "end": "12:00",
+          "end": "11:00",
+          "kind": "activity",
+          "trainers": [],
+          "matchedProgram": false,
+          "programKey": null,
+          "goals": [],
+          "contents": [],
+          "sources": [],
+          "notes": [],
+          "duration": null,
+          "category": "activity",
+          "mikronacrt": null,
+          "isTema": false
+        },
+        {
+          "id": "vikend1-petek-jaz-vodja-2h-1100",
+          "title": "Jaz, vodja",
+          "start": "11:00",
+          "end": "13:00",
           "kind": "program",
           "trainers": [
             "Petra",
@@ -335,24 +353,6 @@
           },
           "isTema": true,
           "temaSlug": "jaz-vodja"
-        },
-        {
-          "id": "vikend1-petek-uvodna-ceremonija-1200",
-          "title": "Uvodna ceremonija",
-          "start": "12:00",
-          "end": "13:00",
-          "kind": "activity",
-          "trainers": [],
-          "matchedProgram": false,
-          "programKey": null,
-          "goals": [],
-          "contents": [],
-          "sources": [],
-          "notes": [],
-          "duration": null,
-          "category": "activity",
-          "mikronacrt": null,
-          "isTema": false
         },
         {
           "id": "vikend1-petek-kosilo-1300",
@@ -519,9 +519,27 @@
           "isTema": false
         },
         {
-          "id": "vikend1-petek-zabavni-vecer-2100",
-          "title": "Zabavni večer",
+          "id": "vikend1-petek-uvodna-ceremonija-2100",
+          "title": "Uvodna ceremonija",
           "start": "21:00",
+          "end": "22:00",
+          "kind": "activity",
+          "trainers": [],
+          "matchedProgram": false,
+          "programKey": null,
+          "goals": [],
+          "contents": [],
+          "sources": [],
+          "notes": [],
+          "duration": null,
+          "category": "activity",
+          "mikronacrt": null,
+          "isTema": false
+        },
+        {
+          "id": "vikend1-petek-zabavni-vecer-2200",
+          "title": "Zabavni večer",
+          "start": "22:00",
           "end": "23:00",
           "kind": "logistics",
           "trainers": [],
@@ -3616,25 +3634,25 @@
           "typeLabel": "Zadolžitve",
           "phase": "during",
           "phaseLabel": "Med dogodkom",
-          "sessionId": "vikend1-petek-uvodna-ceremonija-1200",
+          "sessionId": "vikend1-petek-uvodna-ceremonija-2100",
           "dayId": "vikend1-petek",
           "dayLabel": "Petek, 23. 10. 2026",
           "date": "2026-10-23",
-          "start": "12:00",
-          "end": "13:00",
+          "start": "21:00",
+          "end": "22:00",
           "title": "Ceremonije",
           "note": "uvodna pet 23.10. ob 12:00 in ned 8.11. ob 15:30; sveta maša + zaključna ceremonija",
-          "sortKey": "6-2026-10-23-12:00-z-Ceremonije",
-          "href": "#sid-vikend1-petek-uvodna-ceremonija-1200",
+          "sortKey": "6-2026-10-23-21:00-z-Ceremonije",
+          "href": "#sid-vikend1-petek-uvodna-ceremonija-2100",
           "label": "Ceremonije · Uvodna ceremonija",
           "slots": [
             {
-              "href": "#sid-vikend1-petek-uvodna-ceremonija-1200",
+              "href": "#sid-vikend1-petek-uvodna-ceremonija-2100",
               "dayLabel": "Petek, 23. 10. 2026",
               "weekday": "Petek",
               "date": "2026-10-23",
-              "start": "12:00",
-              "end": "13:00"
+              "start": "21:00",
+              "end": "22:00"
             },
             {
               "href": "#sid-vikend2-nedelja-zakljucna-ceremonija-1530",
@@ -4153,18 +4171,18 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend1-petek-jaz-vodja-2h-1000",
+          "sessionId": "vikend1-petek-jaz-vodja-2h-1100",
           "dayId": "vikend1-petek",
           "dayLabel": "Petek, 23. 10. 2026",
           "date": "2026-10-23",
-          "start": "10:00",
-          "end": "12:00",
+          "start": "11:00",
+          "end": "13:00",
           "title": "Jaz, vodja",
           "category": "tema",
           "programKey": "jaz, vodja",
-          "sortKey": "2026-10-23-10:00",
-          "href": "#sid-vikend1-petek-jaz-vodja-2h-1000",
-          "label": "10:00–12:00 · Jaz, vodja"
+          "sortKey": "2026-10-23-11:00",
+          "href": "#sid-vikend1-petek-jaz-vodja-2h-1100",
+          "label": "11:00–13:00 · Jaz, vodja"
         },
         {
           "type": "tema",
@@ -4293,25 +4311,25 @@
           "typeLabel": "Zadolžitve",
           "phase": "during",
           "phaseLabel": "Med dogodkom",
-          "sessionId": "vikend1-petek-uvodna-ceremonija-1200",
+          "sessionId": "vikend1-petek-uvodna-ceremonija-2100",
           "dayId": "vikend1-petek",
           "dayLabel": "Petek, 23. 10. 2026",
           "date": "2026-10-23",
-          "start": "12:00",
-          "end": "13:00",
+          "start": "21:00",
+          "end": "22:00",
           "title": "Ceremonije",
           "note": "uvodna pet 23.10. ob 12:00 in ned 8.11. ob 15:30; sveta maša + zaključna ceremonija",
-          "sortKey": "6-2026-10-23-12:00-z-Ceremonije",
-          "href": "#sid-vikend1-petek-uvodna-ceremonija-1200",
+          "sortKey": "6-2026-10-23-21:00-z-Ceremonije",
+          "href": "#sid-vikend1-petek-uvodna-ceremonija-2100",
           "label": "Ceremonije · Uvodna ceremonija",
           "slots": [
             {
-              "href": "#sid-vikend1-petek-uvodna-ceremonija-1200",
+              "href": "#sid-vikend1-petek-uvodna-ceremonija-2100",
               "dayLabel": "Petek, 23. 10. 2026",
               "weekday": "Petek",
               "date": "2026-10-23",
-              "start": "12:00",
-              "end": "13:00"
+              "start": "21:00",
+              "end": "22:00"
             },
             {
               "href": "#sid-vikend2-nedelja-zakljucna-ceremonija-1530",
@@ -4351,18 +4369,18 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend1-petek-jaz-vodja-2h-1000",
+          "sessionId": "vikend1-petek-jaz-vodja-2h-1100",
           "dayId": "vikend1-petek",
           "dayLabel": "Petek, 23. 10. 2026",
           "date": "2026-10-23",
-          "start": "10:00",
-          "end": "12:00",
+          "start": "11:00",
+          "end": "13:00",
           "title": "Jaz, vodja",
           "category": "tema",
           "programKey": "jaz, vodja",
-          "sortKey": "2026-10-23-10:00",
-          "href": "#sid-vikend1-petek-jaz-vodja-2h-1000",
-          "label": "10:00–12:00 · Jaz, vodja"
+          "sortKey": "2026-10-23-11:00",
+          "href": "#sid-vikend1-petek-jaz-vodja-2h-1100",
+          "label": "11:00–13:00 · Jaz, vodja"
         },
         {
           "type": "tema",
@@ -5327,13 +5345,13 @@
       ],
       "sessions": [
         {
-          "href": "#sid-vikend1-petek-uvodna-ceremonija-1200",
+          "href": "#sid-vikend1-petek-uvodna-ceremonija-2100",
           "dayId": "vikend1-petek",
           "dayLabel": "Petek, 23. 10. 2026",
           "date": "2026-10-23",
           "weekday": "Petek",
-          "start": "12:00",
-          "end": "13:00",
+          "start": "21:00",
+          "end": "22:00",
           "title": "Uvodna ceremonija"
         },
         {
@@ -5534,16 +5552,16 @@
       },
       "occurrences": [
         {
-          "sessionId": "vikend1-petek-jaz-vodja-2h-1000",
+          "sessionId": "vikend1-petek-jaz-vodja-2h-1100",
           "dayId": "vikend1-petek",
           "dayLabel": "Petek, 23. 10. 2026",
           "date": "2026-10-23",
-          "start": "10:00",
-          "end": "12:00",
+          "start": "11:00",
+          "end": "13:00",
           "duration": "2h",
           "durationMinutes": 120,
           "title": "Jaz, vodja",
-          "href": "#sid-vikend1-petek-jaz-vodja-2h-1000",
+          "href": "#sid-vikend1-petek-jaz-vodja-2h-1100",
           "trainers": [
             "Petra",
             "Nejka"
