@@ -2313,7 +2313,7 @@ function renderPvGeneral(box) {
       <textarea id="pv-${esc(g.key)}" name="text" rows="4" maxlength="5000" required></textarea>
       <div class="pv-gen-foot">
         <label class="pv-anon"><input type="checkbox" name="anon" /> Pošlji anonimno</label>
-        <button type="submit" class="btn primary">Pošlji</button>
+        <button type="submit" class="btn primary pv-send">Pošlji<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button>
       </div>
       <p class="pv-status" role="status" aria-live="polite"></p>
     </form>`).join("");
