@@ -89,9 +89,15 @@ body {
   box-shadow: 0 4px 14px rgba(248,164,24,0.35);
 }
 
-/* —— Header: mobile one-row nav (Domov + Časovnica inline, rest in ≡ menu) —— */
+/* —— Header: mobile one-row nav (Časovnica + UU inline, rest in ≡ menu) —— */
 .nav-more { display: contents; }
 .nav-more-toggle { display: none; }
+@media (min-width: 701px) { /* desktop keeps the original tab order */
+  .tabs [data-tab="domov"] { order: 1; } .tabs [data-tab="casovnica"] { order: 2; } .tabs [data-tab="teme"] { order: 3; }
+  .tabs [data-tab="gradiva"] { order: 4; } .tabs [data-tab="ekipa"] { order: 5; } .tabs [data-tab="os"] { order: 6; }
+  .tabs [data-tab="uu"] { order: 7; } .tabs [data-tab="preverbe"] { order: 8; } .tabs [data-tab="zabava"] { order: 9; }
+  .tabs [data-tab="analitika"] { order: 10; } .tabs .nav-user { order: 11; }
+}
 @media (max-width: 700px) {
   .header-inner { flex-wrap: nowrap; gap: .5rem; padding: .5rem .75rem; }
   .brand-wordmark { height: 42px; }
@@ -1403,8 +1409,7 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 
 /* —— Preverbe: Teme (embedded forms) / Generalno —— */
 .pv-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin-bottom: .9rem; }
-.pv-head h2 { margin: 0; }
-.pv-tabs { display: flex; gap: .4rem; flex: 1 1 280px; max-width: 360px; }
+.pv-tabs { display: flex; gap: .4rem; flex: 1 1 100%; }
 .pv-tab { flex: 1 1 0; display: grid; place-items: center; min-height: 44px; padding: 0 1rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.05); color: var(--ink); font-weight: 700; text-decoration: none; }
 .pv-tab[aria-selected="true"] { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
 .pv-lede { margin: 0 0 .7rem; }
