@@ -1358,3 +1358,4 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .uu-bar.uu-absent, .uu-bar.uu-tentative { z-index: 1; }
 .uu-foot { margin-top: .8rem; font-size: .8rem; }
 .uu-cell.uu-dayhead span { font-size: .68rem; }
+.zd-section { margin-top: 2rem; }

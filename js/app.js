@@ -206,7 +206,7 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
-const ALL_PAGES = ["domov", "casovnica", "teme", "zadolzitve", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "analitika"];
+const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "analitika"];
 
 function loadUser() {
   try { const u = JSON.parse(localStorage.getItem("uvodja.user") || "null"); return u?.email ? u : null; } catch { return null; }
@@ -225,7 +225,9 @@ function allowedPages(email) {
     (r.emails || []).some((x) => String(x).toLowerCase() === e) || (r.groups || []).some(inGroup));
   const pages = hits.length ? hits.flatMap((r) => r.pages || []) : (acc.default || []);
   if (state.visitAdmin === e && !hits.length) return new Set(ALL_PAGES); // Tilen's gmail: admin unless listed in the sheet (see VISIT_ADMIN_SHA)
-  return new Set(pages.includes("*") ? ALL_PAGES : pages);
+  const set = new Set(pages.includes("*") ? ALL_PAGES : pages);
+  if (set.delete("zadolzitve")) set.add("teme"); // Zadolžitve now live on the Teme page
+  return set;
 }
 function canSee(page) {
   if (page === "noaccess") return true;
@@ -1568,8 +1570,13 @@ function applyHash() {
   const hash = location.hash.replace(/^#/, "");
   if (!hash || hash === "casovnica") { setTab("casovnica"); return; }
   if (hash === "izrocki") { setTab("gradiva"); history.replaceState(null, "", "#gradiva"); return; }
+  if (hash === "zadolzitve") {
+    setTab("teme"); showTemeList();
+    $("#zadolzitve-section")?.scrollIntoView({ behavior: "smooth" });
+    return;
+  }
   if (hash === "info") { setTab("domov"); history.replaceState(null, "", "#domov"); return; }
-  if (["domov", "gradiva", "ekipa", "teme", "zadolzitve", "os", "uu", "preverbe", "zabava", "analitika"].includes(hash)) {
+  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "analitika"].includes(hash)) {
     setTab(hash);
     if (hash === "ekipa") showEkipaList();
     if (hash === "teme") showTemeList();

@@ -29,7 +29,6 @@
         <button type="button" class="nav-more-toggle" id="nav-more-toggle" aria-expanded="false" aria-controls="nav-more" aria-label="Več zavihkov">≡</button>
         <div class="nav-more" id="nav-more">
           <button type="button" class="tab" data-tab="teme" aria-selected="false">Teme</button>
-          <button type="button" class="tab" data-tab="zadolzitve" aria-selected="false">Zadolžitve</button>
           <button type="button" class="tab" data-tab="gradiva" aria-selected="false">Gradiva</button>
           <button type="button" class="tab" data-tab="ekipa" aria-selected="false">Ekipa</button>
           <button type="button" class="tab" data-tab="os" aria-selected="false">OS</button>
@@ -78,7 +77,6 @@
         <p class="hero-actions">
           <a class="btn primary" href="#casovnica" data-tab-link="casovnica">Časovnica</a>
           <a class="btn ghost" href="#teme" data-tab-link="teme">Teme</a>
-          <a class="btn ghost" href="#zadolzitve" data-tab-link="zadolzitve">Zadolžitve</a>
         </p>
       </div>
       <div class="home-progress-grid">
@@ -90,7 +88,7 @@
           <div class="progress-track" aria-hidden="true"><div class="progress-fill gold" id="prog-teme-fill"></div></div>
           <p class="muted-text progress-caption" id="prog-teme-cap"></p>
         </a>
-        <a class="progress-card card" href="#zadolzitve" data-tab-link="zadolzitve" id="prog-zad">
+        <a class="progress-card card" href="#zadolzitve" data-tab-link="teme" id="prog-zad">
           <div class="progress-head">
             <h3>Zadolžitve</h3>
             <span class="progress-count" id="prog-zad-count">—</span>
@@ -141,6 +139,10 @@
         <p class="muted-text teme-legend">Status: <span class="cov-badge pripravljeno">Pripravljeno</span>
           <span class="cov-badge ni_pripravljeno">Ni pripravljeno</span></p>
         <div id="teme-overview" class="teme-overview"></div>
+        <section id="zadolzitve-section" class="zd-section" aria-labelledby="zd-title">
+          <h2 id="zd-title">Zadolžitve</h2>
+          <div id="zadolzitve-list" class="zd-list"></div>
+        </section>
       </div>
       <div id="tema-view" hidden>
         <p class="person-back"><a href="#teme" data-tab-link="teme" id="tema-back-link">← Nazaj na teme</a></p>
@@ -153,11 +155,6 @@
         </header>
         <div id="tema-body" class="tema-body"></div>
       </div>
-    </section>
-
-    <section id="tab-zadolzitve" class="tab-panel" hidden>
-      <h2>Zadolžitve</h2>
-      <div id="zadolzitve-list" class="zd-list"></div>
     </section>
 
     <section id="tab-gradiva" class="tab-panel" hidden>
