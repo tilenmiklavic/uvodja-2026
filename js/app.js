@@ -2145,40 +2145,65 @@ let uuAbsences;
 const UU_SHEET_ID = "1a_8ghLlrhMexb5VS-U9M5aPcP4yK6mAnDLdp0Eg74NQ", UU_SHEET_TAB = "Seznam udeležencev";
 const UU_SHEET_URL = `https://docs.google.com/spreadsheets/d/${UU_SHEET_ID}/edit#gid=0`;
 let uuToken = null, uuContacts = null;
-const uuNorm = (x) => String(x || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
-function uuRequestToken() {
+const uuNorm = (x) => String(x || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+const UU_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
+/* prompt "" = silent if already granted; "select_account" lets the viewer pick another Google account */
+function uuRequestToken(prompt = "") {
   return new Promise((resolve, reject) => {
     const oauth = window.google?.accounts?.oauth2;
     if (!oauth) return reject(new Error("Google prijava ni naložena"));
-    if (uuToken && uuToken.exp > Date.now() + 60000) return resolve(uuToken.value);
+    if (!prompt && uuToken && uuToken.exp > Date.now() + 60000) return resolve(uuToken);
+    const hint = state.user?.email || "";
     oauth.initTokenClient({
-      client_id: GSI_CLIENT_ID, scope: "https://www.googleapis.com/auth/spreadsheets.readonly", hint: state.user?.email || "",
-      callback: (r) => r.error ? reject(new Error(r.error)) : (uuToken = { value: r.access_token, exp: Date.now() + (r.expires_in || 3600) * 1000 }, resolve(r.access_token)),
-      error_callback: (e) => reject(new Error(e?.type || "popup")),
-    }).requestAccessToken({ prompt: "" });
+      client_id: GSI_CLIENT_ID, scope: `${UU_SCOPE} https://www.googleapis.com/auth/userinfo.email`, hint, login_hint: hint,
+      callback: async (r) => {
+        if (r.error) return reject(Object.assign(new Error(r.error), { code: r.error }));
+        // Which account did Google actually issue the token for, and was the Sheets scope granted?
+        let info = {}; try { info = await (await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(r.access_token)}`)).json(); } catch {}
+        uuToken = { value: r.access_token, exp: Date.now() + (r.expires_in || 3600) * 1000, email: info.email || "", scoped: String(info.scope || r.scope || "").includes(UU_SCOPE) };
+        resolve(uuToken);
+      },
+      error_callback: (e) => reject(Object.assign(new Error(e?.type || "popup"), { code: e?.type || "popup" })),
+    }).requestAccessToken({ prompt });
   });
 }
-async function uuLoadContacts() {
-  if (uuContacts) return uuContacts;
-  const token = await uuRequestToken();
+async function uuLoadContacts(prompt = "") {
+  if (uuContacts && !prompt) return uuContacts;
+  const tok = await uuRequestToken(prompt);
+  if (!tok.scoped) throw Object.assign(new Error("scope"), { code: "scope", email: tok.email });
   const ranges = [`'${UU_SHEET_TAB}'!A2:B`, `'${UU_SHEET_TAB}'!F2:G`].map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
-  const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${UU_SHEET_ID}/values:batchGet?${ranges}`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!r.ok) { if (r.status === 401) uuToken = null; throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status }); }
+  const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${UU_SHEET_ID}/values:batchGet?${ranges}`, { headers: { Authorization: `Bearer ${tok.value}` } });
+  if (!r.ok) {
+    if (r.status === 401) uuToken = null;
+    let e = {}; try { e = (await r.json()).error || {}; } catch {}
+    const reason = (e.details || []).map((d) => d.reason).find(Boolean) || (e.errors || []).map((d) => d.reason).find(Boolean) || e.status || "";
+    throw Object.assign(new Error(e.message || `HTTP ${r.status}`), { status: r.status, code: reason, email: tok.email });
+  }
   const [names, contacts] = (await r.json()).valueRanges.map((v) => v.values || []);
   uuContacts = new Map(names.map(([ime, priimek], i) => [uuNorm(`${ime} ${priimek}`), { email: contacts[i]?.[0] || "", phone: contacts[i]?.[1] || "" }]));
   return uuContacts;
+}
+function uuContactError(err) {
+  const acc = err.email ? ` (${esc(err.email)})` : "";
+  if (/SERVICE_DISABLED|accessNotConfigured/i.test(err.code) || /has not been used|is disabled/i.test(err.message))
+    return "Google Sheets API v projektu Google Cloud za to stran še ni vklopljen.";
+  if (err.code === "scope" || /SCOPE_INSUFFICIENT|insufficientPermissions/i.test(err.code))
+    return `Dostop do Google Sheets ni bil odobren${acc}.`;
+  if (err.code === "access_denied") return "Dostop do Google Sheets je bil zavrnjen.";
+  if (/popup/.test(err.code)) return "Okno za Google prijavo je bilo zaprto ali blokirano.";
+  if (err.status === 403 || err.status === 404) return `Račun ${err.email ? esc(err.email) : "v uporabi"} nima dostopa do tabele UU.`;
+  return `Kontakta ni bilo mogoče naložiti (${esc(err.message || err)}).`;
 }
 async function uuShowContact(btn) {
   const box = btn.closest(".uu-contact");
   btn.disabled = true; btn.textContent = "Nalagam …";
   try {
-    const c = (await uuLoadContacts()).get(uuNorm(box.dataset.name));
+    const c = (await uuLoadContacts(btn.dataset.uuContact || "")).get(uuNorm(box.dataset.name));
     box.innerHTML = !c ? `<span class="muted-text">Ni najden v tabeli UU.</span> <a href="${UU_SHEET_URL}" target="_blank" rel="noopener">Odpri tabelo ↗</a>`
       : [c.email && `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`, c.phone && `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ""))}">${esc(c.phone)}</a>`].filter(Boolean).join(" · ") || `<span class="muted-text">Brez kontakta v tabeli.</span>`;
   } catch (err) {
-    const why = err.status === 403 || err.status === 404 ? "Nimaš dostopa do tabele UU." : "Kontakta ni bilo mogoče naložiti.";
-    box.innerHTML = `<span class="muted-text">${why}</span> <a href="${UU_SHEET_URL}" target="_blank" rel="noopener">Odpri tabelo ↗</a>`;
-    console.warn("UU contact", err);
+    box.innerHTML = `<span class="muted-text">${uuContactError(err)}</span> <button type="button" class="btn ghost uu-contact-btn" data-uu-contact="select_account">Poskusi z drugim računom</button> <a href="${UU_SHEET_URL}" target="_blank" rel="noopener">Odpri tabelo ↗</a>`;
+    console.warn("UU contact", err.status || "", err.code || "", err.message, err.email || "");
   }
 }
 document.addEventListener("click", (e) => { const b = e.target.closest("[data-uu-contact]"); if (b) { e.preventDefault(); uuShowContact(b); } });
