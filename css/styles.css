@@ -1443,21 +1443,19 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .btn.sv-refresh { flex: none; }
 .sv-help { font-size: .85rem; margin: 0 0 .9rem; }
 .sv-card { padding: 1rem 1.2rem; margin-bottom: .8rem; }
-.sv-q { margin: 0 0 .2rem; font-size: 1.05rem; }
+.sv-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; margin-bottom: .7rem; }
+.sv-q { margin: 0; font-size: 1.05rem; }
+.sv-odds { flex: none; padding: .15rem .55rem; border-radius: 999px; background: rgba(250,204,21,.15); color: var(--gold-soft); font-size: .8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .sv-q::first-letter { text-transform: uppercase; }
-.sv-meta { margin: 0 0 .7rem; font-size: .8rem; }
+.sv-meta { margin: -.3rem 0 .6rem; font-size: .85rem; }
 .sv-res { color: var(--band-green); }
-.sv-opts { display: grid; gap: .45rem; }
-.sv-opt { position: relative; display: flex; align-items: center; justify-content: space-between; gap: .8rem; min-height: 46px; padding: 0 .9rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; overflow: hidden; text-align: left; }
+.sv-opts { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: .45rem; }
+.sv-opt { position: relative; display: flex; align-items: center; justify-content: center; gap: .8rem; min-height: 44px; padding: 0 .6rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; overflow: hidden; text-align: left; }
 .sv-opt:hover:not(:disabled) { border-color: var(--gold); }
 .sv-opt:disabled { cursor: default; }
-.sv-bar { position: absolute; inset: 0 auto 0 0; background: rgba(250,204,21,.16); transition: width .4s ease; }
-.sv-opt.is-lead .sv-bar { background: rgba(250,204,21,.28); }
 .sv-opt.is-sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
 .sv-opt.is-win { border-color: var(--band-green); }
-.sv-opt.is-win .sv-bar { background: rgba(107,142,35,.4); }
-.sv-opt-label, .sv-pct { position: relative; }
-.sv-pct { font-variant-numeric: tabular-nums; color: var(--gold-soft); }
+.sv-opt.is-win { background: rgba(107,142,35,.35); color: #fff; }
 .sv-bet { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--line); display: grid; gap: .5rem; }
 .sv-bet-title { margin: 0; }
 .sv-chips { display: flex; gap: .4rem; flex-wrap: wrap; }

@@ -2188,7 +2188,7 @@ async function renderOsDays() {
   }).join("");
 }
 
-/* —— Zabava → Stavnica: Polymarket-style bets with virtual dukati via Apps Script (apps-script/stavnica.gs) —— */
+/* —— Zabava → Stavnica: fixed-odds bets with virtual zlatniki via Apps Script (apps-script/stavnica.gs) —— */
 const sv = { state: null, loading: false, open: null, error: "" };
 async function svCall(extra = {}) {
   const cfg = await wdConfig();
@@ -2211,23 +2211,19 @@ async function renderStavnica(force = false) {
   }
   if (!sv.state) { box.innerHTML = `<div class="card sv-empty"><p>Stavnice ni bilo mogoče naložiti.</p><p class="muted-text">${esc(sv.error)}</p><button type="button" class="btn ghost" data-sv-reload>Poskusi znova</button></div>`; return; }
   const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
-  const pct = (q, o) => (q.total ? Math.round(((q.pool[o] || 0) / q.total) * 100) : Math.round(100 / q.options.length));
   const label = (q, o) => q.type === "boolean" ? ({ yes: "Da", no: "Ne" }[o.toLowerCase()] || o) : o;
+  const odds = (q) => q.odds || q.options.length;
   const card = (q, i) => {
     const open = sv.open?.q === i && !q.result;
     const sel = open ? sv.open.o : null;
-    const lead = q.total ? q.options.reduce((a, b) => ((q.pool[b] || 0) > (q.pool[a] || 0) ? b : a)) : null;
     return `<article class="card sv-card${q.result ? " is-resolved" : ""}">
-      <h3 class="sv-q">${esc(q.question)}</h3>
-      <p class="sv-meta muted-text">${q.total} dukatov v bazenu · ${q.bettors} ${q.bettors === 1 ? "stavitelj" : "staviteljev"}${q.result ? ` · <strong class="sv-res">Rezultat: ${esc(label(q, q.result))}</strong>` : ""}</p>
-      <div class="sv-opts">${q.options.map((o) => `<button type="button" class="sv-opt${o === sel ? " is-sel" : ""}${q.result === o ? " is-win" : ""}${o === lead && !q.result ? " is-lead" : ""}" data-sv-q="${i}" data-sv-o="${esc(o)}"${q.result ? " disabled" : ""}>
-          <span class="sv-bar" style="width:${pct(q, o)}%"></span>
-          <span class="sv-opt-label">${esc(label(q, o))}</span><span class="sv-pct">${pct(q, o)} %</span>
-        </button>`).join("")}</div>
+      <div class="sv-card-head"><h3 class="sv-q">${esc(q.question)}</h3><span class="sv-odds" title="Zmagovalna stava se povrne ${odds(q)}-krat">×${odds(q)}</span></div>
+      ${q.result ? `<p class="sv-meta"><strong class="sv-res">Zaprto · rezultat: ${esc(label(q, q.result))}</strong></p>` : ""}
+      <div class="sv-opts" style="--n:${q.options.length}">${q.options.map((o) => `<button type="button" class="sv-opt${o === sel ? " is-sel" : ""}${q.result === o ? " is-win" : ""}" data-sv-q="${i}" data-sv-o="${esc(o)}"${q.result ? " disabled" : ""}>${esc(label(q, o))}</button>`).join("")}</div>
       ${open ? `<form class="sv-bet" data-sv-q="${i}" data-sv-o="${esc(sel)}">
         <p class="sv-bet-title">Stava: <strong>${esc(label(q, sel))}</strong></p>
-        <div class="sv-chips">${[5, 10, 25].filter((n) => n <= me.balance).map((n) => `<button type="button" class="sv-chip" data-sv-amt="${n}">${n}</button>`).join("")}${me.balance ? `<button type="button" class="sv-chip" data-sv-amt="${me.balance}">Vse</button>` : ""}</div>
-        <div class="sv-bet-row"><input type="number" name="amount" min="1" max="${me.balance}" step="1" value="${Math.min(10, me.balance)}" inputmode="numeric" aria-label="Vložek v dukatih" />
+        <div class="sv-chips">${[1, 2, 5].filter((n) => n < me.balance).map((n) => `<button type="button" class="sv-chip" data-sv-amt="${n}">${n}</button>`).join("")}${me.balance ? `<button type="button" class="sv-chip" data-sv-amt="${me.balance}">Vse</button>` : ""}</div>
+        <div class="sv-bet-row"><input type="number" name="amount" min="1" max="${me.balance}" step="1" value="${Math.min(1, me.balance)}" inputmode="numeric" aria-label="Vložek v zlatnikih" />
           <button type="submit" class="btn primary"${me.balance ? "" : " disabled"}>Stavi</button><button type="button" class="btn ghost sv-cancel" data-sv-cancel>Prekliči</button></div>
         <p class="sv-payout muted-text" data-sv-payout></p>
         <p class="sv-status" role="status" aria-live="polite"></p>
@@ -2236,20 +2232,19 @@ async function renderStavnica(force = false) {
   };
   const who = (b) => wdWho("", b.name);
   const optLabel = (b) => { const q = st.questions.find((x) => x.id === b.question); return q ? label(q, b.option) : b.option; };
-  box.innerHTML = `<div class="sv-top card"><div><span class="sv-bal-label">Tvoje stanje</span><strong class="sv-bal">💰 ${me.balance} <small>/ ${st.budget} dukatov</small></strong></div>
+  box.innerHTML = `<div class="sv-top card"><div><span class="sv-bal-label">Tvoje stanje</span><strong class="sv-bal">🪙 ${me.balance} <small>zlatnikov</small></strong></div>
       <button type="button" class="btn ghost sv-refresh" data-sv-reload>Osveži</button></div>
-    <p class="muted-text sv-help">Vsak ima ${st.budget} dukatov. Odstotek je delež vseh vložkov na to opcijo; ko je rezultat znan, si zmagovalci razdelijo celoten bazen.</p>
+    <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
     ${st.questions.length ? st.questions.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p></div>`}
-    ${me.bets.length ? `<section class="card sv-list"><h3>Moje stave</h3><ul>${me.bets.map((b) => `<li><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 💰</span>${b.payout === null ? "" : `<span class="sv-l-p${b.payout ? " is-win" : ""}">${b.payout ? `+${b.payout}` : "0"}</span>`}</li>`).join("")}</ul></section>` : ""}
-    ${st.recent.length ? `<section class="card sv-list"><h3>Zadnje stave</h3><ul>${st.recent.map((b) => { const w = who(b); return `<li>${w.av}<span class="sv-l-who" title="${esc(w.title)}">${esc(w.label)}</span><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 💰</span></li>`; }).join("")}</ul></section>` : ""}`;
+    ${me.bets.length ? `<section class="card sv-list"><h3>Moje stave</h3><ul>${me.bets.map((b) => `<li><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 🪙</span><span class="sv-l-p${b.payout ? " is-win" : ""}">${b.payout === null ? `→ ${b.amount * (b.odds || 1)}?` : b.payout ? `+${b.payout}` : "0"}</span></li>`).join("")}</ul></section>` : ""}
+    ${st.recent.length ? `<section class="card sv-list"><h3>Zadnje stave</h3><ul>${st.recent.map((b) => { const w = who(b); return `<li>${w.av}<span class="sv-l-who" title="${esc(w.title)}">${esc(w.label)}</span><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 🪙</span></li>`; }).join("")}</ul></section>` : ""}`;
   svUpdatePayout();
 }
 function svUpdatePayout() {
   const f = $("#stavnica form.sv-bet"), q = f && sv.state?.questions[f.dataset.svQ];
   if (!q) return;
-  const amt = Math.max(0, Math.floor(Number(f.amount.value) || 0)), o = f.dataset.svO;
-  const p = (q.pool[o] || 0) + amt, t = q.total + amt;
-  $("[data-sv-payout]", f).textContent = amt ? `Če zmaga, trenutno prejmeš ~${Math.floor((amt * t) / p)} dukatov (×${(t / p).toFixed(2)}).` : "";
+  const amt = Math.max(0, Math.floor(Number(f.amount.value) || 0)), n = q.odds || q.options.length;
+  $("[data-sv-payout]", f).textContent = amt ? `Če zadeneš, dobiš ${amt * n} zlatnikov (×${n}).` : "";
 }
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#stavnica")) return;

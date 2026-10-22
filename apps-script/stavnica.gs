@@ -1,20 +1,20 @@
 /**
- * Zabava → Stavnica: Polymarket-style betting with virtual coins ("dukati").
- * Questions come from Drive 09_Arhiv/trop/wordle/stavnica, tab "questions" (question | answer | options [| result]);
+ * Zabava → Stavnica: betting with virtual coins ("zlatniki").
+ * Questions come from Drive 09_Arhiv/trop/wordle/stavnica, tab "questions" (question | answer | options | resolved);
  * every bet is appended to tab "bets" with the bettor's name and e-mail.
  *
- * Add this file to the same Apps Script project as preverbe.gs and hook it into doPost:
+ * Hook it into doPost (before the Wordle-specific code):
  *
- *   if (body.type === "stavnica") return handleStavnica(body);
+ *   if (body.type === 'stavnica') return handleStavnica(body);
  *
  * then Deploy → Manage deployments → edit → New version (same /exec URL).
  *
- * Rules: everyone starts with STAVNICA_BUDGET dukatov. Odds are parimutuel – an option's % is its share
- * of the question's pool; when a question gets a value in the "result" column, betting closes and the
- * whole pool is split between the winning bets in proportion to their stakes.
+ * Rules: everyone starts with STAVNICA_BUDGET zlatnikov. Fixed odds = number of options: a winning bet on a
+ * yes/no question pays 2× the stake, on a 3-option question 3×, … Other people's bets don't change the odds.
+ * When the "resolved" column of a question is filled in, betting on it closes and winners get their payout.
  */
 const STAVNICA_SHEET_ID = "1Nc9q0aSElmn7I0tIMYxGIa1yS5wdgZFFcHYCEEKN678";
-const STAVNICA_BUDGET = 100;
+const STAVNICA_BUDGET = 10;
 const STAVNICA_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
 const STAVNICA_BET_HEADER = ["Čas", "Vprašanje", "Opcija", "Vložek", "Ime", "E-naslov"];
 
@@ -38,7 +38,7 @@ function handleStavnica(body) {
         if (q.result) return out({ ok: false, error: "stave za to vprašanje so zaprte" });
         if (q.options.indexOf(String(body.option)) < 0) return out({ ok: false, error: "neveljavna opcija" });
         if (!(amount >= 1)) return out({ ok: false, error: "vložek mora biti vsaj 1" });
-        if (amount > st.me.balance) return out({ ok: false, error: "premalo dukatov (" + st.me.balance + ")" });
+        if (amount > st.me.balance) return out({ ok: false, error: "premalo zlatnikov (" + st.me.balance + ")" });
         const sh = ss.getSheetByName("bets");
         if (sh.getLastRow() === 0) sh.appendRow(STAVNICA_BET_HEADER);
         sh.appendRow([new Date(), q.question, String(body.option), amount, tok.name || body.name || "", me]);
@@ -55,43 +55,33 @@ function stavnicaState_(ss, me) {
   const qRows = ss.getSheetByName("questions").getDataRange().getDisplayValues();
   const head = qRows.shift().map((h) => String(h).trim().toLowerCase());
   const col = (n) => head.indexOf(n);
+  const resCol = col("resolved") >= 0 ? col("resolved") : col("result");
   const questions = qRows.filter((r) => String(r[col("question")] || "").trim()).map((r) => {
     const question = String(r[col("question")]).trim();
-    const raw = String(r[col("options")] || "");
     const type = String(r[col("answer")] || "").trim().toLowerCase();
-    let options = raw.split(/[,\/;]/).map((s) => s.trim()).filter(String);
+    let options = String(r[col("options")] || "").split(/[,\/;]/).map((s) => s.trim()).filter(String);
     if (type === "boolean" && !options.length) options = ["yes", "no"];
-    const result = col("result") >= 0 ? String(r[col("result")] || "").trim() : "";
-    return { id: question, question, type, options, result, pool: {}, total: 0, bettors: 0 };
+    const result = resCol >= 0 ? String(r[resCol] || "").trim() : "";
+    // match the resolved value to an option case-insensitively ("Yes" → "yes")
+    const win = options.find((o) => o.toLowerCase() === result.toLowerCase()) || result;
+    return { id: question, question: question, type: type, options: options, odds: options.length, result: win };
   });
   const byId = {};
-  questions.forEach((q) => { q.options.forEach((o) => (q.pool[o] = 0)); byId[q.id] = q; });
+  questions.forEach((q) => (byId[q.id] = q));
 
   const bSheet = ss.getSheetByName("bets");
   const bRows = bSheet.getLastRow() > 1 ? bSheet.getRange(2, 1, bSheet.getLastRow() - 1, 6).getValues() : [];
   const bets = bRows.map((r) => ({ ts: new Date(r[0]).getTime(), question: String(r[1]).trim(), option: String(r[2]), amount: Number(r[3]) || 0, name: String(r[4] || ""), email: String(r[5] || "").toLowerCase() }))
     .filter((b) => byId[b.question] && b.amount > 0);
-  const people = {};
-  bets.forEach((b) => {
-    const q = byId[b.question];
-    q.pool[b.option] = (q.pool[b.option] || 0) + b.amount;
-    q.total += b.amount;
-    (people[b.question] = people[b.question] || {})[b.email] = 1;
-  });
-  questions.forEach((q) => (q.bettors = Object.keys(people[q.id] || {}).length));
 
-  // Balance: budget − all stakes + winnings from resolved questions
+  // Balance: budget − all stakes + payouts (stake × odds) from resolved questions
   let staked = 0, won = 0;
   const mine = bets.filter((b) => b.email === me).map((b) => {
     const q = byId[b.question];
     staked += b.amount;
-    let payout = null;
-    if (q.result) {
-      const winPool = q.pool[q.result] || 0;
-      payout = b.option === q.result && winPool ? Math.floor((b.amount * q.total) / winPool) : 0;
-      won += payout;
-    }
-    return { ts: b.ts, question: b.question, option: b.option, amount: b.amount, payout: payout };
+    const payout = q.result ? (b.option === q.result ? b.amount * q.odds : 0) : null;
+    if (payout) won += payout;
+    return { ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout };
   });
   const recent = bets.slice(-25).reverse().map((b) => ({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, name: b.name }));
   return { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won, staked: staked, won: won, bets: mine.reverse() } };
