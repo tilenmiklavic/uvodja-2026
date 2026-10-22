@@ -1359,3 +1359,22 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .uu-foot { margin-top: .8rem; font-size: .8rem; }
 .uu-cell.uu-dayhead span { font-size: .68rem; }
 .zd-section { margin-top: 2rem; }
+.uu-name a { color: inherit; text-decoration: none; }
+.uu-name a:hover { color: var(--gold-soft); text-decoration: underline; }
+.uu-person { padding: 1rem 1.2rem; margin-bottom: .8rem; }
+.uu-person-head { display: flex; align-items: center; gap: 1rem; }
+.uu-person-head h2 { margin: 0; }
+.uu-person-head p { margin: .1rem 0 0; }
+.uu-summary { margin: .8rem 0 0; }
+.uu-days-detail { padding: .4rem 1.2rem; }
+.uu-drow { display: grid; grid-template-columns: 150px 1fr; gap: .4rem 1rem; padding: .8rem 0; border-top: 1px solid rgba(251,241,214,.07); }
+.uu-drow:first-child { border-top: 0; }
+.uu-dlabel { display: flex; flex-direction: column; font-size: .9rem; }
+.uu-dlabel span { font-size: .75rem; }
+.uu-cell.uu-big { height: 1.6rem; margin: 0; }
+.uu-ticks { position: relative; height: 1rem; font-size: .68rem; color: var(--ink-muted); }
+.uu-tick { position: absolute; transform: translateX(-50%); }
+.uu-abs-list { margin: .3rem 0 0; padding-left: 1.1rem; font-size: .88rem; }
+.uu-abs-list li.is-tentative { color: var(--warn); }
+.uu-allday { margin: .3rem 0 0; font-size: .85rem; }
+@media (max-width: 600px) { .uu-drow { grid-template-columns: 1fr; } }

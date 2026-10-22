@@ -341,10 +341,10 @@ function setTab(name) {
   const hash = location.hash.replace(/^#/, "");
   logVisit(blocked ? "noaccess" : (/^(oseba|tema)-/.test(hash) ? hash.split("-")[0] : name));
   if (name === "analitika") renderVisits();
-  if (name === "uu") renderUU();
+  if (name === "uu") renderUU(/^uu\/(.+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   currentTab = name;
-  if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
+  if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("uu/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
     history.replaceState(null, "", name === "casovnica" ? "#casovnica" : `#${name}`);
   }
 }
@@ -1582,6 +1582,7 @@ function applyHash() {
     if (hash === "teme") showTemeList();
     return;
   }
+  if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -1602,6 +1603,7 @@ function bindControls() {
     if (tab === "ekipa") showEkipaList();
     if (tab === "teme") showTemeList();
     if (tab === "os") history.replaceState(null, "", "#os"); // leave group detail
+    if (tab === "uu") history.replaceState(null, "", "#uu");
     setTab(tab);
     if (tab === "casovnica") history.replaceState(null, "", "#casovnica");
     else history.replaceState(null, "", `#${tab}`);
@@ -1612,6 +1614,7 @@ function bindControls() {
     if (tab === "ekipa") showEkipaList();
     if (tab === "teme") showTemeList();
     if (tab === "os") history.replaceState(null, "", "#os");
+    if (tab === "uu") history.replaceState(null, "", "#uu");
     setTab(tab);
     history.replaceState(null, "", `#${tab}`);
   }));
@@ -2138,8 +2141,11 @@ async function renderOsDays() {
 /* —— UU: Gantt of participant presence (data/prisotnost.json, derived from the UU sheet "Opombe") —— */
 let uuAbsences;
 const hm = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
-async function renderUU() {
-  const box = $("#uu-chart");
+const hh = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
+const uuSlug = (name) => String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const shortDay = (label) => label.replace(/,\s*(\d+\. \d+)\. \d+$/, " $1.");
+async function renderUU(slug = null) {
+  const box = $("#uu-chart"), list = $("#uu-list-view"), detail = $("#uu-detail-view");
   if (!box) return;
   if (osData === undefined) {
     try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; }
@@ -2149,39 +2155,58 @@ async function renderUU() {
   }
   const days = (state.data?.days || []).map((d) => {
     const ss = d.sessions.filter((s) => !/^Spanje/.test(s.title));
-    const start = Math.min(...ss.map((s) => hm(s.start)));
-    const end = Math.max(...ss.map((s) => hm(s.end)));
-    return { id: d.id, label: d.label, weekend: d.weekend, start, end };
+    return { id: d.id, label: d.label, weekend: d.weekend, start: Math.min(...ss.map((s) => hm(s.start))), end: Math.max(...ss.map((s) => hm(s.end))) };
   });
-  const members = (osData?.groups || []).flatMap((g) => g.members.map((m) => ({ ...m, group: g.n })));
+  const members = (osData?.groups || []).flatMap((g) => g.members.map((m) => ({ ...m, group: g.n, spr: g.spremljevalec, sprSlug: g.slug, slug: uuSlug(m.name) })));
   if (!days.length || !members.length) { box.innerHTML = `<p class="muted-text">Podatki še niso na voljo.</p>`; return; }
   const byName = new Map();
   (uuAbsences || []).forEach((a) => { if (!byName.has(a.name)) byName.set(a.name, []); byName.get(a.name).push(a); });
   const pct = (d, t) => ((Math.min(Math.max(t, d.start), d.end) - d.start) / (d.end - d.start)) * 100;
-  const hh = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
-  const cell = (m, d) => {
-    const abs = (byName.get(m.name) || []).filter((a) => a.day === d.id);
-    const segs = abs.map((a) => ({ a, from: a.from ? hm(a.from) : d.start, to: a.to ? hm(a.to) : d.end }));
-    const bars = segs.map(({ a, from, to }) => {
-      const l = pct(d, from), w = pct(d, to) - l;
-      return w > 0 ? `<i class="uu-bar ${a.tentative ? "uu-tentative" : "uu-absent"}" style="left:${l}%;width:${w}%" title="${esc(`${m.name}: odsoten/a ${hh(from)}–${hh(to)}${a.tentative ? " (ni potrjeno)" : ""} – ${a.note}`)}"></i>` : "";
-    }).join("");
-    return `<div class="uu-cell" style="flex:${d.end - d.start}"><i class="uu-bar uu-present" style="left:0;width:100%"></i>${bars}</div>`;
-  };
-  const weekends = [1, 2].map((w) => days.filter((d) => d.weekend === w));
-  const head = days.map((d) => {
-    const short = d.label.replace(/,\s*(\d+\. \d+)\. \d+$/, " $1.");
-    return `<div class="uu-cell uu-dayhead" style="flex:${d.end - d.start}"><strong>${esc(short)}</strong><span class="muted-text">${hh(d.start)}–${hh(d.end)}</span></div>`;
+  const segsFor = (m, d) => (byName.get(m.name) || []).filter((a) => a.day === d.id)
+    .map((a) => ({ a, from: a.from ? hm(a.from) : d.start, to: a.to ? hm(a.to) : d.end }));
+  const barsFor = (m, d) => segsFor(m, d).map(({ a, from, to }) => {
+    const l = pct(d, from), w = pct(d, to) - l;
+    return w > 0 ? `<i class="uu-bar ${a.tentative ? "uu-tentative" : "uu-absent"}" style="left:${l}%;width:${w}%" title="${esc(`${m.name}: odsoten/a ${hh(from)}–${hh(to)}${a.tentative ? " (ni potrjeno)" : ""} – ${a.note}`)}"></i>` : "";
   }).join("");
-  const rows = members.slice().sort((a, b) => a.group - b.group || a.name.localeCompare(b.name, "sl")).map((m, i, arr) => {
-    const first = i === 0 || arr[i - 1].group !== m.group;
-    const gap = (byName.get(m.name) || []);
-    return `<div class="uu-row${first ? " uu-groupstart" : ""}"><div class="uu-name"><span class="uu-grp">${m.group}</span>${esc(m.name)}${gap.length ? `<span class="uu-flag" title="${esc(gap.map((a) => a.note).join(" · "))}">!</span>` : ""}</div>
-      <div class="uu-days">${weekends.map((ds) => `<div class="uu-weekend" style="flex:${ds.reduce((a, d) => a + d.end - d.start, 0)}">${ds.map((d) => cell(m, d)).join("")}</div>`).join("")}</div></div>`;
+  const cell = (m, d) => `<div class="uu-cell" style="flex:${d.end - d.start}"><i class="uu-bar uu-present" style="left:0;width:100%"></i>${barsFor(m, d)}</div>`;
+  const weekends = [1, 2].map((w) => days.filter((d) => d.weekend === w));
+  const wkFlex = (ds) => ds.reduce((a, d) => a + d.end - d.start, 0);
+  const m = slug && members.find((x) => x.slug === slug);
+  list.hidden = !!m; detail.hidden = !m;
+  if (m) {
+    const people = state.data?.people || {};
+    const sp = m.sprSlug && people[m.sprSlug];
+    let total = 0, away = 0;
+    const rows = days.map((d) => {
+      const segs = segsFor(m, d);
+      total += d.end - d.start;
+      away += segs.filter((x) => !x.a.tentative).reduce((acc, x) => acc + Math.max(0, x.to - x.from), 0);
+      const ticks = []; for (let t = Math.ceil(d.start / 120) * 120; t < d.end; t += 120) ticks.push(`<span class="uu-tick" style="left:${pct(d, t)}%">${t / 60}</span>`);
+      const text = segs.length
+        ? `<ul class="uu-abs-list">${segs.map(({ a, from, to }) => `<li class="${a.tentative ? "is-tentative" : ""}"><strong>${a.from || a.to ? `${hh(from)}–${hh(to)}` : "ves dan"}</strong>${a.tentative ? " <span class=\"muted-text\">(ni potrjeno)</span>" : ""} · ${esc(a.note)}</li>`).join("")}</ul>`
+        : `<p class="muted-text uu-allday">Prisoten/a ves čas</p>`;
+      return `<div class="uu-drow"><div class="uu-dlabel"><strong>${esc(shortDay(d.label))}</strong><span class="muted-text">${hh(d.start)}–${hh(d.end)}</span></div>
+        <div class="uu-dbody"><div class="uu-cell uu-big"><i class="uu-bar uu-present" style="left:0;width:100%"></i>${barsFor(m, d)}</div><div class="uu-ticks">${ticks.join("")}</div>${text}</div></div>`;
+    }).join("");
+    const presentPct = Math.round(((total - away) / total) * 100);
+    detail.innerHTML = `<p class="person-back"><a href="#uu" data-tab-link="uu">← Nazaj na prisotnost</a></p>
+      <header class="card uu-person"><div class="uu-person-head">${avatarHtml(m, "avatar-os")}<div><h2>${esc(m.name)}</h2>
+        <p class="muted-text">${m.steg ? `${esc(m.steg)} · ` : ""}<a href="#os/${m.group}">Skupina ${m.group}</a> · spremljevalec ${esc(sp ? displayName(sp) : displayName(m.spr))}</p></div></div>
+        <p class="uu-summary">Prisotnost: <strong>${presentPct} %</strong> programa${(byName.get(m.name) || []).some((a) => a.tentative) ? ` <span class="muted-text">(brez nepotrjenih odsotnosti)</span>` : ""}</p></header>
+      <div class="uu-legend" aria-hidden="true"><span><i class="uu-key uu-present"></i>prisoten/a</span><span><i class="uu-key uu-tentative"></i>odsotnost ni potrjena</span><span><i class="uu-key uu-absent"></i>odsoten/a</span></div>
+      <div class="card uu-days-detail">${rows}</div>`;
+    window.scrollTo(0, 0);
+    return;
+  }
+  const body = members.slice().sort((a, b) => a.group - b.group || a.name.localeCompare(b.name, "sl")).map((x, i, arr) => {
+    const first = i === 0 || arr[i - 1].group !== x.group;
+    const gap = byName.get(x.name) || [];
+    return `<div class="uu-row${first ? " uu-groupstart" : ""}"><div class="uu-name"><span class="uu-grp">${x.group}</span><a href="#uu/${x.slug}">${esc(x.name)}</a>${gap.length ? `<span class="uu-flag" title="${esc(gap.map((a) => a.note).join(" · "))}">!</span>` : ""}</div>
+      <div class="uu-days">${weekends.map((ds) => `<div class="uu-weekend" style="flex:${wkFlex(ds)}">${ds.map((d) => cell(x, d)).join("")}</div>`).join("")}</div></div>`;
   }).join("");
   $("#uu-sub").textContent = `${members.length} udeležencev · ${new Set((uuAbsences || []).map((a) => a.name)).size} z odsotnostmi`;
   box.innerHTML = `<div class="uu-scroll"><div class="uu-row uu-head"><div class="uu-name">Skupina · ime</div>
-    <div class="uu-days">${weekends.map((ds, i) => `<div class="uu-weekend" style="flex:${ds.reduce((a, d) => a + d.end - d.start, 0)}"><div class="uu-wk-title">${i + 1}. vikend</div><div class="uu-daysrow">${ds.map((d) => { const short = d.label.replace(/,\s*(\d+\. \d+)\. \d+$/, " $1."); return `<div class="uu-cell uu-dayhead" style="flex:${d.end - d.start}"><strong>${esc(short)}</strong><span class="muted-text">${hh(d.start)}–${hh(d.end)}</span></div>`; }).join("")}</div></div>`).join("")}</div></div>${rows}</div>`;
+    <div class="uu-days">${weekends.map((ds, i) => `<div class="uu-weekend" style="flex:${wkFlex(ds)}"><div class="uu-wk-title">${i + 1}. vikend</div><div class="uu-daysrow">${ds.map((d) => `<div class="uu-cell uu-dayhead" style="flex:${d.end - d.start}"><strong>${esc(shortDay(d.label))}</strong></div>`).join("")}</div></div>`).join("")}</div></div>${body}</div>`;
 }
 async function renderOs(groupN = null) {
   const box = $("#os-groups"), list = $("#os-list-view"), detail = $("#os-detail-view");
