@@ -216,18 +216,45 @@ function decodeJwt(token) {
   const bin = atob(b64 + "===".slice((b64.length + 3) % 4));
   return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
 }
-function allowedPages(email) {
-  const acc = state.access || { default: ["*"] };
-  if (!email) return new Set();
-  const e = email.toLowerCase();
-  const inGroup = (g) => (acc.groups?.[g] || []).some((x) => String(x).toLowerCase() === e);
-  const hits = (acc.rules || []).filter((r) =>
-    (r.emails || []).some((x) => String(x).toLowerCase() === e) || (r.groups || []).some(inGroup));
-  const pages = hits.length ? hits.flatMap((r) => r.pages || []) : (acc.default || []);
-  if (state.visitAdmin === e && !hits.length) return new Set(ALL_PAGES); // Tilen's gmail: admin unless listed in the sheet (see VISIT_ADMIN_SHA)
-  const set = new Set(pages.includes("*") ? ALL_PAGES : pages);
+/* Role of an e-mail per data/access.json (users → role, else defaultRole). Tilen's gmail is admin unless listed (see VISIT_ADMIN_SHA). */
+function roleOf(email) {
+  const acc = state.access || {};
+  const e = String(email || "").toLowerCase();
+  if (!e) return null;
+  const listed = Object.entries(acc.users || {}).find(([k]) => k.toLowerCase() === e)?.[1];
+  if (listed) return listed;
+  // Legacy access.json (groups + rules, no roles): group name is the role
+  const group = Object.entries(acc.groups || {}).find(([, list]) => list.some((x) => String(x).toLowerCase() === e))?.[0];
+  if (group) return group;
+  if (state.visitAdmin === e) return "admin";
+  return acc.defaultRole || "uu";
+}
+const SIM_ROLES = ["admin", "svod", "uu"];
+/* Admin-only "view as" role (per tab session); ignored for everyone else */
+function effectiveRole(email) {
+  const real = roleOf(email);
+  return real === "admin" && SIM_ROLES.includes(state.simRole) ? state.simRole : real;
+}
+function pagesForRole(role) {
+  if (!state.access) return new Set(ALL_PAGES);
+  const acc = state.access;
+  if (!acc.roles) { // legacy format
+    const pages = role === "admin" && !acc.groups?.admin ? ["*"] : (acc.rules || []).filter((x) => (x.groups || []).includes(role)).flatMap((x) => x.pages || []);
+    const list = pages.length ? pages : (acc.default || []);
+    const set = new Set(list.includes("*") ? ALL_PAGES : list);
+    if (set.delete("zadolzitve")) set.add("teme");
+    return set;
+  }
+  const r = acc.roles[role];
+  if (!r) return new Set();
+  const allow = r.allow || [];
+  const set = new Set(!allow.length || allow.includes("*") ? ALL_PAGES : allow);
   if (set.delete("zadolzitve")) set.add("teme"); // Zadolžitve now live on the Teme page
+  (r.deny || []).forEach((x) => (x === "*" ? set.clear() : set.delete(x)));
   return set;
+}
+function allowedPages(email) {
+  return email ? pagesForRole(effectiveRole(email)) : new Set();
 }
 function canSee(page) {
   if (page === "noaccess") return true;
@@ -260,6 +287,14 @@ function onCredential(resp) {
   }
 }
 window.onGsiCredential = onCredential;
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-sim-role]");
+  if (!b || roleOf(state.user?.email) !== "admin") return;
+  state.simRole = b.dataset.simRole === "admin" ? null : b.dataset.simRole;
+  try { state.simRole ? sessionStorage.setItem("uvodja.simRole", state.simRole) : sessionStorage.removeItem("uvodja.simRole"); } catch {}
+  setUserMenu(false); closeNavMore();
+  applyAuth(); applyHash();
+});
 document.addEventListener("click", (e) => { if (e.target.closest("[data-signout]")) { e.preventDefault(); signOut(); } }); // global reference for GIS (and for testing)
 function signOut() {
   setUserMenu(false); closeNavMore();
@@ -287,6 +322,10 @@ function applyAuth() {
   const u = state.user;
   checkVisitAdmin(u);
   state.allowed = allowedPages(u?.email);
+  const sim = u && roleOf(u.email) === "admin" && effectiveRole(u.email) !== "admin" ? effectiveRole(u.email) : null;
+  let sb = $("#sim-banner");
+  if (sim && !sb) { sb = document.createElement("div"); sb.id = "sim-banner"; sb.className = "sim-banner"; document.body.prepend(sb); }
+  if (sb) { sb.hidden = !sim; if (sim) sb.innerHTML = `<span title="Simulacija pogleda za admina">Pogled kot <strong>${sim.toUpperCase()}</strong></span> <button type="button" class="sim-exit" data-sim-role="admin">Nazaj na admin</button>`; }
   document.body.classList.toggle("auth-locked", !u);
   $("#auth-gate").hidden = !!u;
   $$(".tab[data-tab]").forEach((b) => { b.hidden = !!u && !state.allowed.has(b.dataset.tab); });
@@ -307,6 +346,8 @@ function applyAuth() {
   nu.innerHTML = `<button type="button" class="user-btn" id="user-btn" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu" title="${esc(u.name)} · ${esc(u.email)}">${av}<span class="nav-user-name">${esc(u.name)}</span></button>
     <div class="user-menu" id="user-menu" hidden>
       <p class="user-menu-name">${esc(u.name)}</p><p class="user-menu-email">${esc(u.email)}</p>
+      ${roleOf(u.email) === "admin" ? `<div class="sim-switch" role="group" aria-label="Pogled kot"><span class="sim-label">Pogled kot</span>${SIM_ROLES.map((r) =>
+        `<button type="button" class="sim-opt" data-sim-role="${r}" aria-pressed="${effectiveRole(u.email) === r}">${r.toUpperCase()}</button>`).join("")}</div>` : ""}
       ${own}<button type="button" class="user-menu-item user-signout" data-signout>Odjava</button>
     </div>`;
   ar.hidden = false;
@@ -1967,6 +2008,7 @@ async function init() {
   setInterval(() => { placeNowLine(); placeUuNow(); }, 60000);
   window.addEventListener("resize", () => { placeNowLine(); placeUuNow(); });
   state.user = loadUser();
+  try { state.simRole = sessionStorage.getItem("uvodja.simRole"); } catch { state.simRole = null; }
   bindControls();
   applyTheme(document.documentElement.dataset.theme === "cgp" ? "cgp" : "default");
   $("#theme-toggle")?.addEventListener("click", () => applyTheme(document.documentElement.dataset.theme === "cgp" ? "default" : "cgp"));

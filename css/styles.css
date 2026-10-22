@@ -1172,6 +1172,13 @@ body.auth-locked main, body.auth-locked #main-nav { display: none; }
 .user-menu-name { margin: 0; font-weight: 800; color: #fff; overflow-wrap: anywhere; }
 .user-menu-email { margin: 0 0 .35rem; font-size: .82rem; color: var(--ink-muted); overflow-wrap: anywhere; }
 .user-menu-item { display: flex; align-items: center; min-height: 44px; padding: 0 .7rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.05); color: var(--ink); font: inherit; font-size: .9rem; font-weight: 600; text-decoration: none; cursor: pointer; text-align: left; }
+.sim-switch { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; padding: .35rem 0 .45rem; border-bottom: 1px solid var(--line); margin-bottom: .2rem; }
+.sim-label { font-size: .75rem; color: var(--ink-muted); margin-right: .2rem; flex-basis: 100%; }
+.sim-opt { flex: 1; min-height: 34px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,0.05); color: var(--ink); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.sim-opt[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
+.sim-banner { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 100; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .3rem .8rem; padding: .4rem .5rem .4rem 1rem; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.4); background: var(--gold); color: var(--navy-deep); font-size: .85rem; text-align: center; }
+.sim-banner[hidden] { display: none; }
+.sim-exit { border: 1px solid var(--navy-deep); background: transparent; color: var(--navy-deep); border-radius: 999px; padding: .15rem .7rem; font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; }
 .user-menu-item:hover { border-color: var(--gold); color: var(--gold-soft); }
 .account-row { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; margin-top: 1.25rem; font-size: .9rem; }
 .account-row[hidden] { display: none; }
