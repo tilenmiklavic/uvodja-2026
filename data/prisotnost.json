@@ -17,7 +17,7 @@
     { "name": "David Demšar", "day": "vikend2-petek", "to": "13:00", "note": "6. 11. pride do 13h" },
     { "name": "Lenart Ponikvar", "day": "vikend2-petek", "to": "10:00", "note": "petek 6. 11. pride okoli 10h" },
     { "name": "Eva Gašparič", "day": "vikend1-petek", "to": "11:00", "note": "23. 10. petek pride okoli 11h; vmes drugi vikend jesenovanje" },
-    { "name": "Neža Jekl", "day": "vikend1-petek", "from": "16:30", "to": "18:45", "note": "23. 10. petek od 16.30 do 18.45" },
+    { "name": "Neža Jekl", "day": "vikend1-petek", "to": "18:45", "note": "23. 10. petek pride med 16.30 in 18.45" },
     { "name": "Meta Rebec", "day": "vikend1-petek", "to": "14:00", "note": "petek 23. 10. pride ob 14h" },
     { "name": "Neža Mauko", "day": "vikend2-petek", "to": "14:00", "note": "petek 6. 11. pride ob 14h" },
     { "name": "Tina Božič", "day": "vikend2-petek", "to": "14:00", "note": "petek 6. 11. pride ob 14h" },
