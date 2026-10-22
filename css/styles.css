@@ -1366,6 +1366,8 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .uu-person-head h2 { margin: 0; }
 .uu-person-head p { margin: .1rem 0 0; }
 .uu-summary { margin: .8rem 0 0; }
+.uu-contact { margin: .35rem 0 0; overflow-wrap: anywhere; }
+.uu-contact-btn { flex: none; padding: .3rem .7rem; }
 .uu-days-detail { padding: .4rem 1.2rem; }
 .uu-drow { display: grid; grid-template-columns: 150px 1fr; gap: .4rem 1rem; padding: .8rem 0; border-top: 1px solid rgba(251,241,214,.07); }
 .uu-drow:first-child { border-top: 0; }

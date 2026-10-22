@@ -2139,7 +2139,49 @@ async function renderOsDays() {
 }
 
 /* —— UU: Gantt of participant presence (data/prisotnost.json, derived from the UU sheet "Opombe") —— */
-let uuAbsences, uuSheet;
+let uuAbsences;
+/* Contact details are read live from the UU sheet with the viewer's own Google access (repo is public, so nothing is stored here).
+   Requires the Sheets API enabled + spreadsheets.readonly scope on the GSI_CLIENT_ID project. Token and rows stay in memory only. */
+const UU_SHEET_ID = "1a_8ghLlrhMexb5VS-U9M5aPcP4yK6mAnDLdp0Eg74NQ", UU_SHEET_TAB = "Seznam udeležencev";
+const UU_SHEET_URL = `https://docs.google.com/spreadsheets/d/${UU_SHEET_ID}/edit#gid=0`;
+let uuToken = null, uuContacts = null;
+const uuNorm = (x) => String(x || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+function uuRequestToken() {
+  return new Promise((resolve, reject) => {
+    const oauth = window.google?.accounts?.oauth2;
+    if (!oauth) return reject(new Error("Google prijava ni naložena"));
+    if (uuToken && uuToken.exp > Date.now() + 60000) return resolve(uuToken.value);
+    oauth.initTokenClient({
+      client_id: GSI_CLIENT_ID, scope: "https://www.googleapis.com/auth/spreadsheets.readonly", hint: state.user?.email || "",
+      callback: (r) => r.error ? reject(new Error(r.error)) : (uuToken = { value: r.access_token, exp: Date.now() + (r.expires_in || 3600) * 1000 }, resolve(r.access_token)),
+      error_callback: (e) => reject(new Error(e?.type || "popup")),
+    }).requestAccessToken({ prompt: "" });
+  });
+}
+async function uuLoadContacts() {
+  if (uuContacts) return uuContacts;
+  const token = await uuRequestToken();
+  const ranges = [`'${UU_SHEET_TAB}'!A2:B`, `'${UU_SHEET_TAB}'!F2:G`].map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
+  const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${UU_SHEET_ID}/values:batchGet?${ranges}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) { if (r.status === 401) uuToken = null; throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status }); }
+  const [names, contacts] = (await r.json()).valueRanges.map((v) => v.values || []);
+  uuContacts = new Map(names.map(([ime, priimek], i) => [uuNorm(`${ime} ${priimek}`), { email: contacts[i]?.[0] || "", phone: contacts[i]?.[1] || "" }]));
+  return uuContacts;
+}
+async function uuShowContact(btn) {
+  const box = btn.closest(".uu-contact");
+  btn.disabled = true; btn.textContent = "Nalagam …";
+  try {
+    const c = (await uuLoadContacts()).get(uuNorm(box.dataset.name));
+    box.innerHTML = !c ? `<span class="muted-text">Ni najden v tabeli UU.</span> <a href="${UU_SHEET_URL}" target="_blank" rel="noopener">Odpri tabelo ↗</a>`
+      : [c.email && `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`, c.phone && `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ""))}">${esc(c.phone)}</a>`].filter(Boolean).join(" · ") || `<span class="muted-text">Brez kontakta v tabeli.</span>`;
+  } catch (err) {
+    const why = err.status === 403 || err.status === 404 ? "Nimaš dostopa do tabele UU." : "Kontakta ni bilo mogoče naložiti.";
+    box.innerHTML = `<span class="muted-text">${why}</span> <a href="${UU_SHEET_URL}" target="_blank" rel="noopener">Odpri tabelo ↗</a>`;
+    console.warn("UU contact", err);
+  }
+}
+document.addEventListener("click", (e) => { const b = e.target.closest("[data-uu-contact]"); if (b) { e.preventDefault(); uuShowContact(b); } });
 const hm = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 const hh = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 const uuSlug = (name) => String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -2152,9 +2194,6 @@ async function renderUU(slug = null) {
   }
   if (uuAbsences === undefined) {
     try { const r = await fetch("data/prisotnost.json", { cache: "no-store" }); uuAbsences = r.ok ? (await r.json()).absences : null; } catch { uuAbsences = null; }
-  }
-  if (uuSheet === undefined) {
-    try { const r = await fetch("data/uu_sheet.json", { cache: "no-store" }); uuSheet = r.ok ? await r.json() : null; } catch { uuSheet = null; }
   }
   const days = (state.data?.days || []).map((d) => {
     const ss = d.sessions.filter((s) => !/^Spanje/.test(s.title));
@@ -2192,12 +2231,13 @@ async function renderUU(slug = null) {
         <div class="uu-dbody"><div class="uu-cell uu-big"><i class="uu-bar uu-present" style="left:0;width:100%"></i>${barsFor(m, d)}</div><div class="uu-ticks">${ticks.join("")}</div>${text}</div></div>`;
     }).join("");
     const presentPct = Math.round(((total - away) / total) * 100);
-    /* Contact details stay in Drive (repo is public): link to the participant's row in the UU sheet */
-    const row = uuSheet?.rows?.[m.name];
-    const contact = row ? ` · <a href="https://docs.google.com/spreadsheets/d/${uuSheet.spreadsheetId}/edit#gid=${uuSheet.gid}&range=A${row}:G${row}" target="_blank" rel="noopener" title="E-naslov in telefon v tabeli UU (Drive)">Kontakt ↗</a>` : "";
+    const known = uuContacts?.get(uuNorm(m.name));
+    const contact = `<p class="uu-contact" data-name="${esc(m.name)}">${known
+      ? [known.email && `<a href="mailto:${esc(known.email)}">${esc(known.email)}</a>`, known.phone && `<a href="tel:${esc(known.phone.replace(/[^\d+]/g, ""))}">${esc(known.phone)}</a>`].filter(Boolean).join(" · ")
+      : `<button type="button" class="btn ghost uu-contact-btn" data-uu-contact>Pokaži kontakt</button>`}</p>`;
     detail.innerHTML = `<p class="person-back"><a href="#uu" data-tab-link="uu">← Nazaj na prisotnost</a></p>
       <header class="card uu-person"><div class="uu-person-head">${avatarHtml(m, "avatar-os")}<div><h2>${esc(m.name)}</h2>
-        <p class="muted-text">${m.steg ? `${esc(m.steg)} · ` : ""}<a href="#os/${m.group}">Skupina ${m.group}</a> · spremljevalec ${esc(sp ? displayName(sp) : displayName(m.spr))}${contact}</p></div></div>
+        <p class="muted-text">${m.steg ? `${esc(m.steg)} · ` : ""}<a href="#os/${m.group}">Skupina ${m.group}</a> · spremljevalec ${esc(sp ? displayName(sp) : displayName(m.spr))}</p>${contact}</div></div>
         <p class="uu-summary">Prisotnost: <strong>${presentPct} %</strong> programa${(byName.get(m.name) || []).some((a) => a.tentative) ? ` <span class="muted-text">(brez nepotrjenih odsotnosti)</span>` : ""}</p></header>
       <div class="uu-legend" aria-hidden="true"><span><i class="uu-key uu-present"></i>prisoten/a</span><span><i class="uu-key uu-tentative"></i>odsotnost ni potrjena</span><span><i class="uu-key uu-absent"></i>odsoten/a</span></div>
       <div class="card uu-days-detail">${rows}</div>`;
