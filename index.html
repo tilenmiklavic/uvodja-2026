@@ -258,10 +258,15 @@
       </section>
     </section>
     <section id="tab-preverbe" class="tab-panel" hidden>
-      <div class="card placeholder-card">
+      <div class="pv-head">
         <h2>Preverbe</h2>
-        <p class="muted-text">Dnevne preverbe bodo objavljene kmalu.</p>
+        <div class="pv-tabs" role="tablist" aria-label="Preverbe">
+          <a role="tab" class="pv-tab" href="#preverbe/teme" data-pv-tab="teme" aria-selected="true">Teme</a>
+          <a role="tab" class="pv-tab" href="#preverbe/generalno" data-pv-tab="generalno" aria-selected="false">Generalno</a>
+        </div>
       </div>
+      <div id="pv-teme" role="tabpanel"></div>
+      <div id="pv-generalno" role="tabpanel" hidden></div>
     </section>
     <section id="tab-zabava" class="tab-panel" hidden>
       <div class="wordle" id="wordle">

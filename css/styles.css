@@ -1400,3 +1400,33 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .uu-name a { overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 600px) { .uu-name { flex-basis: 98px; width: 98px; } }
 @media (max-width: 600px) { .uu-name { flex-basis: 108px; width: 108px; padding-right: .2rem; } .uu-flag { margin-left: auto; flex: 0 0 .9rem; width: .9rem; height: .9rem; font-size: .62rem; } }
+
+/* —— Preverbe: Teme (embedded forms) / Generalno —— */
+.pv-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin-bottom: .9rem; }
+.pv-head h2 { margin: 0; }
+.pv-tabs { display: flex; gap: .4rem; flex: 1 1 280px; max-width: 360px; }
+.pv-tab { flex: 1 1 0; display: grid; place-items: center; min-height: 44px; padding: 0 1rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.05); color: var(--ink); font-weight: 700; text-decoration: none; }
+.pv-tab[aria-selected="true"] { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
+.pv-lede { margin: 0 0 .7rem; }
+.pv-empty { padding: 1.2rem; }
+.pv-empty p { margin: 0 0 .3rem; }
+.pv-form { padding: 0; margin-bottom: .8rem; overflow: hidden; }
+.pv-form summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1.2rem; cursor: pointer; list-style: none; }
+.pv-form summary::-webkit-details-marker { display: none; }
+.pv-form summary::after { content: "▾"; color: var(--gold-soft); margin-left: .4rem; }
+.pv-form[open] summary::after { content: "▴"; }
+.pv-form-title { font-weight: 800; margin-right: auto; }
+.pv-form iframe { display: block; width: 100%; height: min(1400px, 150vh); border: 0; background: #fff; }
+.pv-open { margin: 0; padding: .6rem 1.2rem; font-size: .85rem; }
+.pv-gen { display: flex; flex-direction: column; gap: .5rem; padding: 1rem 1.2rem; margin-bottom: .8rem; }
+.pv-gen > label:first-child { display: flex; flex-direction: column; gap: .1rem; }
+.pv-gen > label:first-child .muted-text { font-size: .85rem; }
+.pv-gen textarea { width: 100%; box-sizing: border-box; min-height: 6rem; resize: vertical; padding: .6rem .7rem; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.06); color: var(--ink); font: inherit; }
+.pv-gen textarea:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.pv-gen-foot { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; }
+.pv-gen-foot .btn { flex: none; min-width: 110px; }
+.pv-anon input { width: 1.1rem; height: 1.1rem; min-height: 0; margin: 0; padding: 0; flex: none; accent-color: var(--gold); }
+.pv-anon { display: inline-flex; align-items: center; gap: .4rem; font-size: .88rem; color: var(--ink-muted); cursor: pointer; }
+.pv-status { margin: 0; font-size: .88rem; min-height: 1.2em; }
+.pv-status.is-ok { color: var(--band-green); }
+.pv-status.is-err { color: var(--warn); }

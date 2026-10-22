@@ -382,10 +382,11 @@ function setTab(name) {
   const hash = location.hash.replace(/^#/, "");
   logVisit(blocked ? "noaccess" : (/^(oseba|tema)-/.test(hash) ? hash.split("-")[0] : name));
   if (name === "analitika") renderVisits();
+  if (name === "preverbe") renderPreverbe(/^preverbe\/(generalno)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "teme");
   if (name === "uu") renderUU(/^uu\/(.+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   currentTab = name;
-  if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("uu/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
+  if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("uu/") && !hash.startsWith("preverbe/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
     history.replaceState(null, "", name === "casovnica" ? "#casovnica" : `#${name}`);
   }
 }
@@ -1624,6 +1625,7 @@ function applyHash() {
     return;
   }
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
+  if (/^preverbe\/(teme|generalno)$/.test(hash)) { setTab("preverbe"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -2180,6 +2182,72 @@ async function renderOsDays() {
   }).join("");
 }
 
+/* —— Preverbe: Teme = today's tema feedback forms (embedded Google Forms), Generalno = 3 free-text forms → Apps Script → Preverbe/Vprašanja sheets —— */
+let pvData;
+async function renderPreverbe(sub = "teme") {
+  const teme = $("#pv-teme"), gen = $("#pv-generalno");
+  if (!teme) return;
+  $$(".pv-tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.pvTab === sub)));
+  teme.hidden = sub !== "teme"; gen.hidden = sub !== "generalno";
+  if (pvData === undefined) {
+    try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; }
+  }
+  if (sub === "teme") renderPvTeme(teme); else renderPvGeneral(gen);
+}
+function renderPvTeme(box) {
+  const today = ljNow().date, temas = state.data?.temas || {};
+  const forms = (pvData?.temaForms || []).flatMap((f) => {
+    const t = temas[f.tema];
+    const occ = (t?.occurrences || []).filter((o) => o.date === today).sort((a, b) => a.start.localeCompare(b.start))[0];
+    return occ ? [{ ...f, name: t.title, occ }] : [];
+  }).sort((a, b) => a.occ.start.localeCompare(b.occ.start));
+  if (!forms.length) {
+    const next = (pvData?.temaForms || []).flatMap((f) => (temas[f.tema]?.occurrences || []).map((o) => o.date)).filter((d) => d > today).sort()[0];
+    box.innerHTML = `<div class="card pv-empty"><p>Danes ni preverb tem.</p>${next ? `<p class="muted-text">Naslednje preverbe: ${Number(next.slice(8))}. ${Number(next.slice(5, 7))}.</p>` : ""}</div>`;
+    return;
+  }
+  const key = forms.map((f) => f.formId).join() + today;
+  if (box.dataset.key === key) return; // keep iframes (and half-filled forms) when switching tabs
+  box.dataset.key = key;
+  box.innerHTML = `<p class="muted-text pv-lede">Preverbe tem za danes – izpolni po vsaki temi.</p>` + forms.map((f) => `<details class="card pv-form"${forms.length === 1 ? " open" : ""}>
+      <summary><span class="pv-form-title">${esc(f.name)}</span><span class="muted-text">${esc(f.occ.start)}–${esc(f.occ.end)}</span></summary>
+      <iframe src="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform?embedded=true" title="${esc(f.title)}" loading="lazy">Nalagam …</iframe>
+      <p class="pv-open"><a href="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform" target="_blank" rel="noopener">Odpri obrazec v novem oknu ↗</a></p>
+    </details>`).join("");
+}
+function renderPvGeneral(box) {
+  if (box.dataset.ready) return;
+  box.dataset.ready = "1";
+  box.innerHTML = (pvData?.general || []).map((g) => `<form class="card pv-gen" data-pv-kind="${esc(g.key)}">
+      <label for="pv-${esc(g.key)}"><strong>${esc(g.label)}</strong><span class="muted-text">${esc(g.hint)}</span></label>
+      <textarea id="pv-${esc(g.key)}" name="text" rows="4" maxlength="5000" required></textarea>
+      <div class="pv-gen-foot">
+        <label class="pv-anon"><input type="checkbox" name="anon" /> Pošlji anonimno</label>
+        <button type="submit" class="btn primary">Pošlji</button>
+      </div>
+      <p class="pv-status" role="status" aria-live="polite"></p>
+    </form>`).join("");
+}
+document.addEventListener("submit", async (e) => {
+  const form = e.target.closest("form[data-pv-kind]");
+  if (!form) return;
+  e.preventDefault();
+  const text = form.text.value.trim(), status = $(".pv-status", form), btn = $("button[type=submit]", form);
+  if (!text) return;
+  btn.disabled = true; status.className = "pv-status"; status.textContent = "Pošiljam …";
+  try {
+    const cfg = await wdConfig();
+    if (!cfg?.scriptUrl) throw new Error("ni povezave");
+    const credential = await wdFreshToken();
+    if (!credential) throw new Error("prijava je potekla – osveži stran");
+    const u = state.user, anon = form.anon.checked;
+    const res = await wdPost(cfg.scriptUrl, { type: "preverba", kind: form.dataset.pvKind, text, anon, email: anon ? "" : u.email, name: anon ? "" : u.name, ts: Date.now() }, credential);
+    if (!res?.ok) throw new Error(res?.error || "napaka strežnika");
+    form.reset(); status.classList.add("is-ok"); status.textContent = "Hvala! Odgovor je poslan.";
+  } catch (err) {
+    status.classList.add("is-err"); status.textContent = `Pošiljanje ni uspelo (${err.message || err}). Poskusi znova.`;
+  } finally { btn.disabled = false; }
+});
 /* —— UU: Gantt of participant presence (data/prisotnost.json, derived from the UU sheet "Opombe") —— */
 let uuAbsences;
 /* Contact details are read live from the UU sheet with the viewer's own Google access (repo is public, so nothing is stored here).
