@@ -1330,3 +1330,31 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .os-sec-vprasanja { border-left-color: var(--gold); } .os-sec-vprasanja .os-sec-label { background: var(--gold); color: #2a1c00; }
 .os-sec-aktivnosti { border-left-color: #5fbf8a; } .os-sec-aktivnosti .os-sec-label { background: #5fbf8a; color: #06231a; }
 .os-sec-zakljucek { border-left-color: #b98ae0; } .os-sec-zakljucek .os-sec-label { background: #b98ae0; color: #1e0d30; }
+
+/* UU presence Gantt */
+.uu-legend { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; margin: 0 0 .8rem; font-size: .85rem; color: var(--ink-muted); }
+.uu-key { display: inline-block; width: 1.6rem; height: .7rem; border-radius: 3px; margin-right: .4rem; vertical-align: middle; }
+.uu-present { background: var(--band-green); }
+.uu-absent { background: var(--band-red); }
+.uu-tentative { background: repeating-linear-gradient(45deg, var(--band-red) 0 4px, rgba(208,32,8,.25) 4px 8px); }
+.uu-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+.uu-row { display: flex; min-width: 980px; align-items: stretch; border-top: 1px solid rgba(251,241,214,.07); }
+.uu-row.uu-groupstart { border-top: 1px solid var(--line); }
+.uu-name { flex: 0 0 190px; position: sticky; left: 0; z-index: 2; background: var(--card-solid); padding: .3rem .6rem; font-size: .85rem; display: flex; align-items: center; gap: .45rem; white-space: nowrap; }
+.uu-grp { display: inline-grid; place-items: center; width: 1.2rem; height: 1.2rem; border-radius: 50%; background: var(--navy-mid); color: var(--gold-soft); font-size: .7rem; font-weight: 700; }
+.uu-flag { margin-left: auto; width: 1rem; height: 1rem; border-radius: 50%; background: var(--warn-bg); color: var(--warn); font-size: .7rem; font-weight: 800; display: inline-grid; place-items: center; cursor: help; }
+.uu-days { flex: 1; display: flex; gap: 1rem; padding: .3rem .5rem; min-width: 0; }
+.uu-weekend { display: flex; flex-direction: column; flex: 1; }
+.uu-daysrow, .uu-weekend { gap: 0; }
+.uu-cell { position: relative; display: block; min-width: 0; height: 1.2rem; margin: .1rem 1px; border-radius: 3px; background: rgba(255,255,255,.04); overflow: hidden; }
+.uu-weekend { flex-direction: row; }
+.uu-head .uu-weekend { flex-direction: column; }
+.uu-head .uu-daysrow { display: flex; }
+.uu-head .uu-name { font-weight: 700; color: var(--gold-soft); }
+.uu-wk-title { font-size: .75rem; font-weight: 700; color: var(--gold-soft); padding-left: 2px; }
+.uu-cell.uu-dayhead { height: auto; background: none; display: flex; flex-direction: column; font-size: .72rem; line-height: 1.2; overflow: visible; }
+.uu-bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.uu-bar.uu-present { background: var(--band-green); opacity: .85; }
+.uu-bar.uu-absent, .uu-bar.uu-tentative { z-index: 1; }
+.uu-foot { margin-top: .8rem; font-size: .8rem; }
+.uu-cell.uu-dayhead span { font-size: .68rem; }

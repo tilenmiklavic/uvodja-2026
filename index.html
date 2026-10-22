@@ -33,6 +33,7 @@
           <button type="button" class="tab" data-tab="gradiva" aria-selected="false">Gradiva</button>
           <button type="button" class="tab" data-tab="ekipa" aria-selected="false">Ekipa</button>
           <button type="button" class="tab" data-tab="os" aria-selected="false">OS</button>
+          <button type="button" class="tab" data-tab="uu" aria-selected="false">UU</button>
           <button type="button" class="tab" data-tab="preverbe" aria-selected="false">Preverbe</button>
           <button type="button" class="tab" data-tab="zabava" aria-selected="false">Zabava</button>
           <button type="button" class="tab" data-tab="analitika" aria-selected="false">Analitika</button>
@@ -236,6 +237,19 @@
         <p class="person-back"><a href="#os" data-tab-link="os">← Nazaj na skupine</a></p>
         <div id="os-detail"></div>
       </div>
+    </section>
+    <section id="tab-uu" class="tab-panel" hidden>
+      <div class="os-head">
+        <h2>UU – prisotnost udeležencev</h2>
+        <p class="muted-text" id="uu-sub"></p>
+      </div>
+      <div class="uu-legend" aria-hidden="true">
+        <span><i class="uu-key uu-present"></i>prisoten/a</span>
+        <span><i class="uu-key uu-tentative"></i>odsotnost ni potrjena</span>
+        <span><i class="uu-key uu-absent"></i>odsoten/a</span>
+      </div>
+      <div id="uu-chart" class="uu-chart"></div>
+      <p class="muted-text uu-foot">Vir: stolpec »Opombe« v seznamu udeležencev (Drive, 03_UU). Brez opombe = prisoten/a ves čas. Ure z »okoli« so približne.</p>
     </section>
     <section id="tab-analitika" class="tab-panel" hidden>
       <section class="card visits" id="visits" aria-labelledby="visits-title">

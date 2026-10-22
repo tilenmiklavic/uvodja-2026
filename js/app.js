@@ -206,7 +206,7 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
-const ALL_PAGES = ["domov", "casovnica", "teme", "zadolzitve", "gradiva", "ekipa", "os", "preverbe", "zabava", "analitika"];
+const ALL_PAGES = ["domov", "casovnica", "teme", "zadolzitve", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "analitika"];
 
 function loadUser() {
   try { const u = JSON.parse(localStorage.getItem("uvodja.user") || "null"); return u?.email ? u : null; } catch { return null; }
@@ -339,6 +339,7 @@ function setTab(name) {
   const hash = location.hash.replace(/^#/, "");
   logVisit(blocked ? "noaccess" : (/^(oseba|tema)-/.test(hash) ? hash.split("-")[0] : name));
   if (name === "analitika") renderVisits();
+  if (name === "uu") renderUU();
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   currentTab = name;
   if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
@@ -1568,7 +1569,7 @@ function applyHash() {
   if (!hash || hash === "casovnica") { setTab("casovnica"); return; }
   if (hash === "izrocki") { setTab("gradiva"); history.replaceState(null, "", "#gradiva"); return; }
   if (hash === "info") { setTab("domov"); history.replaceState(null, "", "#domov"); return; }
-  if (["domov", "gradiva", "ekipa", "teme", "zadolzitve", "os", "preverbe", "zabava", "analitika"].includes(hash)) {
+  if (["domov", "gradiva", "ekipa", "teme", "zadolzitve", "os", "uu", "preverbe", "zabava", "analitika"].includes(hash)) {
     setTab(hash);
     if (hash === "ekipa") showEkipaList();
     if (hash === "teme") showTemeList();
@@ -2127,6 +2128,54 @@ async function renderOsDays() {
   }).join("");
 }
 
+/* —— UU: Gantt of participant presence (data/prisotnost.json, derived from the UU sheet "Opombe") —— */
+let uuAbsences;
+const hm = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+async function renderUU() {
+  const box = $("#uu-chart");
+  if (!box) return;
+  if (osData === undefined) {
+    try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; }
+  }
+  if (uuAbsences === undefined) {
+    try { const r = await fetch("data/prisotnost.json", { cache: "no-store" }); uuAbsences = r.ok ? (await r.json()).absences : null; } catch { uuAbsences = null; }
+  }
+  const days = (state.data?.days || []).map((d) => {
+    const ss = d.sessions.filter((s) => !/^Spanje/.test(s.title));
+    const start = Math.min(...ss.map((s) => hm(s.start)));
+    const end = Math.max(...ss.map((s) => hm(s.end)));
+    return { id: d.id, label: d.label, weekend: d.weekend, start, end };
+  });
+  const members = (osData?.groups || []).flatMap((g) => g.members.map((m) => ({ ...m, group: g.n })));
+  if (!days.length || !members.length) { box.innerHTML = `<p class="muted-text">Podatki še niso na voljo.</p>`; return; }
+  const byName = new Map();
+  (uuAbsences || []).forEach((a) => { if (!byName.has(a.name)) byName.set(a.name, []); byName.get(a.name).push(a); });
+  const pct = (d, t) => ((Math.min(Math.max(t, d.start), d.end) - d.start) / (d.end - d.start)) * 100;
+  const hh = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
+  const cell = (m, d) => {
+    const abs = (byName.get(m.name) || []).filter((a) => a.day === d.id);
+    const segs = abs.map((a) => ({ a, from: a.from ? hm(a.from) : d.start, to: a.to ? hm(a.to) : d.end }));
+    const bars = segs.map(({ a, from, to }) => {
+      const l = pct(d, from), w = pct(d, to) - l;
+      return w > 0 ? `<i class="uu-bar ${a.tentative ? "uu-tentative" : "uu-absent"}" style="left:${l}%;width:${w}%" title="${esc(`${m.name}: odsoten/a ${hh(from)}–${hh(to)}${a.tentative ? " (ni potrjeno)" : ""} – ${a.note}`)}"></i>` : "";
+    }).join("");
+    return `<div class="uu-cell" style="flex:${d.end - d.start}"><i class="uu-bar uu-present" style="left:0;width:100%"></i>${bars}</div>`;
+  };
+  const weekends = [1, 2].map((w) => days.filter((d) => d.weekend === w));
+  const head = days.map((d) => {
+    const short = d.label.replace(/,\s*(\d+\. \d+)\. \d+$/, " $1.");
+    return `<div class="uu-cell uu-dayhead" style="flex:${d.end - d.start}"><strong>${esc(short)}</strong><span class="muted-text">${hh(d.start)}–${hh(d.end)}</span></div>`;
+  }).join("");
+  const rows = members.slice().sort((a, b) => a.group - b.group || a.name.localeCompare(b.name, "sl")).map((m, i, arr) => {
+    const first = i === 0 || arr[i - 1].group !== m.group;
+    const gap = (byName.get(m.name) || []);
+    return `<div class="uu-row${first ? " uu-groupstart" : ""}"><div class="uu-name"><span class="uu-grp">${m.group}</span>${esc(m.name)}${gap.length ? `<span class="uu-flag" title="${esc(gap.map((a) => a.note).join(" · "))}">!</span>` : ""}</div>
+      <div class="uu-days">${weekends.map((ds) => `<div class="uu-weekend" style="flex:${ds.reduce((a, d) => a + d.end - d.start, 0)}">${ds.map((d) => cell(m, d)).join("")}</div>`).join("")}</div></div>`;
+  }).join("");
+  $("#uu-sub").textContent = `${members.length} udeležencev · ${new Set((uuAbsences || []).map((a) => a.name)).size} z odsotnostmi`;
+  box.innerHTML = `<div class="uu-scroll"><div class="uu-row uu-head"><div class="uu-name">Skupina · ime</div>
+    <div class="uu-days">${weekends.map((ds, i) => `<div class="uu-weekend" style="flex:${ds.reduce((a, d) => a + d.end - d.start, 0)}"><div class="uu-wk-title">${i + 1}. vikend</div><div class="uu-daysrow">${ds.map((d) => { const short = d.label.replace(/,\s*(\d+\. \d+)\. \d+$/, " $1."); return `<div class="uu-cell uu-dayhead" style="flex:${d.end - d.start}"><strong>${esc(short)}</strong><span class="muted-text">${hh(d.start)}–${hh(d.end)}</span></div>`; }).join("")}</div></div>`).join("")}</div></div>${rows}</div>`;
+}
 async function renderOs(groupN = null) {
   const box = $("#os-groups"), list = $("#os-list-view"), detail = $("#os-detail-view");
   if (!box) return;
