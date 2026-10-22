@@ -2198,14 +2198,23 @@ async function renderUU(slug = null) {
     window.scrollTo(0, 0);
     return;
   }
+  // Short labels: "Anže M."; extend the surname prefix only when two people would collide
+  const short = new Map();
+  for (let n = 1; short.size < members.length && n < 12; n++) {
+    members.filter((x) => !short.has(x.name)).forEach((x) => {
+      const [first, ...rest] = x.name.split(" ");
+      const lab = `${first} ${rest.join(" ").slice(0, n)}.`;
+      if (members.filter((y) => y.name.split(" ")[0] === first && y.name !== x.name).every((y) => { const [f2, ...r2] = y.name.split(" "); return `${f2} ${r2.join(" ").slice(0, n)}.` !== lab; })) short.set(x.name, lab);
+    });
+  }
   const body = members.slice().sort((a, b) => a.group - b.group || a.name.localeCompare(b.name, "sl")).map((x, i, arr) => {
     const first = i === 0 || arr[i - 1].group !== x.group;
     const gap = byName.get(x.name) || [];
-    return `<div class="uu-row${first ? " uu-groupstart" : ""}"><div class="uu-name"><span class="uu-grp">${x.group}</span><a href="#uu/${x.slug}">${esc(x.name)}</a>${gap.length ? `<span class="uu-flag" title="${esc(gap.map((a) => a.note).join(" · "))}">!</span>` : ""}</div>
+    return `${first ? `<div class="uu-grouphead"><span>Skupina ${x.group}</span></div>` : ""}<div class="uu-row"><div class="uu-name"><a href="#uu/${x.slug}" title="${esc(x.name)}">${esc(short.get(x.name) || x.name)}</a>${gap.length ? `<span class="uu-flag" title="${esc(gap.map((a) => a.note).join(" · "))}">!</span>` : ""}</div>
       <div class="uu-days">${weekends.map((ds) => `<div class="uu-weekend" style="flex:${wkFlex(ds)}">${ds.map((d) => cell(x, d)).join("")}</div>`).join("")}</div></div>`;
   }).join("");
   $("#uu-sub").textContent = `${members.length} udeležencev · ${new Set((uuAbsences || []).map((a) => a.name)).size} z odsotnostmi`;
-  box.innerHTML = `<div class="uu-scroll"><div class="uu-row uu-head"><div class="uu-name">Skupina · ime</div>
+  box.innerHTML = `<div class="uu-scroll"><div class="uu-row uu-head"><div class="uu-name">Ime</div>
     <div class="uu-days">${weekends.map((ds, i) => `<div class="uu-weekend" style="flex:${wkFlex(ds)}"><div class="uu-wk-title">${i + 1}. vikend</div><div class="uu-daysrow">${ds.map((d) => `<div class="uu-cell uu-dayhead" style="flex:${d.end - d.start}"><strong>${esc(shortDay(d.label))}</strong></div>`).join("")}</div></div>`).join("")}</div></div>${body}</div>`;
 }
 async function renderOs(groupN = null) {

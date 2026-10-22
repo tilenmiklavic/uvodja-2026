@@ -1378,3 +1378,13 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .uu-abs-list li.is-tentative { color: var(--warn); }
 .uu-allday { margin: .3rem 0 0; font-size: .85rem; }
 @media (max-width: 600px) { .uu-drow { grid-template-columns: 1fr; } }
+.uu-name { flex-basis: 112px; gap: .3rem; }
+.uu-row { min-width: 760px; }
+.uu-grouphead { position: sticky; left: 0; background: rgba(0,64,100,.35); border-top: 1px solid var(--line); padding: .2rem .6rem; font-size: .75rem; font-weight: 700; color: var(--gold-soft); min-width: 760px; }
+.uu-grouphead span { position: sticky; left: .6rem; }
+.uu-row.uu-groupstart { border-top: 1px solid rgba(251,241,214,.07); }
+@media (max-width: 600px) { .uu-name { flex-basis: 92px; padding: .3rem .4rem; font-size: .8rem; } .uu-row, .uu-grouphead { min-width: 640px; } .uu-days { gap: .5rem; padding: .3rem .3rem; } }
+.uu-name { flex: 0 0 112px; width: 112px; min-width: 0; overflow: hidden; }
+.uu-name a { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 600px) { .uu-name { flex-basis: 98px; width: 98px; } }
+@media (max-width: 600px) { .uu-name { flex-basis: 108px; width: 108px; padding-right: .2rem; } .uu-flag { margin-left: auto; flex: 0 0 .9rem; width: .9rem; height: .9rem; font-size: .62rem; } }
