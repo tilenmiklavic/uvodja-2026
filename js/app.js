@@ -2189,7 +2189,7 @@ async function renderOsDays() {
 }
 
 /* —— Zabava → Stavnica: fixed-odds bets with virtual zlatniki via Apps Script (apps-script/stavnica.gs) —— */
-const sv = { state: null, loading: false, open: null, error: "" };
+const sv = { state: null, loading: false, open: null, error: "", media: undefined };
 async function svCall(extra = {}) {
   const cfg = await wdConfig();
   if (!cfg?.scriptUrl) throw new Error("stavnica ni povezana");
@@ -2206,6 +2206,7 @@ async function renderStavnica(force = false) {
     if (sv.loading) return;
     sv.loading = true;
     if (!sv.state) box.innerHTML = `<p class="muted-text">Nalagam stavnico …</p>`;
+    if (sv.media === undefined) { try { const r = await fetch("data/stavnica.json", { cache: "no-store" }); sv.media = r.ok ? await r.json() : null; } catch { sv.media = null; } }
     try { sv.state = await svCall(); sv.error = ""; } catch (err) { sv.error = err.message || String(err); }
     sv.loading = false;
   }
@@ -2213,13 +2214,19 @@ async function renderStavnica(force = false) {
   const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
   const label = (q, o) => q.type === "boolean" ? ({ yes: "Da", no: "Ne" }[o.toLowerCase()] || o) : o;
   const odds = (q) => q.odds || q.options.length;
+  const img = (q) => q.image || (sv.media?.images || []).find((m) => new RegExp(m.match, "i").test(q.question))?.src || sv.media?.fallback || "";
+  const share = (q) => { const n = q.options.reduce((a, o) => a + (q.people?.[o] || 0), 0); return (o) => (n ? Math.round(((q.people?.[o] || 0) / n) * 100) : 0); };
   const card = (q, i) => {
     const open = sv.open?.q === i && !q.result;
     const sel = open ? sv.open.o : null;
+    const pct = share(q), voters = Object.values(q.people || {}).reduce((a, b) => a + b, 0);
     return `<article class="card sv-card${q.result ? " is-resolved" : ""}">
-      <div class="sv-card-head"><h3 class="sv-q">${esc(q.question)}</h3><span class="sv-odds" title="Zmagovalna stava se povrne ${odds(q)}-krat">×${odds(q)}</span></div>
+      <div class="sv-card-head">${img(q) ? `<img class="sv-img" src="${esc(img(q))}" alt="" loading="lazy" width="48" height="48" />` : ""}<h3 class="sv-q">${esc(q.question)}</h3>${q.options.length ? `<span class="sv-odds" title="Zmagovalna stava se povrne ${odds(q)}-krat">×${odds(q)}</span>` : ""}</div>
       ${q.result ? `<p class="sv-meta"><strong class="sv-res">Zaprto · rezultat: ${esc(label(q, q.result))}</strong></p>` : ""}
-      <div class="sv-opts" style="--n:${q.options.length}">${q.options.map((o) => `<button type="button" class="sv-opt${o === sel ? " is-sel" : ""}${q.result === o ? " is-win" : ""}" data-sv-q="${i}" data-sv-o="${esc(o)}"${q.result ? " disabled" : ""}>${esc(label(q, o))}</button>`).join("")}</div>
+      ${q.options.length ? `<div class="sv-opts" style="--n:${q.options.length}">${q.options.map((o) => `<button type="button" class="sv-opt${o === sel ? " is-sel" : ""}${q.result === o ? " is-win" : ""}" data-sv-q="${i}" data-sv-o="${esc(o)}"${q.result ? " disabled" : ""}>
+          <span class="sv-opt-label">${esc(label(q, o))}</span><span class="sv-pct">${pct(o)} %</span><span class="sv-meter" style="width:${pct(o)}%"></span></button>`).join("")}</div>
+      <p class="sv-foot muted-text">${voters ? `${voters} ${voters === 1 ? "stava" : voters === 2 ? "stavi" : voters < 5 ? "stave" : "stav"} · odstotek = delež ljudi na možnosti` : "Še nihče ni stavil"}</p>`
+      : `<p class="sv-foot muted-text">Možnosti še niso določene.</p>`}
       ${open ? `<form class="sv-bet" data-sv-q="${i}" data-sv-o="${esc(sel)}">
         <p class="sv-bet-title">Stava: <strong>${esc(label(q, sel))}</strong></p>
         <div class="sv-chips">${[1, 2, 5].filter((n) => n < me.balance).map((n) => `<button type="button" class="sv-chip" data-sv-amt="${n}">${n}</button>`).join("")}${me.balance ? `<button type="button" class="sv-chip" data-sv-amt="${me.balance}">Vse</button>` : ""}</div>
@@ -2237,6 +2244,7 @@ async function renderStavnica(force = false) {
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
     ${st.questions.length ? st.questions.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p></div>`}
     ${me.bets.length ? `<section class="card sv-list"><h3>Moje stave</h3><ul>${me.bets.map((b) => `<li><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 🪙</span><span class="sv-l-p${b.payout ? " is-win" : ""}">${b.payout === null ? `→ ${b.amount * (b.odds || 1)}?` : b.payout ? `+${b.payout}` : "0"}</span></li>`).join("")}</ul></section>` : ""}
+    ${sv.media?.images?.length ? `<p class="sv-credits muted-text">Slike: ${sv.media.images.map((m) => `<a href="${esc(m.source)}" target="_blank" rel="noopener">${esc(m.credit)}</a>`).join(" · ")} (Wikimedia Commons)</p>` : ""}
     ${st.recent.length ? `<section class="card sv-list"><h3>Zadnje stave</h3><ul>${st.recent.map((b) => { const w = who(b); return `<li>${w.av}<span class="sv-l-who" title="${esc(w.title)}">${esc(w.label)}</span><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 🪙</span></li>`; }).join("")}</ul></section>` : ""}`;
   svUpdatePayout();
 }

@@ -1,6 +1,7 @@
 /**
  * Zabava → Stavnica: betting with virtual coins ("zlatniki").
- * Questions come from Drive 09_Arhiv/trop/wordle/stavnica, tab "questions" (question | answer | options | resolved);
+ * Questions come from Drive 09_Arhiv/trop/wordle/stavnica, tab "questions" (question | answer | options | resolved [| image]);
+ * the optional "image" column holds an image URL for the question card.
  * every bet is appended to tab "bets" with the bettor's name and e-mail.
  *
  * Hook it into doPost (before the Wordle-specific code):
@@ -64,7 +65,8 @@ function stavnicaState_(ss, me) {
     const result = resCol >= 0 ? String(r[resCol] || "").trim() : "";
     // match the resolved value to an option case-insensitively ("Yes" → "yes")
     const win = options.find((o) => o.toLowerCase() === result.toLowerCase()) || result;
-    return { id: question, question: question, type: type, options: options, odds: options.length, result: win };
+    const image = col("image") >= 0 ? String(r[col("image")] || "").trim() : "";
+    return { id: question, question: question, type: type, options: options, odds: options.length, result: win, image: image, people: {} };
   });
   const byId = {};
   questions.forEach((q) => (byId[q.id] = q));
@@ -73,6 +75,16 @@ function stavnicaState_(ss, me) {
   const bRows = bSheet.getLastRow() > 1 ? bSheet.getRange(2, 1, bSheet.getLastRow() - 1, 6).getValues() : [];
   const bets = bRows.map((r) => ({ ts: new Date(r[0]).getTime(), question: String(r[1]).trim(), option: String(r[2]), amount: Number(r[3]) || 0, name: String(r[4] || ""), email: String(r[5] || "").toLowerCase() }))
     .filter((b) => byId[b.question] && b.amount > 0);
+
+  // How many different people bet on each option (shown as %, doesn't affect the fixed odds)
+  const seen = {};
+  bets.forEach((b) => {
+    const k = b.question + "\u0000" + b.option + "\u0000" + b.email;
+    if (seen[k]) return;
+    seen[k] = 1;
+    const q = byId[b.question];
+    q.people[b.option] = (q.people[b.option] || 0) + 1;
+  });
 
   // Balance: budget − all stakes + payouts (stake × odds) from resolved questions
   let staked = 0, won = 0;

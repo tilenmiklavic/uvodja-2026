@@ -1,0 +1,9 @@
+{
+  "_help": "Slike za vprašanja Stavnice: prvo pravilo, katerega »match« (regex, brez velikih/malih črk) ustreza besedilu vprašanja. Stolpec »image« (URL) v listu questions ima prednost. Slike so iz Wikimedia Commons (licence spodaj).",
+  "images": [
+    { "match": "pašt|pasta|špaget", "src": "assets/stavnica/pasta.webp", "credit": "JIP, CC BY-SA 3.0", "source": "https://commons.wikimedia.org/wiki/File:Spaghetti_bolognese_at_restaurant_Persilja.jpg" },
+    { "match": "kapitan|ladj|plovb", "src": "assets/stavnica/kapitan.webp", "credit": "Michael Gaylard, CC BY 2.0", "source": "https://commons.wikimedia.org/wiki/File:Steering_Wheel,_HMS_Victory.jpg" },
+    { "match": "wc|toaletn|papir", "src": "assets/stavnica/wc-papir.webp", "credit": "Derrick Coetzee, CC0", "source": "https://commons.wikimedia.org/wiki/File:Roll_of_toilet_paper_with_one_sheet_folded_down_in_front.jpg" }
+  ],
+  "fallback": "assets/logos/vodja-skull.png"
+}
