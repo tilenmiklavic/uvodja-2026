@@ -1629,3 +1629,6 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .ocene-score { flex: none; display: flex; flex-direction: column; align-items: flex-end; }
 .ocene-score strong { font-size: 1.15rem; color: var(--gold-soft); font-variant-numeric: tabular-nums; }
 .ocene-score small { font-size: .7rem; color: var(--ink-muted); white-space: nowrap; }
+.pv-sub-h { margin: 1.4rem 0 .6rem; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-soft); display: flex; align-items: center; gap: .8rem; }
+.pv-sub-h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.pv-ftab.pv-tab[hidden] { display: none; }

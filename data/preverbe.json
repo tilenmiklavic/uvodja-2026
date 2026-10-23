@@ -1,5 +1,5 @@
 {
-  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka).",
+  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin).",
   "fetched": "2026-10-22",
   "temaForms": [
     {
@@ -36,6 +36,23 @@
       "key": "feedback",
       "label": "Feedback",
       "hint": "Odziv, pohvala ali predlog."
+    }
+  ],
+  "svodForms": [
+    {
+      "date": "2026-10-23",
+      "title": "Petek 23. 10.",
+      "formId": "17sh1HBaQ1pNiMfdB2n1uQZddzVr5X86-K6zy5MgJ1Fg"
+    },
+    {
+      "date": "2026-10-24",
+      "title": "Sobota 24. 10.",
+      "formId": "1gcGL4GHHOPnKj16uBu2HdAQcMoNxhL9eoCf6bQ9PNtk"
+    },
+    {
+      "date": "2026-10-25",
+      "title": "Nedelja 25. 10.",
+      "formId": "12MuyOOu9VuBL_OswDWhd7-_hD7WEJcjCRiRTQaaoJPI"
     }
   ]
 }

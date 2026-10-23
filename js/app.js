@@ -400,7 +400,7 @@ function setTab(name) {
   const hash = location.hash.replace(/^#/, "");
   logVisit(blocked ? "noaccess" : (/^(oseba|tema)-/.test(hash) ? hash.split("-")[0] : name));
   if (name === "analitika") renderVisits();
-  if (name === "preverbe") renderPreverbe(/^preverbe\/(generalno)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "teme");
+  if (name === "preverbe") renderPreverbe(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "uu") renderUU(/^uu\/(.+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   currentTab = name;
@@ -1649,7 +1649,7 @@ function applyHash() {
     return;
   }
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
-  if (/^preverbe\/(teme|generalno)$/.test(hash)) { setTab("preverbe"); return; }
+  if (/^preverbe\/(teme|generalno|svod)$/.test(hash)) { setTab("preverbe"); return; }
   if (/^zabava\/(wordle|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
@@ -2523,15 +2523,36 @@ async function renderOcene(force = false) {
 document.addEventListener("click", (e) => { if (e.target.closest("[data-ocene-reload]")) renderOcene(true); });
 /* —— Preverbe: Teme = today's tema feedback forms (embedded Google Forms), Generalno = 3 free-text forms → Apps Script → Preverbe/Vprašanja sheets —— */
 let pvData;
-async function renderPreverbe(sub = "teme") {
-  const teme = $("#pv-teme"), gen = $("#pv-generalno");
+/* Tabs per role: UU → Teme + Generalno, SVOD → Preverba SVODa, admin → all three (follows the admin "Pogled kot" switch) */
+function pvTabsFor(role) { return role === "admin" ? ["teme", "generalno", "svod"] : role === "svod" ? ["svod"] : ["teme", "generalno"]; }
+async function renderPreverbe(sub = null) {
+  const teme = $("#pv-teme"), gen = $("#pv-generalno"), svod = $("#pv-svod");
   if (!teme) return;
-  $$("#tab-preverbe .pv-tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.pvTab === sub)));
-  teme.hidden = sub !== "teme"; gen.hidden = sub !== "generalno";
+  const tabs = pvTabsFor(effectiveRole(state.user?.email));
+  if (!tabs.includes(sub)) sub = tabs[0];
+  $$("#tab-preverbe .pv-tab").forEach((t) => { t.hidden = !tabs.includes(t.dataset.pvTab); t.setAttribute("aria-selected", String(t.dataset.pvTab === sub)); });
+  teme.hidden = sub !== "teme"; gen.hidden = sub !== "generalno"; svod.hidden = sub !== "svod";
   if (pvData === undefined) {
     try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; }
   }
-  if (sub === "teme") renderPvTeme(teme); else renderPvGeneral(gen);
+  if (sub === "teme") renderPvTeme(teme); else if (sub === "generalno") renderPvGeneral(gen); else renderPvSvod(svod);
+}
+/* Preverba SVODa: today's day form open; earlier days collapsed below (for filling in late) */
+function renderPvSvod(box) {
+  const today = ljNow().date, forms = pvData?.svodForms || [];
+  const cur = forms.find((f) => f.date === today), past = forms.filter((f) => f.date < today).reverse();
+  const key = today + forms.map((f) => f.formId).join();
+  if (box.dataset.key === key) return; // keep iframes (and half-filled answers)
+  box.dataset.key = key;
+  const card = (f, open) => `<details class="card pv-form" data-form-id="${esc(f.formId)}"${open ? " open" : ""}>
+      <summary><span class="pv-form-title">${esc(f.title)}</span><span class="muted-text">${f.date === today ? "danes" : ""}</span></summary>
+      <iframe src="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform?embedded=true" title="Preverba SVODa – ${esc(f.title)}" loading="lazy">Nalagam …</iframe>
+      <p class="pv-open"><a href="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform" target="_blank" rel="noopener">Odpri obrazec v novem oknu ↗</a></p>
+    </details>`;
+  const next = forms.find((f) => f.date > today);
+  box.innerHTML = (cur ? `<p class="muted-text pv-lede">Dnevna preverba SVODa za danes.</p>${card(cur, true)}`
+      : `<div class="card pv-empty"><p>Za danes ni preverbe SVODa.</p>${next ? `<p class="muted-text">Naslednja: ${esc(next.title)}.</p>` : ""}</div>`)
+    + (past.length ? `<h3 class="pv-sub-h">Prejšnji dnevi</h3>${past.map((f) => card(f, false)).join("")}` : "");
 }
 /* Only temas that started today and ended less than PV_GRACE minutes ago (per the timeline); checked every minute,
    forms are added/removed in place so open ones keep their answers */
