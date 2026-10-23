@@ -2528,18 +2528,25 @@ function pvcStats(v) {
   return { n: a.length, min: a[0], q1: q(0.25), med: q(0.5), q3: q(0.75), max: a[a.length - 1], mean: a.reduce((s, x) => s + x, 0) / a.length };
 }
 const pvcFmt = (x) => (Math.round(x * 100) / 100).toLocaleString("sl-SI");
-function pvcChart(form) {
+/* opts.named: x axis shows each candle's name (wrapped to 2 lines) instead of V1, V2 … */
+function pvcWrap(t, max = 14) {
+  const words = String(t).split(/\s+/), lines = [""];
+  for (const w of words) { const cur = lines[lines.length - 1]; if (cur && (cur + " " + w).length > max) { if (lines.length === 2) { lines[1] += "…"; break; } lines.push(w); } else lines[lines.length - 1] = cur ? cur + " " + w : w; }
+  return lines.map((l) => (l.length > max + 1 ? l.slice(0, max) + "…" : l));
+}
+function pvcChart(form, opts = {}) {
   const qs = form.questions.filter((q) => q.values.length).map((q) => ({ ...q, s: pvcStats(q.values) }));
   if (!qs.length) return `<p class="muted-text">Ni številčnih odgovorov.</p>`;
   const vmax = Math.max(...qs.map((q) => q.s.max)), vmin = Math.min(...qs.map((q) => q.s.min));
   const hi = vmax <= 5 ? 5 : vmax <= 10 ? 10 : Math.ceil(vmax), lo = Math.min(1, Math.floor(vmin));
-  const W = Math.max(320, qs.length * 64 + 48), H = 220, L = 34, R = 10, T = 12, B = 30, bw = (W - L - R) / qs.length;
+  const named = !!opts.named;
+  const W = Math.max(320, qs.length * (named ? 96 : 64) + 48), H = named ? 240 : 220, L = 34, R = 10, T = 12, B = named ? 46 : 30, bw = (W - L - R) / qs.length;
   const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
   const ticks = []; const step = hi - lo > 6 ? 2 : 1;
   for (let v = lo; v <= hi; v += step) ticks.push(`<line class="pvc-grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="pvc-tick" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`);
   const candles = qs.map((q, i) => {
     const cx = L + bw * i + bw / 2, w = Math.min(28, bw * 0.45), s = q.s;
-    const tip = `V${i + 1}: ${q.title}\nn = ${s.n} · povprečje ${pvcFmt(s.mean)} · mediana ${pvcFmt(s.med)}\nmin ${pvcFmt(s.min)} · Q1 ${pvcFmt(s.q1)} · Q3 ${pvcFmt(s.q3)} · max ${pvcFmt(s.max)}`;
+    const tip = `${named ? "" : `V${i + 1}: `}${q.title}\nn = ${s.n} · povprečje ${pvcFmt(s.mean)} · mediana ${pvcFmt(s.med)}\nmin ${pvcFmt(s.min)} · Q1 ${pvcFmt(s.q1)} · Q3 ${pvcFmt(s.q3)} · max ${pvcFmt(s.max)}`;
     return `<g class="pvc-candle" tabindex="0" data-tip="${esc(tip)}">
       <rect class="pvc-hit" x="${cx - bw / 2}" y="${T}" width="${bw}" height="${H - T - B}"/>
       <line class="pvc-whisker" x1="${cx}" x2="${cx}" y1="${y(s.max)}" y2="${y(s.min)}"/>
@@ -2547,12 +2554,12 @@ function pvcChart(form) {
       <rect class="pvc-box" x="${cx - w / 2}" y="${y(s.q3)}" width="${w}" height="${Math.max(2, y(s.q1) - y(s.q3))}" rx="4"/>
       <line class="pvc-median" x1="${cx - w / 2}" x2="${cx + w / 2}" y1="${y(s.med)}" y2="${y(s.med)}"/>
       <circle class="pvc-mean" cx="${cx}" cy="${y(s.mean)}" r="4"/>
-      <text class="pvc-x" x="${cx}" y="${H - 10}" text-anchor="middle">V${i + 1}</text>
+      ${named ? `<text class="pvc-x" x="${cx}" y="${H - B + 16}" text-anchor="middle">${pvcWrap(q.title).map((l, j) => `<tspan x="${cx}" dy="${j ? 13 : 0}">${esc(l)}</tspan>`).join("")}</text>` : `<text class="pvc-x" x="${cx}" y="${H - 10}" text-anchor="middle">V${i + 1}</text>`}
     </g>`;
   }).join("");
-  const table = `<details class="pvc-table"><summary>Tabela</summary><table><thead><tr><th>#</th><th>Vprašanje</th><th>n</th><th>min</th><th>Q1</th><th>mediana</th><th>Q3</th><th>max</th><th>povp.</th></tr></thead><tbody>${qs.map((q, i) => `<tr><td>V${i + 1}</td><td>${esc(q.title)}</td><td>${q.s.n}</td>${["min", "q1", "med", "q3", "max", "mean"].map((k) => `<td>${pvcFmt(q.s[k])}</td>`).join("")}</tr>`).join("")}</tbody></table></details>`;
+  const table = `<details class="pvc-table"><summary>Tabela</summary><table><thead><tr><th>#</th><th>Vprašanje</th><th>n</th><th>min</th><th>Q1</th><th>mediana</th><th>Q3</th><th>max</th><th>povp.</th></tr></thead><tbody>${qs.map((q, i) => `<tr><td>${named ? i + 1 : `V${i + 1}`}</td><td>${esc(q.title)}</td><td>${q.s.n}</td>${["min", "q1", "med", "q3", "max", "mean"].map((k) => `<td>${pvcFmt(q.s[k])}</td>`).join("")}</tr>`).join("")}</tbody></table></details>`;
   return `<div class="pvc-scroll"><svg class="pvc-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(form.title)}: porazdelitev odgovorov po vprašanjih">${ticks.join("")}${candles}</svg></div>
-    <ol class="pvc-legend">${qs.map((q, i) => `<li><span class="pvc-qn">V${i + 1}</span>${esc(q.title)} <span class="muted-text">· povp. ${pvcFmt(q.s.mean)} · n ${q.s.n}</span></li>`).join("")}</ol>${table}`;
+    <ol class="pvc-legend">${qs.map((q, i) => `<li>${named ? "" : `<span class="pvc-qn">V${i + 1}</span>`}${esc(q.title)} <span class="muted-text">· povp. ${pvcFmt(q.s.mean)} · n ${q.s.n}</span></li>`).join("")}</ol>${table}`;
 }
 async function renderPvCharts(force = false) {
   const box = $("#pvc-body");
@@ -2586,7 +2593,7 @@ async function renderPvCharts(force = false) {
   const temaName = (t) => t.replace(/^\d+\s*[_.-]?\s*/, "").replace(/^Preverba teme\s*/i, "");
   const block = (f, name) => `<section class="pvc-block"><h4>${esc(name)} <span class="muted-text">· ${f.responses} ${f.responses === 1 ? "odgovor" : f.responses === 2 ? "odgovora" : f.responses < 5 ? "odgovori" : "odgovorov"}</span></h4>${pvcChart(f)}</section>`;
   box.innerHTML = `<h3 class="pv-sub-h">Preverbe SVODa po dnevih</h3>${svod.length ? svod.map((f) => block(f, f.title)).join("") : `<p class="muted-text">Še ni odgovorov.</p>`}
-    <h3 class="pv-sub-h">Preverbe tem</h3>${teme.length ? teme.map((f) => block(f, temaName(f.title))).join("") : `<p class="muted-text">Še ni odgovorov.</p>`}`;
+    <h3 class="pv-sub-h">Preverbe tem</h3>${teme.length ? `<section class="pvc-block"><h4>Ocena teme po temah <span class="muted-text">· ${teme.reduce((a, f) => a + f.responses, 0)} odgovorov</span></h4>${pvcChart({ title: "Ocene tem", questions: teme.map((f) => ({ title: temaName(f.title), values: (f.questions.find((q) => /ocen/i.test(q.title)) || f.questions[0] || { values: [] }).values })) }, { named: true })}</section>` : `<p class="muted-text">Še ni odgovorov.</p>`}`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-pvc-reload]")) renderPvCharts(true); });
 // Hover / focus tooltip for candles
