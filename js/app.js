@@ -376,12 +376,12 @@ function setTab(name) {
     panel.hidden = panel.id !== `tab-${name}`;
   });
   if (name === "ekipa") ensureWorkloadChart();
-  const zb = /^zabava\/(wordle|stavnica)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null; // null = chooser
+  const zbm = /^zabava\/(wordle|stavnica)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   if (name === "zabava") {
     $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
     $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica";
-    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") renderStavnica();
+    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); }
     if (zb) window.scrollTo(0, 0);
   }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
@@ -1639,7 +1639,7 @@ function applyHash() {
   }
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno)$/.test(hash)) { setTab("preverbe"); return; }
-  if (/^zabava\/(wordle|stavnica)$/.test(hash)) { setTab("zabava"); return; }
+  if (/^zabava\/(wordle|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -2197,7 +2197,7 @@ async function renderOsDays() {
 }
 
 /* —— Zabava → Stavnica: fixed-odds bets with virtual zlatniki via Apps Script (apps-script/stavnica.gs) —— */
-const sv = { state: null, loading: false, open: null, error: "", media: undefined };
+const sv = { state: null, loading: false, open: null, error: "", media: undefined, view: "" }; // view: "" = Stave, "profil", or a question slug
 async function svCall(extra = {}) {
   const cfg = await wdConfig();
   if (!cfg?.scriptUrl) throw new Error("stavnica ni povezana");
@@ -2206,6 +2206,23 @@ async function svCall(extra = {}) {
   const res = await wdPost(cfg.scriptUrl, { type: "stavnica", action: "state", name: state.user?.name || "", ...extra }, credential);
   if (!res?.ok) throw new Error(res?.error || "napaka strežnika");
   return res;
+}
+const svSlug = (q) => uuSlug(q.id);
+const svLabel = (q, o) => q.type === "boolean" ? ({ yes: "Da", no: "Ne" }[String(o).toLowerCase()] || o) : o;
+const svOdds = (q) => q.odds || q.options.length;
+function svImg(q) { return q.image || (sv.media?.images || []).find((m) => new RegExp(m.match, "i").test(q.question))?.src || sv.media?.fallback || ""; }
+function svShare(q) {
+  const n = q.options.reduce((a, o) => a + (q.people?.[o] || 0), 0);
+  return { n, pct: (o) => (n ? Math.round(((q.people?.[o] || 0) / n) * 100) : 0) };
+}
+const svCount = (n) => `${n} ${n === 1 ? "stava" : n === 2 ? "stavi" : n < 5 ? "stave" : "stav"}`;
+function svRecent(list, withQuestion) {
+  const st = sv.state;
+  if (!list.length) return `<p class="muted-text">Še ni stav.</p>`;
+  return `<ul>${list.map((b) => {
+    const w = wdWho("", b.name), q = st.questions.find((x) => x.id === b.question);
+    return `<li>${w.av}<span class="sv-l-who" title="${esc(w.title)}">${esc(w.label)}</span>${withQuestion ? `<a class="sv-l-q" href="#zabava/stavnica/${q ? svSlug(q) : ""}">${esc(b.question)}</a>` : `<span class="sv-l-q"></span>`}<span class="sv-l-o">${esc(q ? svLabel(q, b.option) : b.option)} · ${b.amount} 🪙</span></li>`;
+  }).join("")}</ul>`;
 }
 async function renderStavnica(force = false) {
   const box = $("#stavnica");
@@ -2220,46 +2237,78 @@ async function renderStavnica(force = false) {
   }
   if (!sv.state) { box.innerHTML = `<div class="card sv-empty"><p>Stavnice ni bilo mogoče naložiti.</p><p class="muted-text">${esc(sv.error)}</p><button type="button" class="btn ghost" data-sv-reload>Poskusi znova</button></div>`; return; }
   const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
-  const label = (q, o) => q.type === "boolean" ? ({ yes: "Da", no: "Ne" }[o.toLowerCase()] || o) : o;
-  const odds = (q) => q.odds || q.options.length;
-  const img = (q) => q.image || (sv.media?.images || []).find((m) => new RegExp(m.match, "i").test(q.question))?.src || sv.media?.fallback || "";
-  const share = (q) => { const n = q.options.reduce((a, o) => a + (q.people?.[o] || 0), 0); return (o) => (n ? Math.round(((q.people?.[o] || 0) / n) * 100) : 0); };
-  const card = (q, i) => {
-    const open = sv.open?.q === i && !q.result;
-    const sel = open ? sv.open.o : null;
-    const pct = share(q), voters = Object.values(q.people || {}).reduce((a, b) => a + b, 0);
-    return `<article class="card sv-card${q.result ? " is-resolved" : ""}">
-      <div class="sv-card-head">${img(q) ? `<img class="sv-img" src="${esc(img(q))}" alt="" loading="lazy" width="48" height="48" />` : ""}<h3 class="sv-q">${esc(q.question)}</h3>${q.options.length ? `<span class="sv-odds" title="Zmagovalna stava se povrne ${odds(q)}-krat">×${odds(q)}</span>` : ""}</div>
-      ${q.result ? `<p class="sv-meta"><strong class="sv-res">Zaprto · rezultat: ${esc(label(q, q.result))}</strong></p>` : ""}
+  const qi = st.questions.findIndex((q) => svSlug(q) === sv.view);
+  const tab = sv.view === "profil" ? "profil" : "stave";
+  const tabs = `<div class="pv-ftabs" role="tablist" aria-label="Stavnica">
+      <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica" aria-selected="${tab === "stave"}">Stave</a>
+      <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/profil" aria-selected="${tab === "profil"}">Profil <span class="sv-tab-bal">🪙 ${me.balance}</span></a>
+    </div>`;
+  let body;
+  if (tab === "profil") body = svProfile(st, me);
+  else if (qi >= 0) body = svDetail(st, me, qi);
+  else body = svList(st);
+  box.innerHTML = `<div class="pv-folder">${tabs}<div class="pv-fpanel sv-panel">${body}</div></div>`;
+  svUpdatePayout();
+}
+function svList(st) {
+  const card = (q) => {
+    const sh = svShare(q);
+    return `<a class="card sv-card sv-card-link${q.result ? " is-resolved" : ""}" href="#zabava/stavnica/${svSlug(q)}">
+      <div class="sv-card-head">${svImg(q) ? `<img class="sv-img" src="${esc(svImg(q))}" alt="" loading="lazy" width="48" height="48" />` : ""}<h3 class="sv-q">${esc(q.question)}</h3>${q.options.length ? `<span class="sv-odds">×${svOdds(q)}</span>` : ""}</div>
+      ${q.options.length ? `<div class="sv-mini" style="--n:${q.options.length}">${q.options.map((o) => `<span class="sv-mini-opt${q.result === o ? " is-win" : ""}"><span>${esc(svLabel(q, o))}</span><strong>${sh.pct(o)} %</strong><i style="width:${sh.pct(o)}%"></i></span>`).join("")}</div>` : ""}
+      <p class="sv-foot muted-text">${q.result ? `<strong class="sv-res">Zaprto · ${esc(svLabel(q, q.result))}</strong> · ` : ""}${!q.options.length ? "Možnosti še niso določene." : sh.n ? svCount(sh.n) : "Še nihče ni stavil"}<span class="sv-go">Odpri ›</span></p>
+    </a>`;
+  };
+  return `${st.questions.length ? st.questions.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p></div>`}
+    <section class="card sv-list"><h3>Zadnje stave</h3>${svRecent(st.recent.slice(0, 25), true)}</section>
+    ${sv.media?.images?.length ? `<p class="sv-credits muted-text">Slike: ${sv.media.images.map((m) => `<a href="${esc(m.source)}" target="_blank" rel="noopener">${esc(m.credit)}</a>`).join(" · ")} (Wikimedia Commons)</p>` : ""}`;
+}
+function svDetail(st, me, i) {
+  const q = st.questions[i], sh = svShare(q);
+  const sel = sv.open?.q === i && !q.result ? sv.open.o : null;
+  return `<p class="person-back sv-back"><a href="#zabava/stavnica">← Vse stave</a></p>
+    <article class="sv-detail">
+      <header class="sv-detail-head">${svImg(q) ? `<img class="sv-detail-img" src="${esc(svImg(q))}" alt="" width="96" height="96" />` : ""}
+        <div><h2 class="sv-q">${esc(q.question)}</h2>
+        <p class="muted-text sv-detail-meta">${q.options.length ? `<span class="sv-odds">×${svOdds(q)}</span> zadetek vrne ${svOdds(q)}-kratni vložek · ` : ""}${sh.n ? svCount(sh.n) : "še brez stav"}</p></div></header>
+      ${q.result ? `<p class="sv-meta"><strong class="sv-res">Zaprto · rezultat: ${esc(svLabel(q, q.result))}</strong></p>` : ""}
       ${q.options.length ? `<div class="sv-opts" style="--n:${q.options.length}">${q.options.map((o) => `<button type="button" class="sv-opt${o === sel ? " is-sel" : ""}${q.result === o ? " is-win" : ""}" data-sv-q="${i}" data-sv-o="${esc(o)}"${q.result ? " disabled" : ""}>
-          <span class="sv-opt-label">${esc(label(q, o))}</span><span class="sv-pct">${pct(o)} %</span><span class="sv-meter" style="width:${pct(o)}%"></span></button>`).join("")}</div>
-      <p class="sv-foot muted-text">${voters ? `${voters} ${voters === 1 ? "stava" : voters === 2 ? "stavi" : voters < 5 ? "stave" : "stav"} · odstotek = delež ljudi na možnosti` : "Še nihče ni stavil"}</p>`
+          <span class="sv-opt-label">${esc(svLabel(q, o))}</span><span class="sv-pct">${sh.pct(o)} %</span><span class="sv-meter" style="width:${sh.pct(o)}%"></span></button>`).join("")}</div>
+        <p class="sv-foot muted-text">${q.result ? "Stave so zaprte." : "Izberi možnost za stavo · odstotek = delež ljudi na možnosti"}</p>`
       : `<p class="sv-foot muted-text">Možnosti še niso določene.</p>`}
-      ${open ? `<form class="sv-bet" data-sv-q="${i}" data-sv-o="${esc(sel)}">
-        <p class="sv-bet-title">Stava: <strong>${esc(label(q, sel))}</strong></p>
+      ${sel ? `<form class="sv-bet" data-sv-q="${i}" data-sv-o="${esc(sel)}">
+        <p class="sv-bet-title">Stava: <strong>${esc(svLabel(q, sel))}</strong> <span class="muted-text">· stanje 🪙 ${me.balance}</span></p>
         <div class="sv-chips">${[1, 2, 5].filter((n) => n < me.balance).map((n) => `<button type="button" class="sv-chip" data-sv-amt="${n}">${n}</button>`).join("")}${me.balance ? `<button type="button" class="sv-chip" data-sv-amt="${me.balance}">Vse</button>` : ""}</div>
         <div class="sv-bet-row"><input type="number" name="amount" min="1" max="${me.balance}" step="1" value="${Math.min(1, me.balance)}" inputmode="numeric" aria-label="Vložek v zlatnikih" />
           <button type="submit" class="btn primary"${me.balance ? "" : " disabled"}>Stavi</button><button type="button" class="btn ghost sv-cancel" data-sv-cancel>Prekliči</button></div>
         <p class="sv-payout muted-text" data-sv-payout></p>
         <p class="sv-status" role="status" aria-live="polite"></p>
       </form>` : ""}
-    </article>`;
+    </article>
+    <section class="card sv-list"><h3>Zadnje stave na to vprašanje</h3>${svRecent(st.recent.filter((b) => b.question === q.id), false)}</section>`;
+}
+function svProfile(st, me) {
+  const open = me.bets.filter((b) => b.payout === null), done = me.bets.filter((b) => b.payout !== null);
+  const pending = open.reduce((a, b) => a + b.amount * (b.odds || 1), 0);
+  const row = (b) => {
+    const q = st.questions.find((x) => x.id === b.question);
+    return `<li><a class="sv-l-q" href="#zabava/stavnica/${q ? svSlug(q) : ""}">${esc(b.question)}</a><span class="sv-l-o">${esc(q ? svLabel(q, b.option) : b.option)} · ${b.amount} 🪙</span><span class="sv-l-p${b.payout ? " is-win" : ""}">${b.payout === null ? `→ ${b.amount * (b.odds || 1)}?` : b.payout ? `+${b.payout}` : "0"}</span></li>`;
   };
-  const who = (b) => wdWho("", b.name);
-  const optLabel = (b) => { const q = st.questions.find((x) => x.id === b.question); return q ? label(q, b.option) : b.option; };
-  box.innerHTML = `<div class="sv-top card"><div><span class="sv-bal-label">Tvoje stanje</span><strong class="sv-bal">🪙 ${me.balance} <small>zlatnikov</small></strong></div>
+  return `<div class="sv-top card"><div><span class="sv-bal-label">Tvoje stanje</span><strong class="sv-bal">🪙 ${me.balance} <small>zlatnikov</small></strong></div>
       <button type="button" class="btn ghost sv-refresh" data-sv-reload>Osveži</button></div>
+    <div class="sv-stats">
+      <div class="card"><span class="muted-text">Začetno</span><strong>${st.budget}</strong></div>
+      <div class="card"><span class="muted-text">Vloženo</span><strong>${me.staked ?? me.bets.reduce((a, b) => a + b.amount, 0)}</strong></div>
+      <div class="card"><span class="muted-text">Priigrano</span><strong>${me.won ?? done.reduce((a, b) => a + (b.payout || 0), 0)}</strong></div>
+      <div class="card"><span class="muted-text">Možen dobitek</span><strong>${pending}</strong></div>
+    </div>
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
-    ${st.questions.length ? st.questions.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p></div>`}
-    ${me.bets.length ? `<section class="card sv-list"><h3>Moje stave</h3><ul>${me.bets.map((b) => `<li><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 🪙</span><span class="sv-l-p${b.payout ? " is-win" : ""}">${b.payout === null ? `→ ${b.amount * (b.odds || 1)}?` : b.payout ? `+${b.payout}` : "0"}</span></li>`).join("")}</ul></section>` : ""}
-    ${sv.media?.images?.length ? `<p class="sv-credits muted-text">Slike: ${sv.media.images.map((m) => `<a href="${esc(m.source)}" target="_blank" rel="noopener">${esc(m.credit)}</a>`).join(" · ")} (Wikimedia Commons)</p>` : ""}
-    ${st.recent.length ? `<section class="card sv-list"><h3>Zadnje stave</h3><ul>${st.recent.map((b) => { const w = who(b); return `<li>${w.av}<span class="sv-l-who" title="${esc(w.title)}">${esc(w.label)}</span><span class="sv-l-q">${esc(b.question)}</span><span class="sv-l-o">${esc(optLabel(b))} · ${b.amount} 🪙</span></li>`; }).join("")}</ul></section>` : ""}`;
-  svUpdatePayout();
+    <section class="card sv-list"><h3>Moje stave</h3>${me.bets.length ? `<ul>${[...open, ...done].map(row).join("")}</ul>` : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
 }
 function svUpdatePayout() {
   const f = $("#stavnica form.sv-bet"), q = f && sv.state?.questions[f.dataset.svQ];
   if (!q) return;
-  const amt = Math.max(0, Math.floor(Number(f.amount.value) || 0)), n = q.odds || q.options.length;
+  const amt = Math.max(0, Math.floor(Number(f.amount.value) || 0)), n = svOdds(q);
   $("[data-sv-payout]", f).textContent = amt ? `Če zadeneš, dobiš ${amt * n} zlatnikov (×${n}).` : "";
 }
 document.addEventListener("click", (e) => {
@@ -2269,6 +2318,7 @@ document.addEventListener("click", (e) => {
   else if (chip) { const f = chip.closest("form"); f.amount.value = chip.dataset.svAmt; svUpdatePayout(); }
   else if (e.target.closest("[data-sv-cancel]")) { sv.open = null; renderStavnica(); }
   else if (e.target.closest("[data-sv-reload]")) renderStavnica(true);
+  else if (e.target.closest("a[href^='#zabava/stavnica']")) sv.open = null;
 });
 document.addEventListener("input", (e) => { if (e.target.closest("#stavnica form.sv-bet")) svUpdatePayout(); });
 document.addEventListener("submit", async (e) => {
@@ -2281,6 +2331,7 @@ document.addEventListener("submit", async (e) => {
   try {
     sv.state = await svCall({ action: "bet", question: q.id, option: f.dataset.svO, amount });
     sv.open = null; renderStavnica();
+    const ok = $("#stavnica .sv-foot"); if (ok) { ok.textContent = `Stava sprejeta: ${amount} 🪙 na »${svLabel(q, f.dataset.svO)}«.`; ok.classList.add("is-ok"); }
   } catch (err) { status.className = "sv-status is-err"; status.textContent = `Stava ni uspela (${err.message || err}).`; btn.disabled = false; }
 });
 /* —— Preverbe: Teme = today's tema feedback forms (embedded Google Forms), Generalno = 3 free-text forms → Apps Script → Preverbe/Vprašanja sheets —— */
@@ -2288,7 +2339,7 @@ let pvData;
 async function renderPreverbe(sub = "teme") {
   const teme = $("#pv-teme"), gen = $("#pv-generalno");
   if (!teme) return;
-  $$(".pv-tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.pvTab === sub)));
+  $$("#tab-preverbe .pv-tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.pvTab === sub)));
   teme.hidden = sub !== "teme"; gen.hidden = sub !== "generalno";
   if (pvData === undefined) {
     try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; }

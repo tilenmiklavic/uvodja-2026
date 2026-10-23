@@ -95,6 +95,6 @@ function stavnicaState_(ss, me) {
     if (payout) won += payout;
     return { ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout };
   });
-  const recent = bets.slice(-25).reverse().map((b) => ({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, name: b.name }));
+  const recent = bets.slice(-200).reverse().map((b) => ({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, name: b.name }));
   return { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won, staked: staked, won: won, bets: mine.reverse() } };
 }
