@@ -399,7 +399,7 @@ function setTab(name) {
   closeNavMore();
   const hash = location.hash.replace(/^#/, "");
   logVisit(blocked ? "noaccess" : (/^(oseba|tema)-/.test(hash) ? hash.split("-")[0] : name));
-  if (name === "analitika") renderVisits();
+  if (name === "analitika") { renderVisits(); renderPvCharts(); }
   if (name === "preverbe") renderPreverbe(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "uu") renderUU(/^uu\/(.+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
@@ -2521,6 +2521,90 @@ async function renderOcene(force = false) {
   }).join("")}</ol>` : `<p class="muted-text">Še ni končanih tem z ocenami.</p>`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-ocene-reload]")) renderOcene(true); });
+/* —— Analitika → candle (box-plot) charts per Preverba SVODa day and per tema with feedback (Apps Script type "analitika", admin only) —— */
+const pvc = { data: null, at: 0, loading: false, error: null };
+function pvcStats(v) {
+  const a = [...v].sort((x, y) => x - y), q = (p) => { const i = (a.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i); return a[lo] + (a[hi] - a[lo]) * (i - lo); };
+  return { n: a.length, min: a[0], q1: q(0.25), med: q(0.5), q3: q(0.75), max: a[a.length - 1], mean: a.reduce((s, x) => s + x, 0) / a.length };
+}
+const pvcFmt = (x) => (Math.round(x * 100) / 100).toLocaleString("sl-SI");
+function pvcChart(form) {
+  const qs = form.questions.filter((q) => q.values.length).map((q) => ({ ...q, s: pvcStats(q.values) }));
+  if (!qs.length) return `<p class="muted-text">Ni številčnih odgovorov.</p>`;
+  const vmax = Math.max(...qs.map((q) => q.s.max)), vmin = Math.min(...qs.map((q) => q.s.min));
+  const hi = vmax <= 5 ? 5 : vmax <= 10 ? 10 : Math.ceil(vmax), lo = Math.min(1, Math.floor(vmin));
+  const W = Math.max(320, qs.length * 64 + 48), H = 220, L = 34, R = 10, T = 12, B = 30, bw = (W - L - R) / qs.length;
+  const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+  const ticks = []; const step = hi - lo > 6 ? 2 : 1;
+  for (let v = lo; v <= hi; v += step) ticks.push(`<line class="pvc-grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="pvc-tick" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`);
+  const candles = qs.map((q, i) => {
+    const cx = L + bw * i + bw / 2, w = Math.min(28, bw * 0.45), s = q.s;
+    const tip = `V${i + 1}: ${q.title}\nn = ${s.n} · povprečje ${pvcFmt(s.mean)} · mediana ${pvcFmt(s.med)}\nmin ${pvcFmt(s.min)} · Q1 ${pvcFmt(s.q1)} · Q3 ${pvcFmt(s.q3)} · max ${pvcFmt(s.max)}`;
+    return `<g class="pvc-candle" tabindex="0" data-tip="${esc(tip)}">
+      <rect class="pvc-hit" x="${cx - bw / 2}" y="${T}" width="${bw}" height="${H - T - B}"/>
+      <line class="pvc-whisker" x1="${cx}" x2="${cx}" y1="${y(s.max)}" y2="${y(s.min)}"/>
+      <line class="pvc-whisker" x1="${cx - w / 4}" x2="${cx + w / 4}" y1="${y(s.max)}" y2="${y(s.max)}"/><line class="pvc-whisker" x1="${cx - w / 4}" x2="${cx + w / 4}" y1="${y(s.min)}" y2="${y(s.min)}"/>
+      <rect class="pvc-box" x="${cx - w / 2}" y="${y(s.q3)}" width="${w}" height="${Math.max(2, y(s.q1) - y(s.q3))}" rx="4"/>
+      <line class="pvc-median" x1="${cx - w / 2}" x2="${cx + w / 2}" y1="${y(s.med)}" y2="${y(s.med)}"/>
+      <circle class="pvc-mean" cx="${cx}" cy="${y(s.mean)}" r="4"/>
+      <text class="pvc-x" x="${cx}" y="${H - 10}" text-anchor="middle">V${i + 1}</text>
+    </g>`;
+  }).join("");
+  const table = `<details class="pvc-table"><summary>Tabela</summary><table><thead><tr><th>#</th><th>Vprašanje</th><th>n</th><th>min</th><th>Q1</th><th>mediana</th><th>Q3</th><th>max</th><th>povp.</th></tr></thead><tbody>${qs.map((q, i) => `<tr><td>V${i + 1}</td><td>${esc(q.title)}</td><td>${q.s.n}</td>${["min", "q1", "med", "q3", "max", "mean"].map((k) => `<td>${pvcFmt(q.s[k])}</td>`).join("")}</tr>`).join("")}</tbody></table></details>`;
+  return `<div class="pvc-scroll"><svg class="pvc-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(form.title)}: porazdelitev odgovorov po vprašanjih">${ticks.join("")}${candles}</svg></div>
+    <ol class="pvc-legend">${qs.map((q, i) => `<li><span class="pvc-qn">V${i + 1}</span>${esc(q.title)} <span class="muted-text">· povp. ${pvcFmt(q.s.mean)} · n ${q.s.n}</span></li>`).join("")}</ol>${table}`;
+}
+async function renderPvCharts(force = false) {
+  const box = $("#pvc-body");
+  if (!box || !canSee("analitika")) return;
+  if (!pvc.data || force || Date.now() - pvc.at > 10 * 60000) {
+    if (pvc.loading) return;
+    pvc.loading = true;
+    try {
+      if (pvData === undefined) { try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; } }
+      const cfg = await wdConfig();
+      if (!cfg?.scriptUrl) throw Object.assign(new Error("config"), { kind: "config" });
+      const credential = await wdFreshToken();
+      if (!credential) throw Object.assign(new Error("auth"), { kind: "auth" });
+      const res = await wdPost(cfg.scriptUrl, { type: "analitika" }, credential);
+      if (!res?.ok) throw Object.assign(new Error(res?.error || "napaka"), { kind: /prijava/i.test(res?.error) ? "auth" : /dostop/i.test(res?.error) ? "denied" : "server" });
+      pvc.data = res; pvc.at = Date.now(); pvc.error = null;
+    } catch (err) { pvc.error = err; }
+    pvc.loading = false;
+  }
+  if (!pvc.data) {
+    const e = pvc.error, k = e?.kind;
+    const msg = { auth: "Prijava je potekla – osveži prijavo v meniju.", denied: "Grafe vidi le admin.", offline: "Ni internetne povezave.", network: "Strežnik ni dosegljiv (slaba povezava?).", timeout: "Strežnik se ni odzval.", config: "Strežnik ni nastavljen." }[k]
+      || (/bad_date|invalid|unknown/i.test(e?.message || "") ? "Strežnik še ne pozna teh grafov (Apps Script ni posodobljen)." : `Grafov ni bilo mogoče naložiti (${e?.message || "napaka"}).`);
+    box.innerHTML = `<p class="muted-text">${esc(msg)}</p><button type="button" class="btn ghost" data-pvc-reload>Poskusi znova</button>`;
+    return;
+  }
+  const forms = pvc.data.forms || [];
+  const dateOf = (f) => (pvData?.svodForms || []).find((x) => x.formId === f.id)?.date || f.title;
+  const svod = forms.filter((f) => f.group === "svod" && f.responses).sort((a, b) => dateOf(a).localeCompare(dateOf(b)));
+  const teme = forms.filter((f) => f.group === "teme" && f.responses).sort((a, b) => (parseInt(a.title, 10) || 99) - (parseInt(b.title, 10) || 99) || a.title.localeCompare(b.title));
+  const temaName = (t) => t.replace(/^\d+\s*[_.-]?\s*/, "").replace(/^Preverba teme\s*/i, "");
+  const block = (f, name) => `<section class="pvc-block"><h4>${esc(name)} <span class="muted-text">· ${f.responses} ${f.responses === 1 ? "odgovor" : f.responses === 2 ? "odgovora" : f.responses < 5 ? "odgovori" : "odgovorov"}</span></h4>${pvcChart(f)}</section>`;
+  box.innerHTML = `<h3 class="pv-sub-h">Preverbe SVODa po dnevih</h3>${svod.length ? svod.map((f) => block(f, f.title)).join("") : `<p class="muted-text">Še ni odgovorov.</p>`}
+    <h3 class="pv-sub-h">Preverbe tem</h3>${teme.length ? teme.map((f) => block(f, temaName(f.title))).join("") : `<p class="muted-text">Še ni odgovorov.</p>`}`;
+}
+document.addEventListener("click", (e) => { if (e.target.closest("[data-pvc-reload]")) renderPvCharts(true); });
+// Hover / focus tooltip for candles
+(() => {
+  let tip;
+  const show = (g, x, y) => {
+    tip ||= Object.assign(document.createElement("div"), { className: "pvc-tip", role: "tooltip" });
+    if (!tip.isConnected) document.body.appendChild(tip);
+    tip.textContent = g.dataset.tip; tip.hidden = false;
+    const r = tip.getBoundingClientRect();
+    tip.style.left = `${Math.min(window.innerWidth - r.width - 8, Math.max(8, x - r.width / 2))}px`;
+    tip.style.top = `${Math.max(8, y - r.height - 12)}px`;
+  };
+  const hide = () => { if (tip) tip.hidden = true; };
+  document.addEventListener("pointermove", (e) => { const g = e.target.closest?.(".pvc-candle"); if (g) show(g, e.clientX, e.clientY); else hide(); });
+  document.addEventListener("focusin", (e) => { const g = e.target.closest?.(".pvc-candle"); if (g) { const r = g.getBoundingClientRect(); show(g, r.left + r.width / 2, r.top); } });
+  document.addEventListener("focusout", hide);
+})();
 /* —— Preverbe: Teme = today's tema feedback forms (embedded Google Forms), Generalno = 3 free-text forms → Apps Script → Preverbe/Vprašanja sheets —— */
 let pvData;
 /* Tabs per role: UU → Teme + Generalno, SVOD → Preverba SVODa, admin → all three (follows the admin "Pogled kot" switch) */
