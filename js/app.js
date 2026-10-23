@@ -2216,13 +2216,35 @@ function svShare(q) {
   return { n, pct: (o) => (n ? Math.round(((q.people?.[o] || 0) / n) * 100) : 0) };
 }
 const svCount = (n) => `${n} ${n === 1 ? "stava" : n === 2 ? "stavi" : n < 5 ? "stave" : "stav"}`;
+function svAgo(ts) {
+  const m = Math.round((Date.now() - ts) / 60000);
+  if (!ts || !Number.isFinite(m)) return "";
+  if (m < 1) return "pravkar";
+  if (m < 60) return `pred ${m} min`;
+  if (m < 1440) return `pred ${Math.round(m / 60)} h`;
+  return new Date(ts).toLocaleDateString("sl-SI", { day: "numeric", month: "numeric" });
+}
+/* One bet: who/when + question, then Izbira · Vložek · Dobitek (potential while open, won/lost once resolved) */
+function svBetRow(b, { who = true, question = true } = {}) {
+  const q = sv.state.questions.find((x) => x.id === b.question);
+  const odds = b.odds || (q ? svOdds(q) : 1), pot = b.amount * odds;
+  const resolved = q?.result ? (b.option === q.result ? "won" : "lost") : null;
+  const w = who ? wdWho("", b.name) : null;
+  const out = resolved === "won" ? `<strong class="is-win">+${b.payout ?? pot} 🪙</strong><small>zadel</small>`
+    : resolved === "lost" ? `<strong class="is-lost">0 🪙</strong><small>ni zadel</small>`
+    : `<strong>${pot} 🪙</strong><small>če zadene · ×${odds}</small>`;
+  return `<li class="sv-bet-item${resolved ? ` is-${resolved}` : ""}">
+    <div class="sv-bi-top${w ? " has-who" : ""}">${w ? `${w.av}<span class="sv-bi-who" title="${esc(w.title)}">${esc(w.label)}</span>` : ""}${question && q ? `<a class="sv-bi-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : question ? `<span class="sv-bi-q">${esc(b.question)}</span>` : ""}<span class="sv-bi-time muted-text">${esc(svAgo(b.ts))}</span></div>
+    <div class="sv-bi-facts">
+      <span class="sv-fact sv-fact-pick"><small>Izbira</small><strong>${esc(q ? svLabel(q, b.option) : b.option)}</strong></span>
+      <span class="sv-fact"><small>Vložek</small><strong>${b.amount} 🪙</strong></span>
+      <span class="sv-fact sv-fact-out"><small>Dobitek</small>${out}</span>
+    </div>
+  </li>`;
+}
 function svRecent(list, withQuestion) {
-  const st = sv.state;
   if (!list.length) return `<p class="muted-text">Še ni stav.</p>`;
-  return `<ul>${list.map((b) => {
-    const w = wdWho("", b.name), q = st.questions.find((x) => x.id === b.question);
-    return `<li>${w.av}<span class="sv-l-who" title="${esc(w.title)}">${esc(w.label)}</span>${withQuestion ? `<a class="sv-l-q" href="#zabava/stavnica/${q ? svSlug(q) : ""}">${esc(b.question)}</a>` : `<span class="sv-l-q"></span>`}<span class="sv-l-o">${esc(q ? svLabel(q, b.option) : b.option)} · ${b.amount} 🪙</span></li>`;
-  }).join("")}</ul>`;
+  return `<ul class="sv-bets">${list.map((b) => svBetRow(b, { who: true, question: withQuestion })).join("")}</ul>`;
 }
 async function renderStavnica(force = false) {
   const box = $("#stavnica");
@@ -2290,10 +2312,7 @@ function svDetail(st, me, i) {
 function svProfile(st, me) {
   const open = me.bets.filter((b) => b.payout === null), done = me.bets.filter((b) => b.payout !== null);
   const pending = open.reduce((a, b) => a + b.amount * (b.odds || 1), 0);
-  const row = (b) => {
-    const q = st.questions.find((x) => x.id === b.question);
-    return `<li><a class="sv-l-q" href="#zabava/stavnica/${q ? svSlug(q) : ""}">${esc(b.question)}</a><span class="sv-l-o">${esc(q ? svLabel(q, b.option) : b.option)} · ${b.amount} 🪙</span><span class="sv-l-p${b.payout ? " is-win" : ""}">${b.payout === null ? `→ ${b.amount * (b.odds || 1)}?` : b.payout ? `+${b.payout}` : "0"}</span></li>`;
-  };
+
   return `<div class="sv-top card"><div><span class="sv-bal-label">Tvoje stanje</span><strong class="sv-bal">🪙 ${me.balance} <small>zlatnikov</small></strong></div>
       <button type="button" class="btn ghost sv-refresh" data-sv-reload>Osveži</button></div>
     <div class="sv-stats">
@@ -2303,7 +2322,7 @@ function svProfile(st, me) {
       <div class="card"><span class="muted-text">Možen dobitek</span><strong>${pending}</strong></div>
     </div>
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
-    <section class="card sv-list"><h3>Moje stave</h3>${me.bets.length ? `<ul>${[...open, ...done].map(row).join("")}</ul>` : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
+    <section class="card sv-list"><h3>Moje stave</h3>${me.bets.length ? `<ul class="sv-bets">${[...open, ...done].map((b) => svBetRow(b, { who: false })).join("")}</ul>` : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
 }
 function svUpdatePayout() {
   const f = $("#stavnica form.sv-bet"), q = f && sv.state?.questions[f.dataset.svQ];
