@@ -1496,3 +1496,26 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .sv-l-o { flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sv-l-p { flex: none; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 .sv-l-p.is-win { color: var(--band-green); font-weight: 800; }
+
+/* —— Preverbe: folder tabs, the active tab flows into its panel —— */
+.pv-folder { --pv-bg: rgba(255,255,255,0.07); }
+.pv-ftabs { display: flex; }
+.pv-ftab.pv-tab { /* override the pill look of .pv-tab */
+  position: relative; flex: 1 1 0; display: grid; place-items: center; min-height: 50px; padding: 0 1rem;
+  background: rgba(0,0,0,0.22); color: var(--ink-muted); font-weight: 700; text-decoration: none;
+  border: 1px solid var(--line); border-radius: var(--radius) var(--radius) 0 0;
+}
+.pv-ftab + .pv-ftab { margin-left: -1px; }
+.pv-ftab.pv-tab:hover { color: #fff; background: rgba(255,255,255,0.04); }
+.pv-ftab.pv-tab[aria-selected="true"] {
+  z-index: 1; background: var(--pv-bg); color: var(--gold-soft); border-bottom-color: transparent;
+  box-shadow: inset 0 3px 0 var(--gold);
+}
+.pv-fpanel {
+  background: var(--pv-bg); border: 1px solid var(--line); border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius); padding: 1.1rem; box-shadow: var(--shadow);
+}
+/* inner cards sit inside the panel: lighter, no extra shadow */
+.pv-fpanel .card { background: rgba(255,255,255,0.04); box-shadow: none; }
+.pv-fpanel .pv-gen:last-child, .pv-fpanel .pv-form:last-child, .pv-fpanel .pv-empty { margin-bottom: 0; }
+@media (max-width: 700px) { .pv-fpanel { padding: .8rem; } }
