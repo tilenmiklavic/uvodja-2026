@@ -330,6 +330,15 @@ function applyAuth() {
   document.body.classList.toggle("auth-locked", !u);
   $("#auth-gate").hidden = !!u;
   $$(".tab[data-tab]").forEach((b) => { b.hidden = !!u && !state.allowed.has(b.dataset.tab); });
+  // Mobile bar shows Časovnica + UU; roles that can see neither (UU participants) get Preverbe + Zabava there instead of in ≡
+  const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
+  const promote = u && !["casovnica", "uu"].some((x) => state.allowed.has(x));
+  ["zabava", "preverbe"].forEach((x) => {
+    const b = $(`.tab[data-tab="${x}"]`, nav);
+    if (!b) return;
+    if (promote) { if (b.parentElement !== nav) nav.insertBefore(b, x === "zabava" ? toggle : $('.tab[data-tab="zabava"]', nav) || toggle); }
+    else if (b.parentElement !== more) more.insertBefore(b, x === "zabava" ? $('.tab[data-tab="analitika"]', more) : $('.tab[data-tab="zabava"]', more));
+  });
   $$("[data-tab-link]").forEach((a) => { if (a.dataset.tabLink !== "domov") a.hidden = !!u && !state.allowed.has(a.dataset.tabLink); });
   const nu = $("#nav-user"), ar = $("#account-row");
   const nw = $("#noaccess-who");
