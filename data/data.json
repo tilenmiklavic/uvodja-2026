@@ -24,7 +24,7 @@
       "programId": "10xDmjgoYQrPWPA_PTVzpI-o4Hxot0_urdb5xK4rtjx4",
       "folderId": "166EnwAANG6DbhPG8EwAfIYS7jc3rgz6i"
     },
-    "generatedAt": "2026-10-22",
+    "generatedAt": "2026-10-23",
     "matchStats": {
       "matched": 19,
       "unmatched_program": 9,
@@ -379,8 +379,8 @@
           "end": "17:00",
           "kind": "program",
           "trainers": [
-            "Jakob G",
-            "Jakob S"
+            "Jakob S",
+            "Nejka"
           ],
           "matchedProgram": true,
           "programKey": "razsežnost združenja",
@@ -2274,8 +2274,8 @@
         "Canvas model: trener mora res razumeti strukturo."
       ],
       "trainers": [
-        "Jakob G.",
-        "Jakob S."
+        "Jakob S.",
+        "Nejka"
       ],
       "mikronacrt": {
         "status": "exists",
@@ -3340,22 +3340,6 @@
       "slug": "jakob-gostisa",
       "roles": [
         {
-          "type": "tema",
-          "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend1-petek-razseznost-zdruzenja-2h-1500",
-          "dayId": "vikend1-petek",
-          "dayLabel": "Petek, 23. 10. 2026",
-          "date": "2026-10-23",
-          "start": "15:00",
-          "end": "17:00",
-          "title": "Razsežnost Združenja",
-          "category": "tema",
-          "programKey": "razsežnost združenja",
-          "sortKey": "2026-10-23-15:00",
-          "href": "#sid-vikend1-petek-razseznost-zdruzenja-2h-1500",
-          "label": "15:00–17:00 · Razsežnost Združenja"
-        },
-        {
           "type": "activity",
           "typeLabel": "Odgovorni za aktivnost",
           "sessionId": "vikend1-petek-os-2000",
@@ -3697,8 +3681,8 @@
         }
       ],
       "counts": {
-        "total": 16,
-        "teme": 6,
+        "total": 15,
+        "teme": 5,
         "timekeeper": 1,
         "zadolzitve": 5,
         "zadolzitvePre": 3,
@@ -4187,6 +4171,22 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za temo",
+          "sessionId": "vikend1-petek-razseznost-zdruzenja-2h-1500",
+          "dayId": "vikend1-petek",
+          "dayLabel": "Petek, 23. 10. 2026",
+          "date": "2026-10-23",
+          "start": "15:00",
+          "end": "17:00",
+          "title": "Razsežnost Združenja",
+          "category": "tema",
+          "programKey": "razsežnost združenja",
+          "sortKey": "2026-10-23-15:00",
+          "href": "#sid-vikend1-petek-razseznost-zdruzenja-2h-1500",
+          "label": "15:00–17:00 · Razsežnost Združenja"
+        },
+        {
+          "type": "tema",
+          "typeLabel": "Odgovorni za temo",
           "sessionId": "vikend1-sobota-skavtska-pot-1-5-0900",
           "dayId": "vikend1-sobota",
           "dayLabel": "Sobota, 24. 10. 2026",
@@ -4345,8 +4345,8 @@
         }
       ],
       "counts": {
-        "total": 9,
-        "teme": 4,
+        "total": 10,
+        "teme": 5,
         "timekeeper": 1,
         "zadolzitve": 4,
         "zadolzitvePre": 3,
@@ -5662,14 +5662,14 @@
       ],
       "odgovorni": [
         {
-          "name": "Jakob Gostiša",
-          "slug": "jakob-gostisa",
-          "shortName": "Jakob G."
-        },
-        {
           "name": "Jakob Stele",
           "slug": "jakob-stele",
           "shortName": "Jakob S."
+        },
+        {
+          "name": "Nejka Miklavič",
+          "slug": "nejka-miklavic",
+          "shortName": "Nejka"
         }
       ],
       "mikronacrt": {
@@ -5695,8 +5695,8 @@
           "title": "Razsežnost Združenja",
           "href": "#sid-vikend1-petek-razseznost-zdruzenja-2h-1500",
           "trainers": [
-            "Jakob G",
-            "Jakob S"
+            "Jakob S",
+            "Nejka"
           ]
         }
       ],
