@@ -2281,19 +2281,21 @@ async function renderStavnica(force = false) {
   if (!sv.state) { box.innerHTML = `<div class="card sv-empty"><p>Stavnice ni bilo mogoče naložiti.</p><p class="muted-text">${esc(sv.error)}</p><button type="button" class="btn ghost" data-sv-reload>Poskusi znova</button></div>`; return; }
   const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
   const qi = st.questions.findIndex((q) => svSlug(q) === sv.view);
-  const tab = sv.view === "profil" ? "profil" : "stave";
+  const tab = sv.view === "profil" || sv.view === "pretekle" ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
   const tabs = `<div class="pv-ftabs" role="tablist" aria-label="Stavnica">
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica" aria-selected="${tab === "stave"}">Stave</a>
+      <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/pretekle" aria-selected="${tab === "pretekle"}">Pretekle stave</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/profil" aria-selected="${tab === "profil"}">Profil <span class="sv-tab-bal">🪙 ${me.balance}</span></a>
     </div>`;
   let body;
   if (tab === "profil") body = svProfile(st, me);
   else if (qi >= 0) body = svDetail(st, me, qi);
-  else body = svList(st);
+  else body = svList(st, tab === "pretekle");
   box.innerHTML = `<div class="pv-folder">${tabs}<div class="pv-fpanel sv-panel">${body}</div></div>`;
   svUpdatePayout();
 }
-function svList(st) {
+/* past = resolved bets ("Pretekle stave"); otherwise open ones. Zadnje stave only on the open list */
+function svList(st, past = false) {
   const card = (q) => {
     const sh = svShare(q);
     return `<a class="card sv-card sv-card-link${q.result ? " is-resolved" : ""}" href="#zabava/stavnica/${svSlug(q)}">
@@ -2302,14 +2304,16 @@ function svList(st) {
       <p class="sv-foot muted-text">${q.result ? `<strong class="sv-res">Zaprto · ${esc(svLabel(q, q.result))}</strong> · ` : ""}${!q.options.length ? "Možnosti še niso določene." : sh.n ? svCount(sh.n) : "Še nihče ni stavil"}<span class="sv-go">Odpri ›</span></p>
     </a>`;
   };
-  return `${st.questions.length ? st.questions.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p></div>`}
+  const qs = st.questions.filter((q) => !!q.result === past);
+  if (past) return qs.length ? qs.map(card).join("") : `<div class="card sv-empty"><p>Še ni razrešenih stav.</p><p class="muted-text">Ko je vprašanje razrešeno, se preseli sem.</p></div>`;
+  return `${qs.length ? qs.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p><p class="muted-text">Razrešene stave so pod <a href="#zabava/stavnica/pretekle">Pretekle stave</a>.</p></div>`}
     <section class="sv-list"><h3>Zadnje stave</h3>${svRecent(st.recent.slice(0, 25), true)}</section>
     ${sv.media?.images?.some((m) => m.source) ? `<p class="sv-credits muted-text">Slike: ${sv.media.images.filter((m) => m.source).map((m) => `<a href="${esc(m.source)}" target="_blank" rel="noopener">${esc(m.credit)}</a>`).join(" · ")} (Wikimedia Commons)</p>` : ""}`;
 }
 function svDetail(st, me, i) {
   const q = st.questions[i], sh = svShare(q);
   const sel = sv.open?.q === i && !q.result ? sv.open.o : null;
-  return `<p class="person-back sv-back"><a href="#zabava/stavnica">← Vse stave</a></p>
+  return `<p class="person-back sv-back">${q.result ? `<a href="#zabava/stavnica/pretekle">← Pretekle stave</a>` : `<a href="#zabava/stavnica">← Vse stave</a>`}</p>
     <article class="sv-detail">
       <header class="sv-detail-head">${svImg(q) ? `<img class="sv-detail-img" src="${esc(svImg(q))}" alt="" width="96" height="96" />` : ""}
         <div><h2 class="sv-q">${esc(q.question)}</h2>

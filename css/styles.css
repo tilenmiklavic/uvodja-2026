@@ -1592,3 +1592,4 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .role-badge { display: inline-block; margin-left: .4rem; padding: .05rem .4rem; border-radius: 999px; font-size: .62rem; font-weight: 800; letter-spacing: .05em; vertical-align: middle; line-height: 1.4; border: 1px solid var(--line); color: var(--ink-muted); background: rgba(255,255,255,.05); }
 .role-badge.role-admin { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
 .role-badge.role-svod { background: rgba(250,204,21,.14); border-color: rgba(250,204,21,.45); color: var(--gold-soft); }
+@media (max-width: 480px) { .pv-ftab.pv-tab { padding: 0 .45rem; font-size: .88rem; } .sv-tab-bal { margin-left: .25rem; } }
