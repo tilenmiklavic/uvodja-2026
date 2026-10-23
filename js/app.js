@@ -376,12 +376,13 @@ function setTab(name) {
     panel.hidden = panel.id !== `tab-${name}`;
   });
   if (name === "ekipa") ensureWorkloadChart();
-  const zb = /^zabava\/(stavnica)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "wordle";
+  const zb = /^zabava\/(wordle|stavnica)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   if (name === "zabava") {
-    $$("[data-zb-tab]").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.zbTab === zb)));
+    $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
     $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica";
-    if (zb === "wordle") renderWordle(); else renderStavnica();
+    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") renderStavnica();
+    if (zb) window.scrollTo(0, 0);
   }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
   closeNavMore();

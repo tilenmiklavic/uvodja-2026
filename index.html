@@ -270,12 +270,11 @@
       </div>
     </section>
     <section id="tab-zabava" class="tab-panel" hidden>
-      <div class="pv-head zb-head">
-        <div class="pv-tabs" role="tablist" aria-label="Zabava">
-          <a role="tab" class="pv-tab" href="#zabava/wordle" data-zb-tab="wordle" aria-selected="true">Wordle</a>
-          <a role="tab" class="pv-tab" href="#zabava/stavnica" data-zb-tab="stavnica" aria-selected="false">Stavnica</a>
-        </div>
-      </div>
+      <nav class="zb-pick" id="zb-pick" aria-label="Zabava">
+        <a class="zb-choice" href="#zabava/wordle"><img src="assets/zabava/wordle.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Wordle</span></a>
+        <a class="zb-choice" href="#zabava/stavnica"><img src="assets/zabava/stavnica.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Piratska stavnica</span></a>
+      </nav>
+      <p class="person-back zb-back" id="zb-back" hidden><a href="#zabava">← Nazaj na Zabavo</a></p>
       <div class="stavnica" id="stavnica" hidden></div>
       <div class="wordle" id="wordle">
         <div class="wd-head">

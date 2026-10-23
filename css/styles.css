@@ -1446,7 +1446,17 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .pv-status.is-err { color: var(--warn); }
 
 /* —— Zabava: Wordle / Stavnica —— */
-.zb-head { margin-bottom: 1rem; }
+/* Zabava chooser: two big image buttons */
+.zb-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; max-width: 980px; margin: .5rem auto 0; }
+@media (max-width: 700px) { .zb-pick { grid-template-columns: 1fr; gap: .9rem; } }
+.zb-pick[hidden] { display: none; }
+.zb-choice { display: flex; flex-direction: column; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--card); box-shadow: var(--shadow); text-decoration: none; color: var(--ink); transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.zb-choice img { display: block; width: 100%; height: auto; aspect-ratio: 5 / 2; object-fit: contain; background: #fff; }
+.zb-choice-label { display: flex; align-items: center; justify-content: space-between; padding: .8rem 1.1rem; font-weight: 800; font-size: 1.05rem; }
+.zb-choice-label::after { content: "›"; font-size: 1.5rem; line-height: 1; color: var(--gold-soft); }
+.zb-choice:hover, .zb-choice:focus-visible { transform: translateY(-2px); border-color: var(--gold); box-shadow: 0 10px 28px rgba(0,0,0,.45); }
+.zb-choice:hover .zb-choice-label { color: var(--gold-soft); }
+.zb-back { margin: 0 0 .8rem; }
 .stavnica { max-width: 720px; margin: 0 auto; }
 .sv-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1.2rem; margin-bottom: .5rem; }
 .sv-bal-label { display: block; font-size: .78rem; color: var(--ink-muted); }
