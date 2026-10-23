@@ -386,7 +386,7 @@ function setTab(name) {
   $$(".tab-panel").forEach((panel) => {
     panel.hidden = panel.id !== `tab-${name}`;
   });
-  if (name === "ekipa") ensureWorkloadChart();
+  if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
   const zbm = /^zabava\/(wordle|stavnica)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   if (name === "zabava") {
@@ -2464,6 +2464,63 @@ document.addEventListener("submit", async (e) => {
     status.className = "sv-status is-err"; status.textContent = `Stava ni uspela (${why}).`; btn.disabled = false;
   }
 });
+/* —— Ekipa → Lestvica ocen tem: tema grades (Apps Script type "ocene", SVOD/admin only) × facilitators (data.temas.odgovorni) —— */
+const ocene = { data: null, at: 0, loading: false, error: null };
+async function renderOcene(force = false) {
+  const box = $("#ocene-body");
+  if (!box || !canSee("ekipa")) return;
+  if (!ocene.data || force || Date.now() - ocene.at > 10 * 60000) {
+    if (ocene.loading) return;
+    ocene.loading = true;
+    if (!ocene.data) box.innerHTML = `<p class="muted-text">Nalagam ocene …</p>`;
+    try {
+      if (pvData === undefined) { try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; } }
+      const cfg = await wdConfig();
+      if (!cfg?.scriptUrl) throw Object.assign(new Error("config"), { kind: "config" });
+      const credential = await wdFreshToken();
+      if (!credential) throw Object.assign(new Error("auth"), { kind: "auth" });
+      const res = await wdPost(cfg.scriptUrl, { type: "ocene" }, credential);
+      if (!res?.ok) throw Object.assign(new Error(res?.error || "napaka"), { kind: /prijava/i.test(res?.error) ? "auth" : /dostop/i.test(res?.error) ? "denied" : "server" });
+      ocene.data = res; ocene.at = Date.now(); ocene.error = null;
+    } catch (err) { ocene.error = err; }
+    ocene.loading = false;
+  }
+  if (!ocene.data) {
+    const e = ocene.error, k = e?.kind;
+    const msg = { auth: "Prijava je potekla – osveži prijavo v meniju.", denied: "Ocene vidijo le SVOD in admin.", offline: "Ni internetne povezave.", network: "Strežnik ni dosegljiv (slaba povezava?).", timeout: "Strežnik se ni odzval.", config: "Strežnik ni nastavljen." }[k]
+      || (/unknown|neznan|doGet|Wordle|bad_date/i.test(e?.message || "") ? "Strežnik še ne pozna lestvice ocen (Apps Script ni posodobljen)." : `Ocen ni bilo mogoče naložiti (${e?.message || "napaka"}).`);
+    box.innerHTML = `<p class="muted-text">${esc(msg)}</p><button type="button" class="btn ghost" data-ocene-reload>Poskusi znova</button>`;
+    return;
+  }
+  const tabs = ocene.data.tabs || [], temas = state.data?.temas || {}, people = state.data?.people || {};
+  const now = ljNow(), nowKey = `${now.date} ${now.label}`;
+  const tabFor = (f, i) => tabs.find((t) => t.name === f.responsesTab) || tabs.find((t) => parseInt(t.name, 10) === i + 1);
+  const done = (pvData?.temaForms || []).map((f, i) => {
+    const t = temas[f.tema], tab = tabFor(f, i);
+    const last = (t?.occurrences || []).map((o) => `${o.date} ${o.end}`).sort().pop();
+    return t && tab?.n && last && last <= nowKey ? { slug: f.tema, title: t.title, tab, who: t.odgovorni || [] } : null;
+  }).filter(Boolean);
+  const agg = {};
+  done.forEach((d) => d.who.forEach((w) => {
+    const a = (agg[w.slug] ||= { slug: w.slug, name: w.name, sum: 0, n: 0, temas: [] });
+    a.sum += d.tab.sum; a.n += d.tab.n; a.temas.push(d);
+  }));
+  const rows = Object.values(agg).map((a) => ({ ...a, avg: a.sum / a.n })).sort((a, b) => b.avg - a.avg || b.n - a.n);
+  const fmt = (x) => x.toFixed(2).replace(".", ",");
+  // Shared rank for equal averages (co-facilitators of the same tema): 1, 1, 3, 3 …
+  rows.forEach((r, i) => { r.rank = i && Math.abs(r.avg - rows[i - 1].avg) < 1e-9 ? rows[i - 1].rank : i + 1; });
+  box.innerHTML = rows.length ? `<ol class="ocene-list">${rows.map((r) => {
+    const p = people[r.slug] || { name: r.name };
+    const rank = ["🥇", "🥈", "🥉"][r.rank - 1] || `${r.rank}.`;
+    return `<li class="ocene-row">
+      <span class="ocene-rank">${rank}</span>${avatarHtml(p, "avatar-sm")}
+      <div class="ocene-main"><a class="ocene-name" href="#oseba-${esc(r.slug)}">${esc(displayName(p))}</a>
+        <span class="ocene-temas">${r.temas.map((d) => `<span class="ocene-chip" title="${d.tab.n} ocen">${esc(d.title)} <strong>${fmt(d.tab.avg)}</strong></span>`).join("")}</span></div>
+      <div class="ocene-score"><strong>★ ${fmt(r.avg)}</strong><small>${r.temas.length} ${r.temas.length === 1 ? "tema" : r.temas.length === 2 ? "temi" : r.temas.length < 5 ? "teme" : "tem"} · ${r.n} ocen</small></div>
+    </li>`;
+  }).join("")}</ol>` : `<p class="muted-text">Še ni končanih tem z ocenami.</p>`;
+}
+document.addEventListener("click", (e) => { if (e.target.closest("[data-ocene-reload]")) renderOcene(true); });
 /* —— Preverbe: Teme = today's tema feedback forms (embedded Google Forms), Generalno = 3 free-text forms → Apps Script → Preverbe/Vprašanja sheets —— */
 let pvData;
 async function renderPreverbe(sub = "teme") {

@@ -1613,3 +1613,19 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .sv-error.is-auth .sv-err-title { color: #ff8a8d; }
 .sv-err-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
 .sv-err-actions .btn { flex: none; }
+
+/* —— Ekipa: Lestvica ocen tem —— */
+.ocene-card { margin-bottom: 1.25rem; }
+.ocene-note { font-size: .85rem; margin: -.2rem 0 .8rem; }
+.ocene-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.ocene-row { display: flex; align-items: center; gap: .65rem; padding: .55rem .75rem; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); }
+.ocene-rank { flex: none; width: 1.8rem; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ocene-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .25rem; }
+.ocene-name { font-weight: 800; color: var(--ink); text-decoration: none; }
+.ocene-name:hover { color: var(--gold-soft); text-decoration: underline; }
+.ocene-temas { display: flex; flex-wrap: wrap; gap: .3rem; }
+.ocene-chip { font-size: .72rem; padding: .1rem .45rem; border-radius: 999px; background: rgba(0,0,0,.22); color: var(--ink-muted); white-space: nowrap; }
+.ocene-chip strong { color: var(--gold-soft); font-variant-numeric: tabular-nums; }
+.ocene-score { flex: none; display: flex; flex-direction: column; align-items: flex-end; }
+.ocene-score strong { font-size: 1.15rem; color: var(--gold-soft); font-variant-numeric: tabular-nums; }
+.ocene-score small { font-size: .7rem; color: var(--ink-muted); white-space: nowrap; }

@@ -1,14 +1,41 @@
 {
-  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja.",
+  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka).",
   "fetched": "2026-10-22",
   "temaForms": [
-    { "tema": "jaz-vodja", "title": "Preverba teme Jaz, vodja", "formId": "1wF-ucZ_nCa0-7-lunrzo9i8uAQr3NKyc1hDyVPyby6U" },
-    { "tema": "razseznost-zdruzenja", "title": "Preverba teme Razsežnost Združenja", "formId": "1pWNNGkVRpdDYk_bnpGyiGgBlmCExXrCYHdUTw1u1htM" },
-    { "tema": "katolisko-skavtstvo", "title": "Preverba teme Katoliško skavtstvo", "formId": "1NYBFYRRLFRpsJA4subkf0tU-s6NDT6MJsb4OrjWiWHo" }
+    {
+      "tema": "jaz-vodja",
+      "title": "Preverba teme Jaz, vodja",
+      "formId": "1wF-ucZ_nCa0-7-lunrzo9i8uAQr3NKyc1hDyVPyby6U",
+      "responsesTab": "1 Jaz Vodja"
+    },
+    {
+      "tema": "razseznost-zdruzenja",
+      "title": "Preverba teme Razsežnost Združenja",
+      "formId": "1pWNNGkVRpdDYk_bnpGyiGgBlmCExXrCYHdUTw1u1htM",
+      "responsesTab": "2 Razsežnost"
+    },
+    {
+      "tema": "katolisko-skavtstvo",
+      "title": "Preverba teme Katoliško skavtstvo",
+      "formId": "1NYBFYRRLFRpsJA4subkf0tU-s6NDT6MJsb4OrjWiWHo",
+      "responsesTab": "3_Katoliska Duh"
+    }
   ],
   "general": [
-    { "key": "vprasanja", "label": "Vprašanja", "hint": "Vprašanje za SVOD o vsebini, programu ali organizaciji." },
-    { "key": "io", "label": "Vprašanja za IO", "hint": "Vprašanje za Izvršni odbor (IO)." },
-    { "key": "feedback", "label": "Feedback", "hint": "Odziv, pohvala ali predlog." }
+    {
+      "key": "vprasanja",
+      "label": "Vprašanja",
+      "hint": "Vprašanje za SVOD o vsebini, programu ali organizaciji."
+    },
+    {
+      "key": "io",
+      "label": "Vprašanja za IO",
+      "hint": "Vprašanje za Izvršni odbor (IO)."
+    },
+    {
+      "key": "feedback",
+      "label": "Feedback",
+      "hint": "Odziv, pohvala ali predlog."
+    }
   ]
 }
