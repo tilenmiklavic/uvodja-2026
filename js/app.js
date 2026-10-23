@@ -2270,12 +2270,12 @@ function svRecent(list, withQuestion) {
 async function renderStavnica(force = false) {
   const box = $("#stavnica");
   if (!box) return;
-  if (!sv.state || force) {
+  if (!sv.state || force || Date.now() - (sv.fetchedAt || 0) > SV_REFRESH_MS) {
     if (sv.loading) return;
     sv.loading = true;
     if (!sv.state) box.innerHTML = `<p class="muted-text">Nalagam stavnico …</p>`;
     if (sv.media === undefined) { try { const r = await fetch("data/stavnica.json", { cache: "no-store" }); sv.media = r.ok ? await r.json() : null; } catch { sv.media = null; } }
-    try { sv.state = await svCall(); sv.error = ""; } catch (err) { sv.error = err.message || String(err); }
+    try { sv.state = await svCall(); sv.error = ""; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err.message || String(err); }
     sv.loading = false;
   }
   if (!sv.state) { box.innerHTML = `<div class="card sv-empty"><p>Stavnice ni bilo mogoče naložiti.</p><p class="muted-text">${esc(sv.error)}</p><button type="button" class="btn ghost" data-sv-reload>Poskusi znova</button></div>`; return; }
@@ -2349,6 +2349,20 @@ function svProfile(st, me) {
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
     <section class="sv-list"><h3>Moje stave</h3>${me.bets.length ? `<ul class="sv-bets">${[...open, ...done].map((b) => svBetRow(b, { who: false })).join("")}</ul>` : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
 }
+/* Hourly background check (and on return to the tab after >1 h): re-render only if bets changed and no bet slip is open */
+const SV_REFRESH_MS = 60 * 60 * 1000;
+async function svBackgroundRefresh() {
+  if (!sv.state || sv.loading || Date.now() - (sv.fetchedAt || 0) < SV_REFRESH_MS - 5000) return;
+  if (currentTab !== "zabava" || $("#stavnica")?.hidden || document.hidden) return;
+  let next;
+  try { next = await svCall(); } catch { return; }
+  const sig = (x) => JSON.stringify([x.questions, x.recent, x.me]);
+  const changed = sig(next) !== sig(sv.state);
+  sv.state = next; sv.fetchedAt = Date.now();
+  if (changed && !$("#stavnica form.sv-bet")) renderStavnica();
+}
+setInterval(svBackgroundRefresh, 5 * 60 * 1000); // cheap check; actual fetch at most once per hour
+document.addEventListener("visibilitychange", () => { if (!document.hidden) svBackgroundRefresh(); });
 function svUpdatePayout() {
   const f = $("#stavnica form.sv-bet"), q = f && sv.state?.questions[f.dataset.svQ];
   if (!q) return;
