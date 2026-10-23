@@ -1684,3 +1684,13 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .vq-card { padding: .85rem 1rem; display: flex; flex-direction: column; gap: .5rem; }
 .vq-card p { margin: 0; line-height: 1.45; overflow-wrap: anywhere; }
 .vq-card time { font-size: .75rem; margin-top: auto; }
+.vq-bar { display: flex; align-items: center; justify-content: space-between; gap: .4rem 1rem; flex-wrap: wrap; margin-bottom: .2rem; }
+.vq-bar .vq-sum { margin: 0; }
+.vq-err { margin: .2rem 0 0; color: var(--warn); font-size: .85rem; min-height: 1em; }
+.vq-group[hidden], .vq-card[hidden] { display: none; }
+.vq-card { position: relative; padding-right: 3.2rem; }
+.vq-check { position: absolute; top: .65rem; right: .65rem; width: 2rem; height: 2rem; border-radius: 50%; border: 2px solid var(--line); background: transparent; color: transparent; font-weight: 900; font-size: 1rem; line-height: 1; cursor: pointer; display: grid; place-items: center; transition: background .15s, border-color .15s, color .15s; }
+.vq-check:hover { border-color: #3fbf5f; color: rgba(63,191,95,.6); }
+.vq-check[aria-pressed="true"] { background: #3fbf5f; border-color: #3fbf5f; color: #0b1520; }
+.vq-card.is-done { opacity: .55; }
+.vq-card.is-done p { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.35); }

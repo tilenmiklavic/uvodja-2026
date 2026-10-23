@@ -2586,12 +2586,46 @@ async function renderVprasanja(force = false) {
   const tabs = (vq.data.tabs || []).filter((t) => t.items?.length)
     .sort((a, b) => (parseInt(a.name, 10) || 99) - (parseInt(b.name, 10) || 99));
   const total = tabs.reduce((a, t) => a + t.items.length, 0);
+  const done = vq.data.done || {}, isDone = (x) => !!(x.id && done[x.id]);
+  const nDone = tabs.reduce((a, t) => a + t.items.filter(isDone).length, 0);
+  let hide = false; try { hide = localStorage.getItem("uvodja.vq.hideDone") === "1"; } catch {}
   const cnt = (n) => `${n} ${n === 1 ? "vprašanje" : n === 2 ? "vprašanji" : n < 5 ? "vprašanja" : "vprašanj"}`;
-  box.innerHTML = tabs.length ? `<p class="muted-text vq-sum">${cnt(total)} iz ${tabs.length} ${tabs.length === 1 ? "teme" : "tem"} · <button type="button" class="link-btn" data-vq-reload>Osveži</button></p>` + tabs.map((t) => `<section class="vq-group">
-      <h3 class="pv-sub-h">${esc(temaOf(t))} <span class="vq-count">${t.items.length}</span></h3>
-      <div class="vq-grid">${[...t.items].sort((a, b) => (b.ts || 0) - (a.ts || 0)).map((x) => `<article class="card vq-card"><p>${esc(x.text).replace(/\n/g, "<br>")}</p>${x.ts ? `<time class="muted-text">${esc(when(x.ts))}</time>` : ""}</article>`).join("")}</div>
-    </section>`).join("") : `<p class="muted-text">Še ni vprašanj.</p>`;
+  const card = (x) => `<article class="card vq-card${isDone(x) ? " is-done" : ""}"${hide && isDone(x) ? " hidden" : ""}>
+      ${x.id ? `<button type="button" class="vq-check" data-vq-id="${esc(x.id)}" aria-pressed="${isDone(x)}" title="${isDone(x) ? "Odgovorjeno – klikni za razveljavitev" : "Označi kot odgovorjeno"}" aria-label="Odgovorjeno">✓</button>` : ""}
+      <p>${esc(x.text).replace(/\n/g, "<br>")}</p>${x.ts ? `<time class="muted-text">${esc(when(x.ts))}</time>` : ""}</article>`;
+  box.innerHTML = tabs.length ? `<div class="vq-bar"><p class="muted-text vq-sum"><strong>${nDone}</strong> od ${cnt(total)} odgovorjenih · ${tabs.length} ${tabs.length === 1 ? "tema" : tabs.length === 2 ? "temi" : tabs.length < 5 ? "teme" : "tem"} · <button type="button" class="link-btn" data-vq-reload>Osveži</button></p>
+      <label class="pv-anon vq-hide"><input type="checkbox" data-vq-hide${hide ? " checked" : ""} /> Skrij odgovorjene</label></div>
+      <p class="vq-err" role="status" aria-live="polite"></p>` + tabs.map((t) => {
+        const open = t.items.filter((x) => !isDone(x)).length;
+        return `<section class="vq-group"${hide && !open ? " hidden" : ""}>
+      <h3 class="pv-sub-h">${esc(temaOf(t))} <span class="vq-count" title="neodgovorjena / vsa">${open} / ${t.items.length}</span></h3>
+      <div class="vq-grid">${[...t.items].sort((a, b) => isDone(a) - isDone(b) || (b.ts || 0) - (a.ts || 0)).map(card).join("")}</div>
+    </section>`; }).join("") : `<p class="muted-text">Še ni vprašanj.</p>`;
 }
+/* Tick a question as answered (optimistic; shared via Apps Script) */
+async function vqMark(id, on) {
+  vq.data.done = { ...(vq.data.done || {}) };
+  if (on) vq.data.done[id] = Date.now(); else delete vq.data.done[id];
+  renderVprasanja();
+  try {
+    const cfg = await wdConfig(), credential = await wdFreshToken();
+    if (!credential) throw Object.assign(new Error("auth"), { kind: "auth" });
+    const res = await wdPost(cfg.scriptUrl, { type: "vprasanja", action: "mark", id, done: on }, credential);
+    if (!res?.ok) throw new Error(res?.error || "napaka");
+    vq.data.done = res.done || vq.data.done;
+  } catch (err) {
+    if (on) delete vq.data.done[id]; else vq.data.done[id] = Date.now();
+    renderVprasanja();
+    const m = $("#vq-body .vq-err");
+    if (m) m.textContent = `Oznake ni bilo mogoče shraniti (${{ auth: "prijava je potekla", offline: "ni povezave", network: "strežnik ni dosegljiv", timeout: "strežnik se ni odzval" }[err.kind] || err.message}).`;
+  }
+}
+document.addEventListener("click", (e) => { const b = e.target.closest("[data-vq-id]"); if (b) vqMark(b.dataset.vqId, b.getAttribute("aria-pressed") !== "true"); });
+document.addEventListener("change", (e) => {
+  if (!e.target.matches?.("[data-vq-hide]")) return;
+  try { localStorage.setItem("uvodja.vq.hideDone", e.target.checked ? "1" : "0"); } catch {}
+  renderVprasanja();
+});
 document.addEventListener("click", (e) => { if (e.target.closest("[data-vq-reload]")) renderVprasanja(true); });
 /* Teme: ★ badge on list cards + "Ocena teme" card on a tema's page (SVOD/admin, same data as the leaderboard) */
 async function decorateTemeScores() {
