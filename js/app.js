@@ -2299,7 +2299,7 @@ function svList(st) {
   };
   return `${st.questions.length ? st.questions.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p></div>`}
     <section class="sv-list"><h3>Zadnje stave</h3>${svRecent(st.recent.slice(0, 25), true)}</section>
-    ${sv.media?.images?.length ? `<p class="sv-credits muted-text">Slike: ${sv.media.images.map((m) => `<a href="${esc(m.source)}" target="_blank" rel="noopener">${esc(m.credit)}</a>`).join(" · ")} (Wikimedia Commons)</p>` : ""}`;
+    ${sv.media?.images?.some((m) => m.source) ? `<p class="sv-credits muted-text">Slike: ${sv.media.images.filter((m) => m.source).map((m) => `<a href="${esc(m.source)}" target="_blank" rel="noopener">${esc(m.credit)}</a>`).join(" · ")} (Wikimedia Commons)</p>` : ""}`;
 }
 function svDetail(st, me, i) {
   const q = st.questions[i], sh = svShare(q);
