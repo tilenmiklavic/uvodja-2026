@@ -353,16 +353,18 @@ function applyAuth() {
   nu.hidden = false;
   const own = person && state.allowed.has("ekipa")
     ? `<a class="user-menu-item" href="#oseba-${esc(person.slug)}" data-user-close>Moja stran</a>` : "";
-  nu.innerHTML = `<button type="button" class="user-btn" id="user-btn" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu" title="${esc(u.name)} · ${esc(u.email)}">${av}<span class="nav-user-name">${esc(u.name)}</span></button>
+  nu.innerHTML = `<button type="button" class="user-btn" id="user-btn" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu" title="${esc(u.name)} · ${esc(u.email)}"><span class="tok-wrap">${av}<i class="tok-dot is-${tokState()}"></i></span><span class="nav-user-name">${esc(u.name)}</span></button>
     <div class="user-menu" id="user-menu" hidden>
       <p class="user-menu-name">${esc(u.name)}</p><p class="user-menu-email">${esc(u.email)}</p>
       ${roleOf(u.email) === "admin" ? `<div class="sim-switch" role="group" aria-label="Pogled kot"><span class="sim-label">Pogled kot</span>${SIM_ROLES.map((r) =>
         `<button type="button" class="sim-opt" data-sim-role="${r}" aria-pressed="${effectiveRole(u.email) === r}">${r.toUpperCase()}</button>`).join("")}</div>` : ""}
+      <div class="tok-box"><p class="tok-line" id="tok-line"></p><button type="button" class="user-menu-item" id="tok-refresh" data-tok-refresh>Osveži prijavo</button><div id="tok-gsi" class="tok-gsi"></div></div>
       ${own}<button type="button" class="user-menu-item user-signout" data-signout>Odjava</button>
     </div>`;
   ar.hidden = false;
   const who = person && state.allowed.has("ekipa")
     ? `<a href="#oseba-${esc(person.slug)}">${esc(u.name)}</a>` : esc(u.name);
+  setTimeout(tokRender, 0);
   ar.innerHTML = `${av}<span>Prijavljen/a kot <strong>${who}</strong> <span class="muted-text">(${esc(u.email)})</span></span><button type="button" class="btn ghost" data-signout>Odjava</button>`;
 }
 
@@ -1929,22 +1931,58 @@ const WD_QUEUE = "uvodja.wordle.queue";
 function wdQueue() { try { return JSON.parse(localStorage.getItem(WD_QUEUE)) || []; } catch { return []; } }
 function wdSetQueue(q) { try { localStorage.setItem(WD_QUEUE, JSON.stringify(q)); } catch {} }
 /* Fresh ID token: stored one if valid ≥2 min, else GIS silent prompt (One Tap/auto-select) up to 15 s */
-async function wdFreshToken() {
-  const u = state.user;
-  if (u?.credential && u.credExp > Date.now() + 120000) return u.credential;
-  const g = window.google?.accounts?.id;
-  if (!g) return null;
-  if (!state.gsiReady) { initGsi(); }
-  return new Promise((resolve) => {
-    const t = setTimeout(() => resolve(null), 15000);
-    (state.tokenWaiters ||= []).push((c) => { clearTimeout(t); resolve(c); });
-    try { g.prompt(); } catch { clearTimeout(t); resolve(null); }
-  });
-}
+async function wdFreshToken() { return silentToken(15000); }
+/* POST to Apps Script with a time limit; errors carry a kind for user-facing messages */
+const SCRIPT_TIMEOUT_MS = 25000;
 async function wdPost(url, item, credential) {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...item, credential }) });
-  return r.json();
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), SCRIPT_TIMEOUT_MS);
+  let r;
+  try { r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...item, credential }), signal: ctl.signal }); }
+  catch (err) { throw Object.assign(new Error(err.name === "AbortError" ? "timeout" : "network"), { kind: err.name === "AbortError" ? "timeout" : navigator.onLine === false ? "offline" : "network" }); }
+  finally { clearTimeout(t); }
+  try { return await r.json(); } catch { throw Object.assign(new Error(`HTTP ${r.status}`), { kind: "server" }); }
 }
+
+/* —— Google sign-in token status: navbar dot, menu line, background refresh —— */
+function tokState() {
+  const u = state.user;
+  if (!u) return "none";
+  if (tokenRefreshP && !state.tokenFailed && !(u.credExp > Date.now() + 120000)) return "busy";
+  return u.credential && u.credExp > Date.now() + 60000 ? "ok" : "bad";
+}
+function tokRender() {
+  const st = tokState(), u = state.user;
+  const label = { ok: "Prijava velja", busy: "Osvežujem prijavo …", bad: "Prijava je potekla", none: "" }[st];
+  $$(".tok-dot").forEach((d) => { d.className = `tok-dot is-${st}`; d.title = label; });
+  const line = $("#tok-line");
+  if (line) {
+    const min = u?.credExp ? Math.max(0, Math.round((u.credExp - Date.now()) / 60000)) : 0;
+    line.className = `tok-line is-${st}`;
+    line.innerHTML = `<i class="tok-dot is-${st}"></i>${st === "ok" ? `Prijava velja še ${min} min` : esc(label)}${state.tokenFailed && st === "bad" ? `<span class="muted-text"> – samodejna osvežitev ni uspela</span>` : ""}`;
+  }
+  const g = $("#tok-gsi");
+  if (g && st === "bad" && state.tokenFailed && !g.childElementCount && window.google?.accounts?.id) {
+    window.google.accounts.id.renderButton(g, { theme: "filled_black", size: "medium", shape: "pill", text: "signin_with", locale: "sl" });
+  }
+  if (g && st === "ok") g.innerHTML = "";
+}
+async function tokRefreshNow() {
+  const b = $("#tok-refresh");
+  if (b) { b.disabled = true; b.textContent = "Osvežujem …"; }
+  const c = await silentToken(12000, true);
+  if (b) { b.disabled = false; b.textContent = "Osveži prijavo"; }
+  tokRender();
+  return c;
+}
+document.addEventListener("click", (e) => { if (e.target.closest("[data-tok-refresh]")) { e.preventDefault(); tokRefreshNow().then((c) => { if (c && !$("#stavnica")?.hidden) renderStavnica(true); }); } });
+// Renew in the background ~5 min before expiry (and when the tab becomes visible); repaint the dot every 30 s
+function tokMaintain() {
+  const u = state.user;
+  if (u && !document.hidden && !(u.credExp > Date.now() + 5 * 60000)) silentToken(10000);
+  tokRender();
+}
+setInterval(tokMaintain, 30000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) tokMaintain(); });
 async function wdSubmit(item) {
   const cfg = await wdConfig();
   if (!cfg?.scriptUrl || !state.user) return;
@@ -2084,14 +2122,19 @@ function checkVisitAdmin(u) {
 const visitLast = {};
 /* Silent ID-token refresh (GIS auto_select prompt; no login modal). Shared promise; resolves token or null after ms. */
 let tokenRefreshP = null;
-function silentToken(ms = 5000) {
+function silentToken(ms = 5000, force = false) {
   const u = state.user;
   if (!u) return Promise.resolve(null);
-  if (u.credential && u.credExp > Date.now() + 120000) return Promise.resolve(u.credential);
-  if (tokenRefreshP) return tokenRefreshP;
+  if (!force && u.credential && u.credExp > Date.now() + 120000) return Promise.resolve(u.credential);
+  if (tokenRefreshP && !force) return tokenRefreshP;
+  state.tokenFailed = false; tokRender();
   tokenRefreshP = new Promise((resolve) => {
     let done = false;
-    const fin = (c) => { if (done) return; done = true; clearTimeout(t); resolve(c || null); setTimeout(() => { tokenRefreshP = null; }, c ? 0 : 60000); };
+    const fin = (c) => {
+      if (done) return; done = true; clearTimeout(t); resolve(c || null);
+      state.tokenFailed = !c; tokRender();
+      setTimeout(() => { tokenRefreshP = null; }, c || force ? 0 : 60000);
+    };
     const t = setTimeout(() => fin(null), ms);
     (state.tokenWaiters ||= []).push(fin);
     const go = (n = 0) => {
@@ -2219,14 +2262,32 @@ async function renderOsDays() {
 
 /* —— Zabava → Stavnica: fixed-odds bets with virtual zlatniki via Apps Script (apps-script/stavnica.gs) —— */
 const sv = { state: null, loading: false, open: null, error: "", media: undefined, view: "" }; // view: "" = Stave, "profil", or a question slug
-async function svCall(extra = {}) {
+async function svCall(extra = {}, onStage = () => {}) {
+  const err = (kind, msg) => Object.assign(new Error(msg || kind), { kind });
+  if (navigator.onLine === false) throw err("offline");
   const cfg = await wdConfig();
-  if (!cfg?.scriptUrl) throw new Error("stavnica ni povezana");
+  if (!cfg?.scriptUrl) throw err("config");
+  onStage("auth");
   const credential = await wdFreshToken();
-  if (!credential) throw new Error("prijava je potekla – osveži stran");
+  if (!credential) throw err("auth");
+  onStage("load");
   const res = await wdPost(cfg.scriptUrl, { type: "stavnica", action: "state", name: state.user?.name || "", ...extra }, credential);
-  if (!res?.ok) throw new Error(res?.error || "napaka strežnika");
+  if (!res?.ok) throw err(/prijava/i.test(res?.error || "") ? "auth" : "server", res?.error || "napaka strežnika");
   return res;
+}
+/* User-facing explanation per error kind */
+function svErrorHtml(e) {
+  const k = e?.kind || "other";
+  const t = {
+    auth: ["Prijava je potekla.", "Google prijave ni bilo mogoče samodejno osvežiti. Osveži prijavo (ali se odjavi in znova prijavi)."],
+    offline: ["Ni internetne povezave.", "Naprava je brez povezave. Ko se povežeš, poskusi znova."],
+    network: ["Strežnik ni dosegljiv.", "Zahteva ni prišla do strežnika – najverjetneje slaba internetna povezava."],
+    timeout: ["Strežnik se ni odzval.", `Odgovora ni bilo v ${SCRIPT_TIMEOUT_MS / 1000} s – slaba povezava ali preobremenjen strežnik.`],
+    server: ["Napaka na strežniku.", `Strežnik je vrnil napako: ${e?.message || "neznano"}.`],
+    config: ["Stavnica ni povezana.", "Manjka naslov strežnika (wordle_config.json)."],
+  }[k] || ["Stavnice ni bilo mogoče naložiti.", e?.message || ""];
+  return `<div class="card sv-empty sv-error is-${esc(k)}"><p class="sv-err-title">${esc(t[0])}</p><p class="muted-text">${esc(t[1])}</p>
+    <div class="sv-err-actions">${k === "auth" ? `<button type="button" class="btn primary" data-tok-refresh>Osveži prijavo</button>` : ""}<button type="button" class="btn ghost" data-sv-reload>Poskusi znova</button></div></div>`;
 }
 const svSlug = (q) => uuSlug(q.id);
 const svLabel = (q, o) => q.type === "boolean" ? ({ yes: "Da", no: "Ne" }[String(o).toLowerCase()] || o) : o;
@@ -2279,12 +2340,13 @@ async function renderStavnica(force = false) {
   if (!sv.state || force || Date.now() - (sv.fetchedAt || 0) > SV_REFRESH_MS) {
     if (sv.loading) return;
     sv.loading = true;
-    if (!sv.state) box.innerHTML = `<p class="muted-text">Nalagam stavnico …</p>`;
+    const stage = (s) => { if (!sv.state) box.innerHTML = `<p class="muted-text sv-loading">${s === "auth" ? "Preverjam prijavo …" : "Nalagam stave …"}</p>`; };
+    stage("load");
     if (sv.media === undefined) { try { const r = await fetch("data/stavnica.json", { cache: "no-store" }); sv.media = r.ok ? await r.json() : null; } catch { sv.media = null; } }
-    try { sv.state = await svCall(); sv.error = ""; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err.message || String(err); }
+    try { sv.state = await svCall({}, stage); sv.error = null; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err; }
     sv.loading = false;
   }
-  if (!sv.state) { box.innerHTML = `<div class="card sv-empty"><p>Stavnice ni bilo mogoče naložiti.</p><p class="muted-text">${esc(sv.error)}</p><button type="button" class="btn ghost" data-sv-reload>Poskusi znova</button></div>`; return; }
+  if (!sv.state) { box.innerHTML = svErrorHtml(sv.error); return; }
   const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
   const qi = st.questions.findIndex((q) => svSlug(q) === sv.view);
   const tab = sv.view === "profil" || sv.view === "pretekle" ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
@@ -2396,7 +2458,10 @@ document.addEventListener("submit", async (e) => {
     sv.state = await svCall({ action: "bet", question: q.id, option: f.dataset.svO, amount });
     sv.open = null; renderStavnica();
     const ok = $("#stavnica .sv-foot"); if (ok) { ok.textContent = `Stava sprejeta: ${amount} 🪙 na »${svLabel(q, f.dataset.svO)}«.`; ok.classList.add("is-ok"); }
-  } catch (err) { status.className = "sv-status is-err"; status.textContent = `Stava ni uspela (${err.message || err}).`; btn.disabled = false; }
+  } catch (err) {
+    const why = { auth: "prijava je potekla – osveži prijavo v meniju", offline: "ni internetne povezave", network: "strežnik ni dosegljiv", timeout: "strežnik se ni odzval" }[err.kind] || err.message || err;
+    status.className = "sv-status is-err"; status.textContent = `Stava ni uspela (${why}).`; btn.disabled = false;
+  }
 });
 /* —— Preverbe: Teme = today's tema feedback forms (embedded Google Forms), Generalno = 3 free-text forms → Apps Script → Preverbe/Vprašanja sheets —— */
 let pvData;

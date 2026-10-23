@@ -1593,3 +1593,23 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .role-badge.role-admin { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
 .role-badge.role-svod { background: rgba(250,204,21,.14); border-color: rgba(250,204,21,.45); color: var(--gold-soft); }
 @media (max-width: 480px) { .pv-ftab.pv-tab { padding: 0 .45rem; font-size: .88rem; } .sv-tab-bal { margin-left: .25rem; } }
+
+/* —— Sign-in token status (avatar dot, account menu) —— */
+.tok-wrap { position: relative; display: inline-flex; flex: none; }
+.tok-wrap .tok-dot { position: absolute; right: -2px; bottom: -2px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--top-bg, #0b1520); }
+.tok-dot { display: inline-block; background: var(--ink-muted); }
+.tok-dot.is-ok { background: #3fbf5f; }
+.tok-dot.is-bad { background: #e5484d; }
+.tok-dot.is-busy { background: var(--gold); animation: tok-pulse 1s ease-in-out infinite; }
+@keyframes tok-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .tok-dot.is-busy { animation: none; } }
+.tok-box { display: grid; gap: .35rem; padding: .35rem 0 .45rem; border-bottom: 1px solid var(--line); margin-bottom: .2rem; }
+.tok-line { display: flex; align-items: center; flex-wrap: wrap; gap: .1rem .45rem; margin: 0; font-size: .82rem; }
+.tok-line .tok-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.tok-line.is-bad { color: #ff8a8d; }
+.tok-gsi:empty { display: none; }
+/* Stavnica errors */
+.sv-error .sv-err-title { font-weight: 800; margin: 0 0 .25rem; }
+.sv-error.is-auth .sv-err-title { color: #ff8a8d; }
+.sv-err-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
+.sv-err-actions .btn { flex: none; }
