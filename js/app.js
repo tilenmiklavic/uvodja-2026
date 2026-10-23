@@ -2381,29 +2381,38 @@ async function renderPreverbe(sub = "teme") {
   }
   if (sub === "teme") renderPvTeme(teme); else renderPvGeneral(gen);
 }
-/* Only temas that have already started today (per the timeline); new ones are added in place every minute so open forms keep their answers */
+/* Only temas that started today and ended less than PV_GRACE minutes ago (per the timeline); checked every minute,
+   forms are added/removed in place so open ones keep their answers */
+const PV_GRACE = 120;
 function renderPvTeme(box) {
   const now = ljNow(), today = now.date, temas = state.data?.temas || {};
   const todays = (pvData?.temaForms || []).flatMap((f) => {
     const t = temas[f.tema];
-    const occ = (t?.occurrences || []).filter((o) => o.date === today).sort((a, b) => a.start.localeCompare(b.start))[0];
-    return occ ? [{ ...f, name: t.title, occ }] : [];
+    const occs = (t?.occurrences || []).filter((o) => o.date === today).sort((a, b) => a.start.localeCompare(b.start));
+    if (!occs.length) return [];
+    const end = occs.map((o) => o.end).sort().pop(); // last part of the tema today (pt.1 / pt.2)
+    return [{ ...f, name: t.title, occ: { start: occs[0].start, end } }];
   }).sort((a, b) => a.occ.start.localeCompare(b.occ.start));
-  const forms = todays.filter((f) => toMin(f.occ.start) <= now.min);
+  const forms = todays.filter((f) => toMin(f.occ.start) <= now.min && now.min < toMin(f.occ.end) + PV_GRACE);
   if (!forms.length) {
     delete box.dataset.day;
-    const later = todays[0];
+    const later = todays.find((f) => toMin(f.occ.start) > now.min);
+    if (!later && todays.length) {
+      box.innerHTML = `<div class="card pv-empty"><p>Preverbe današnjih tem so zaprte.</p><p class="muted-text">Obrazec je na voljo od začetka teme do 2 uri po njenem koncu.</p></div>`;
+      return;
+    }
     const next = later ? null : (pvData?.temaForms || []).flatMap((f) => (temas[f.tema]?.occurrences || []).map((o) => o.date)).filter((d) => d > today).sort()[0];
     box.innerHTML = later
-      ? `<div class="card pv-empty"><p>Preverbe tem bodo na voljo, ko se tema začne.</p><p class="muted-text">Prva danes: ${esc(later.name)} ob ${esc(later.occ.start)}.</p></div>`
+      ? `<div class="card pv-empty"><p>Preverbe tem bodo na voljo, ko se tema začne.</p><p class="muted-text">${later === todays[0] ? "Prva danes" : "Naslednja"}: ${esc(later.name)} ob ${esc(later.occ.start)}.</p></div>`
       : `<div class="card pv-empty"><p>Danes ni preverb tem.</p>${next ? `<p class="muted-text">Naslednje preverbe: ${Number(next.slice(8))}. ${Number(next.slice(5, 7))}.</p>` : ""}</div>`;
     return;
   }
   if (box.dataset.day !== today) {
     box.dataset.day = today;
-    box.innerHTML = `<p class="muted-text pv-lede">Preverbe tem, ki so se danes že začele – izpolni po vsaki temi.</p><div class="pv-forms"></div>`;
+    box.innerHTML = `<p class="muted-text pv-lede">Preverbe tem, ki so v teku ali so se končale v zadnjih 2 urah – izpolni po vsaki temi.</p><div class="pv-forms"></div>`;
   }
   const list = $(".pv-forms", box);
+  $$("[data-form-id]", list).forEach((el) => { if (!forms.some((f) => f.formId === el.dataset.formId)) el.remove(); });
   forms.forEach((f) => {
     if ($(`[data-form-id="${f.formId}"]`, list)) return;
     list.insertAdjacentHTML("beforeend", `<details class="card pv-form" data-form-id="${esc(f.formId)}"${forms.length === 1 ? " open" : ""}>
