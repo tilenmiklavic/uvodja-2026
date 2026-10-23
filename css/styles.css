@@ -1482,7 +1482,7 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .sv-pct { font-size: .75rem; font-weight: 700; color: var(--gold-soft); font-variant-numeric: tabular-nums; }
 .sv-meter { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--gold); opacity: .8; transition: width .4s ease; }
 .sv-foot { margin: .55rem 0 0; font-size: .78rem; }
-.sv-credits { font-size: .72rem; margin: -.2rem 0 .8rem; }
+.sv-credits { font-size: .72rem; margin: 1rem 0 0; }
 .sv-credits a { color: inherit; }
 .sv-bet { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--line); display: grid; gap: .5rem; }
 .sv-bet-title { margin: 0; }
@@ -1496,8 +1496,10 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .sv-status { margin: 0; font-size: .88rem; }
 .sv-status.is-err { color: var(--warn); }
 .sv-empty { padding: 1.2rem; }
-.sv-list { padding: 1rem 1.2rem; margin-bottom: .8rem; }
-.sv-list h3 { margin: 0 0 .5rem; font-size: 1rem; }
+/* bet lists sit directly in the panel (no box), separated by a labelled divider */
+.sv-list { margin: 1.6rem 0 0; }
+.sv-list h3 { display: flex; align-items: center; gap: .8rem; margin: 0 0 .8rem; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-soft); }
+.sv-list h3::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .sv-list ul { list-style: none; margin: 0; padding: 0; }
 .sv-list li { display: flex; align-items: center; gap: .5rem; padding: .45rem 0; border-top: 1px solid rgba(251,241,214,.07); font-size: .88rem; }
 .sv-list li:first-child { border-top: 0; }
@@ -1563,7 +1565,7 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 
 /* —— Stavnica: bet rows (Moje stave / Zadnje stave) —— */
 .sv-list ul.sv-bets { display: grid; gap: .55rem; }
-.sv-list li.sv-bet-item { display: block; padding: .7rem .8rem; border: 1px solid var(--line); border-top: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.03); }
+.sv-list li.sv-bet-item { display: block; padding: .7rem .8rem; border: 1px solid var(--line); border-top: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.05); }
 .sv-bet-item.is-won { border-color: rgba(107,142,35,.7); background: rgba(107,142,35,.12); }
 .sv-bet-item.is-lost { opacity: .7; }
 .sv-bi-top { display: flex; align-items: center; gap: .45rem; margin-bottom: .55rem; min-width: 0; }

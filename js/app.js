@@ -2282,7 +2282,7 @@ function svList(st) {
     </a>`;
   };
   return `${st.questions.length ? st.questions.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p></div>`}
-    <section class="card sv-list"><h3>Zadnje stave</h3>${svRecent(st.recent.slice(0, 25), true)}</section>
+    <section class="sv-list"><h3>Zadnje stave</h3>${svRecent(st.recent.slice(0, 25), true)}</section>
     ${sv.media?.images?.length ? `<p class="sv-credits muted-text">Slike: ${sv.media.images.map((m) => `<a href="${esc(m.source)}" target="_blank" rel="noopener">${esc(m.credit)}</a>`).join(" · ")} (Wikimedia Commons)</p>` : ""}`;
 }
 function svDetail(st, me, i) {
@@ -2307,7 +2307,7 @@ function svDetail(st, me, i) {
         <p class="sv-status" role="status" aria-live="polite"></p>
       </form>` : ""}
     </article>
-    <section class="card sv-list"><h3>Zadnje stave na to vprašanje</h3>${svRecent(st.recent.filter((b) => b.question === q.id), false)}</section>`;
+    <section class="sv-list"><h3>Zadnje stave na to vprašanje</h3>${svRecent(st.recent.filter((b) => b.question === q.id), false)}</section>`;
 }
 function svProfile(st, me) {
   const open = me.bets.filter((b) => b.payout === null), done = me.bets.filter((b) => b.payout !== null);
@@ -2322,7 +2322,7 @@ function svProfile(st, me) {
       <div class="card"><span class="muted-text">Možen dobitek</span><strong>${pending}</strong></div>
     </div>
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
-    <section class="card sv-list"><h3>Moje stave</h3>${me.bets.length ? `<ul class="sv-bets">${[...open, ...done].map((b) => svBetRow(b, { who: false })).join("")}</ul>` : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
+    <section class="sv-list"><h3>Moje stave</h3>${me.bets.length ? `<ul class="sv-bets">${[...open, ...done].map((b) => svBetRow(b, { who: false })).join("")}</ul>` : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
 }
 function svUpdatePayout() {
   const f = $("#stavnica form.sv-bet"), q = f && sv.state?.questions[f.dataset.svQ];
