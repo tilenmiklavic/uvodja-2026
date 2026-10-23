@@ -2015,7 +2015,7 @@ document.addEventListener("click", (e) => {
 async function init() {
   await loadData();
   state.mobileDay = upcomingDayId() || ttDays()[0]?.id;
-  setInterval(() => { placeNowLine(); placeUuNow(); }, 60000);
+  setInterval(() => { placeNowLine(); placeUuNow(); const t = $("#pv-teme"); if (t && !t.hidden && currentTab === "preverbe") renderPvTeme(t); }, 60000);
   window.addEventListener("resize", () => { placeNowLine(); placeUuNow(); });
   state.user = loadUser();
   try { state.simRole = sessionStorage.getItem("uvodja.simRole"); } catch { state.simRole = null; }
@@ -2289,26 +2289,37 @@ async function renderPreverbe(sub = "teme") {
   }
   if (sub === "teme") renderPvTeme(teme); else renderPvGeneral(gen);
 }
+/* Only temas that have already started today (per the timeline); new ones are added in place every minute so open forms keep their answers */
 function renderPvTeme(box) {
-  const today = ljNow().date, temas = state.data?.temas || {};
-  const forms = (pvData?.temaForms || []).flatMap((f) => {
+  const now = ljNow(), today = now.date, temas = state.data?.temas || {};
+  const todays = (pvData?.temaForms || []).flatMap((f) => {
     const t = temas[f.tema];
     const occ = (t?.occurrences || []).filter((o) => o.date === today).sort((a, b) => a.start.localeCompare(b.start))[0];
     return occ ? [{ ...f, name: t.title, occ }] : [];
   }).sort((a, b) => a.occ.start.localeCompare(b.occ.start));
+  const forms = todays.filter((f) => toMin(f.occ.start) <= now.min);
   if (!forms.length) {
-    const next = (pvData?.temaForms || []).flatMap((f) => (temas[f.tema]?.occurrences || []).map((o) => o.date)).filter((d) => d > today).sort()[0];
-    box.innerHTML = `<div class="card pv-empty"><p>Danes ni preverb tem.</p>${next ? `<p class="muted-text">Naslednje preverbe: ${Number(next.slice(8))}. ${Number(next.slice(5, 7))}.</p>` : ""}</div>`;
+    delete box.dataset.day;
+    const later = todays[0];
+    const next = later ? null : (pvData?.temaForms || []).flatMap((f) => (temas[f.tema]?.occurrences || []).map((o) => o.date)).filter((d) => d > today).sort()[0];
+    box.innerHTML = later
+      ? `<div class="card pv-empty"><p>Preverbe tem bodo na voljo, ko se tema začne.</p><p class="muted-text">Prva danes: ${esc(later.name)} ob ${esc(later.occ.start)}.</p></div>`
+      : `<div class="card pv-empty"><p>Danes ni preverb tem.</p>${next ? `<p class="muted-text">Naslednje preverbe: ${Number(next.slice(8))}. ${Number(next.slice(5, 7))}.</p>` : ""}</div>`;
     return;
   }
-  const key = forms.map((f) => f.formId).join() + today;
-  if (box.dataset.key === key) return; // keep iframes (and half-filled forms) when switching tabs
-  box.dataset.key = key;
-  box.innerHTML = `<p class="muted-text pv-lede">Preverbe tem za danes – izpolni po vsaki temi.</p>` + forms.map((f) => `<details class="card pv-form"${forms.length === 1 ? " open" : ""}>
+  if (box.dataset.day !== today) {
+    box.dataset.day = today;
+    box.innerHTML = `<p class="muted-text pv-lede">Preverbe tem, ki so se danes že začele – izpolni po vsaki temi.</p><div class="pv-forms"></div>`;
+  }
+  const list = $(".pv-forms", box);
+  forms.forEach((f) => {
+    if ($(`[data-form-id="${f.formId}"]`, list)) return;
+    list.insertAdjacentHTML("beforeend", `<details class="card pv-form" data-form-id="${esc(f.formId)}"${forms.length === 1 ? " open" : ""}>
       <summary><span class="pv-form-title">${esc(f.name)}</span><span class="muted-text">${esc(f.occ.start)}–${esc(f.occ.end)}</span></summary>
       <iframe src="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform?embedded=true" title="${esc(f.title)}" loading="lazy">Nalagam …</iframe>
       <p class="pv-open"><a href="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform" target="_blank" rel="noopener">Odpri obrazec v novem oknu ↗</a></p>
-    </details>`).join("");
+    </details>`);
+  });
 }
 function renderPvGeneral(box) {
   if (box.dataset.ready) return;
