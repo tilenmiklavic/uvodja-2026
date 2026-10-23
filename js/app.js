@@ -387,6 +387,7 @@ function setTab(name) {
     panel.hidden = panel.id !== `tab-${name}`;
   });
   if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
+  if (name === "teme") decorateTemeScores();
   const zbm = /^zabava\/(wordle|stavnica)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   if (name === "zabava") {
@@ -1188,6 +1189,7 @@ function renderTema(slug) {
     : `<p class="empty-detail">Ni Vsebin za preverjanje.</p>`;
 
   $("#tema-body").innerHTML = `
+    <section class="card tema-section tema-score" id="tema-score" hidden></section>
     <section class="card tema-section">
       <h3>Termini v časovnici</h3>
       ${occ}
@@ -1241,6 +1243,7 @@ function openTema(slug) {
   }
   setTab("teme");
   renderTema(slug);
+  decorateTemeScores();
   history.replaceState(null, "", `#tema-${slug}`);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -2466,13 +2469,13 @@ document.addEventListener("submit", async (e) => {
 });
 /* —— Ekipa → Lestvica ocen tem: tema grades (Apps Script type "ocene", SVOD/admin only) × facilitators (data.temas.odgovorni) —— */
 const ocene = { data: null, at: 0, loading: false, error: null };
-async function renderOcene(force = false) {
-  const box = $("#ocene-body");
-  if (!box || !canSee("ekipa")) return;
-  if (!ocene.data || force || Date.now() - ocene.at > 10 * 60000) {
-    if (ocene.loading) return;
-    ocene.loading = true;
-    if (!ocene.data) box.innerHTML = `<p class="muted-text">Nalagam ocene …</p>`;
+/* Shared loader (leaderboard + Teme scores); one request in flight, reused for 10 min */
+let oceneP = null;
+function loadOcene(force = false) {
+  if (ocene.data && !force && Date.now() - ocene.at < 10 * 60000) return Promise.resolve(ocene.data);
+  if (oceneP) return oceneP;
+  ocene.loading = true;
+  oceneP = (async () => {
     try {
       if (pvData === undefined) { try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; } }
       const cfg = await wdConfig();
@@ -2483,8 +2486,26 @@ async function renderOcene(force = false) {
       if (!res?.ok) throw Object.assign(new Error(res?.error || "napaka"), { kind: /prijava/i.test(res?.error) ? "auth" : /dostop/i.test(res?.error) ? "denied" : "server" });
       ocene.data = res; ocene.at = Date.now(); ocene.error = null;
     } catch (err) { ocene.error = err; }
-    ocene.loading = false;
-  }
+    ocene.loading = false; oceneP = null;
+    return ocene.data;
+  })();
+  return oceneP;
+}
+const canSeeOcene = () => ["svod", "admin"].includes(effectiveRole(state.user?.email));
+/* Grade stats for one tema slug from the responses tabs (null if none yet) */
+function temaScore(slug) {
+  const tabs = ocene.data?.tabs || [], forms = pvData?.temaForms || [];
+  const i = forms.findIndex((f) => f.tema === slug);
+  if (i < 0) return null;
+  const tab = tabs.find((t) => t.name === forms[i].responsesTab) || tabs.find((t) => parseInt(t.name, 10) === i + 1);
+  return tab?.n ? tab : null;
+}
+const scoreFmt = (x) => x.toFixed(2).replace(".", ",");
+async function renderOcene(force = false) {
+  const box = $("#ocene-body");
+  if (!box || !canSee("ekipa")) return;
+  if (!ocene.data) box.innerHTML = `<p class="muted-text">Nalagam ocene …</p>`;
+  await loadOcene(force);
   if (!ocene.data) {
     const e = ocene.error, k = e?.kind;
     const msg = { auth: "Prijava je potekla – osveži prijavo v meniju.", denied: "Ocene vidijo le SVOD in admin.", offline: "Ni internetne povezave.", network: "Strežnik ni dosegljiv (slaba povezava?).", timeout: "Strežnik se ni odzval.", config: "Strežnik ni nastavljen." }[k]
@@ -2521,6 +2542,27 @@ async function renderOcene(force = false) {
   }).join("")}</ol>` : `<p class="muted-text">Še ni končanih tem z ocenami.</p>`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-ocene-reload]")) renderOcene(true); });
+/* Teme: ★ badge on list cards + "Ocena teme" card on a tema's page (SVOD/admin, same data as the leaderboard) */
+async function decorateTemeScores() {
+  if (!canSeeOcene()) return;
+  await loadOcene();
+  if (!ocene.data) return;
+  $$("#teme-overview .tm-card").forEach((card) => {
+    const slug = $(".tm-title", card)?.dataset.tema, sc = slug && temaScore(slug), badges = $(".tm-badges", card);
+    $(".badge.score", card)?.remove();
+    if (sc && badges) badges.insertAdjacentHTML("afterbegin", `<span class="badge score" title="Povprečna ocena (${sc.n} ocen)">★ ${scoreFmt(sc.avg)}</span>`);
+  });
+  const box = $("#tema-score"), slug = state.temaSlug;
+  if (!box || !slug) return;
+  const sc = temaScore(slug);
+  box.hidden = !sc;
+  if (!sc) return;
+  const max = Math.max(1, ...sc.dist);
+  box.innerHTML = `<h3>Ocena teme</h3>
+    <div class="ts-wrap"><div class="ts-big"><strong>★ ${scoreFmt(sc.avg)}</strong><span class="muted-text">${sc.n} ocen · lestvica 1–5</span></div>
+    <ul class="ts-dist">${[5, 4, 3, 2, 1].map((g) => `<li><span class="ts-g">${g}</span><span class="ts-bar"><i style="width:${(sc.dist[g - 1] / max) * 100}%"></i></span><span class="ts-n">${sc.dist[g - 1]}</span></li>`).join("")}</ul></div>
+    <p class="muted-text ts-note">Iz preverb tem (zavihek Preverbe → Teme). Komentarji niso prikazani.</p>`;
+}
 /* —— Analitika → candle (box-plot) charts per Preverba SVODa day and per tema with feedback (Apps Script type "analitika", admin only) —— */
 const pvc = { data: null, at: 0, loading: false, error: null };
 function pvcStats(v) {
