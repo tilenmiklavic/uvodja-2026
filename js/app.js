@@ -696,6 +696,12 @@ function placeNowLine() {
   box.appendChild(line);
 }
 
+/* Time label: "23:00 –" for sleep (open-ended); start only when no end/length is known (start == end) */
+function sessionTimeLabel(s) {
+  if (/^spanje/i.test(s.title)) return `${s.start} –`;
+  if (!s.end || s.end === s.start) return s.start;
+  return `${s.start} – ${s.end}`;
+}
 /* Časovnica: one continuous vertical timeline (date column | line + dot | entry cards) */
 function renderTimetable() {
   const root = $("#timetable-tree");
@@ -808,9 +814,9 @@ function renderSession(s) {
       <summary class="session-header" role="button" tabindex="0" aria-expanded="${open ? "true" : "false"}">
         <div class="sh-row1">
           <p class="session-title">${titleHtml}</p>
-          <span class="time-badge">${esc(s.start)} – ${esc(s.end)}</span>
+          <span class="time-badge">${esc(sessionTimeLabel(s))}</span>
         </div>
-        ${(s.trainers || []).length ? `<div class="sh-people">${s.trainers.map((t) => personLink(t, "trainer-pill")).join("")}</div>` : ""}
+        ${(s.trainers || []).length && s.kind !== "logistics" ? `<div class="sh-people">${s.trainers.map((t) => personLink(t, "trainer-pill")).join("")}</div>` : ""}
       </summary>
       <div class="session-body">
         ${courseBody}

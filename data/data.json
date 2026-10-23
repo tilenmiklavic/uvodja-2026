@@ -1168,7 +1168,7 @@
           "id": "vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
           "title": "Osebno spremljanje voditeljev",
           "start": "15:30",
-          "end": "15:30",
+          "end": "17:30",
           "kind": "program",
           "trainers": [
             "Barbara",
@@ -3114,13 +3114,13 @@
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
           "start": "15:30",
-          "end": "15:30",
+          "end": "17:30",
           "title": "Osebno spremljanje voditeljev",
           "category": "tema",
           "programKey": "osebno spremljanje voditeljev",
           "sortKey": "2026-10-25-15:30",
           "href": "#sid-vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
-          "label": "15:30–15:30 · Osebno spremljanje voditeljev"
+          "label": "15:30–17:30 · Osebno spremljanje voditeljev"
         },
         {
           "type": "timekeeper",
@@ -3492,13 +3492,13 @@
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
           "start": "15:30",
-          "end": "15:30",
+          "end": "17:30",
           "title": "Osebno spremljanje voditeljev",
           "category": "tema",
           "programKey": "osebno spremljanje voditeljev",
           "sortKey": "2026-10-25-15:30",
           "href": "#sid-vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
-          "label": "15:30–15:30 · Osebno spremljanje voditeljev"
+          "label": "15:30–17:30 · Osebno spremljanje voditeljev"
         },
         {
           "type": "tema",
@@ -6358,7 +6358,7 @@
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
           "start": "15:30",
-          "end": "15:30",
+          "end": "17:30",
           "duration": "2h",
           "durationMinutes": null,
           "title": "Osebno spremljanje voditeljev",
