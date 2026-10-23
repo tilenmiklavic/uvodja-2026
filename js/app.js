@@ -2109,6 +2109,13 @@ function logVisit(page) {
 }
 const PAGE_LABEL = { domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
 let visitsLoadedAt = 0;
+/* Role for an Analitika row: by e-mail, else by matching the name to a listed person (access.json people), else the default role */
+function visitRole(p) {
+  if (p.email) return roleOf(p.email);
+  const norm = (x) => String(x || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const hit = Object.entries(state.access?.people || {}).find(([, slug]) => norm(state.data?.people?.[slug]?.name) === norm(p.name));
+  return hit ? roleOf(hit[0]) : (p.name ? state.access?.defaultRole || "uu" : "");
+}
 async function renderVisits() {
   const box = $("#visits");
   if (!box) return;
@@ -2145,7 +2152,7 @@ async function renderVisits() {
     body.innerHTML = `<p class="muted-text">Skupaj ${d.total || 0} ogledov</p>
       <h3 class="visits-h">Zadnjih 14 dni</h3><div class="vbars">${bars}</div>
       <h3 class="visits-h">Po straneh</h3><ul class="vrows">${pages.map(([p, n]) => row(esc(PAGE_LABEL[p] || p), n, pmax)).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>
-      <h3 class="visits-h">Po osebah</h3><ul class="vrows">${people.map((p) => row(esc(displayName(p.name || p.email)), p.count, hmax)).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>`;
+      <h3 class="visits-h">Po osebah</h3><ul class="vrows">${people.map((p) => { const r = visitRole(p); return row(esc(displayName(p.name || p.email)), p.count, hmax, r ? ` <span class="role-badge role-${esc(r)}" title="Vloga: ${esc(r.toUpperCase())}">${esc(r.toUpperCase())}</span>` : ""); }).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>`;
   } catch {
     visitsLoadedAt = 0;
     body.innerHTML = `<p class="muted-text">Statistike trenutno niso na voljo.</p>`;
