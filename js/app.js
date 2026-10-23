@@ -2092,6 +2092,7 @@ async function init() {
   renderEkipa();
   applyAuth();
   applyHash();
+  tokMaintain(); // renew an expired/expiring sign-in right away, on whatever page the user lands
   wdFlushQueue();
 }
 
