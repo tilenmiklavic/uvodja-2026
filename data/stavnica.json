@@ -6,6 +6,10 @@
       "src": "assets/people/matej-gnidovec.webp"
     },
     {
+      "match": "norice|predavatelj",
+      "src": "assets/stavnica/norice.webp"
+    },
+    {
       "match": "pašt|pasta|špaget",
       "src": "assets/stavnica/pasta.webp",
       "credit": "JIP, CC BY-SA 3.0",
