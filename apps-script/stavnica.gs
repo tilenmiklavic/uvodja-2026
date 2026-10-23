@@ -1,7 +1,8 @@
 /**
  * Zabava → Stavnica: betting with virtual coins ("zlatniki").
  * Questions come from Drive 09_Arhiv/trop/wordle/stavnica, tab "questions" (question | answer | options | resolved [| image]);
- * the optional "image" column holds an image URL for the question card.
+ * the optional "image" column holds the question card's image: an image inserted into the cell (Insert → Image → In cell),
+ * an =IMAGE("https://…") formula, or a plain https:// link.
  * every bet is appended to tab "bets" with the bettor's name and e-mail.
  *
  * Hook it into doPost (before the Wordle-specific code):
@@ -53,11 +54,25 @@ function handleStavnica(body) {
 }
 
 function stavnicaState_(ss, me) {
-  const qRows = ss.getSheetByName("questions").getDataRange().getDisplayValues();
+  const qSheet = ss.getSheetByName("questions");
+  const qRange = qSheet.getDataRange();
+  const qRows = qRange.getDisplayValues();
   const head = qRows.shift().map((h) => String(h).trim().toLowerCase());
   const col = (n) => head.indexOf(n);
+  // Images: in-cell images aren't in the display values, so read the raw values/formulas of that column
+  const imgCol = col("image");
+  const imgRaw = imgCol >= 0 && qRows.length ? qSheet.getRange(2, imgCol + 1, qRows.length, 1).getValues() : [];
+  const imgFx = imgCol >= 0 && qRows.length ? qSheet.getRange(2, imgCol + 1, qRows.length, 1).getFormulas() : [];
+  const imageAt = (i) => {
+    const v = imgRaw[i] && imgRaw[i][0], fx = imgFx[i] && imgFx[i][0];
+    if (v && typeof v === "object" && typeof v.getContentUrl === "function") return v.getUrl() || v.getContentUrl(); // CellImage
+    const m = /^=IMAGE\(\s*"([^"]+)"/i.exec(fx || "");
+    if (m) return m[1];
+    return /^https?:\/\//i.test(String(v || "").trim()) ? String(v).trim() : "";
+  };
   const resCol = col("resolved") >= 0 ? col("resolved") : col("result");
-  const questions = qRows.filter((r) => String(r[col("question")] || "").trim()).map((r) => {
+  const questions = qRows.map((r, i) => ({ r: r, i: i })).filter((x) => String(x.r[col("question")] || "").trim()).map((x) => {
+    const r = x.r;
     const question = String(r[col("question")]).trim();
     const type = String(r[col("answer")] || "").trim().toLowerCase();
     let options = String(r[col("options")] || "").split(/[,\/;]/).map((s) => s.trim()).filter(String);
@@ -65,7 +80,7 @@ function stavnicaState_(ss, me) {
     const result = resCol >= 0 ? String(r[resCol] || "").trim() : "";
     // match the resolved value to an option case-insensitively ("Yes" → "yes")
     const win = options.find((o) => o.toLowerCase() === result.toLowerCase()) || result;
-    const image = col("image") >= 0 ? String(r[col("image")] || "").trim() : "";
+    const image = imageAt(x.i);
     return { id: question, question: question, type: type, options: options, odds: options.length, result: win, image: image, people: {} };
   });
   const byId = {};

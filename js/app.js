@@ -2231,7 +2231,13 @@ async function svCall(extra = {}) {
 const svSlug = (q) => uuSlug(q.id);
 const svLabel = (q, o) => q.type === "boolean" ? ({ yes: "Da", no: "Ne" }[String(o).toLowerCase()] || o) : o;
 const svOdds = (q) => q.odds || q.options.length;
-function svImg(q) { return q.image || (sv.media?.images || []).find((m) => new RegExp(m.match, "i").test(q.question))?.src || sv.media?.fallback || ""; }
+/* Sheet image first; keyword image / skull as fallback (also used if the sheet image fails to load) */
+function svImgFallback(q) { return (sv.media?.images || []).find((m) => new RegExp(m.match, "i").test(q.question))?.src || sv.media?.fallback || ""; }
+function svImg(q) { return q.image || svImgFallback(q); }
+document.addEventListener("error", (e) => {
+  const img = e.target;
+  if (img?.tagName === "IMG" && img.dataset.fb && img.getAttribute("src") !== img.dataset.fb) img.src = img.dataset.fb;
+}, true);
 function svShare(q) {
   const n = q.options.reduce((a, o) => a + (q.people?.[o] || 0), 0);
   return { n, pct: (o) => (n ? Math.round(((q.people?.[o] || 0) / n) * 100) : 0) };
@@ -2299,7 +2305,7 @@ function svList(st, past = false) {
   const card = (q) => {
     const sh = svShare(q);
     return `<a class="card sv-card sv-card-link${q.result ? " is-resolved" : ""}" href="#zabava/stavnica/${svSlug(q)}">
-      <div class="sv-card-head">${svImg(q) ? `<img class="sv-img" src="${esc(svImg(q))}" alt="" loading="lazy" width="48" height="48" />` : ""}<h3 class="sv-q">${esc(q.question)}</h3>${q.options.length ? `<span class="sv-odds">×${svOdds(q)}</span>` : ""}</div>
+      <div class="sv-card-head">${svImg(q) ? `<img class="sv-img" src="${esc(svImg(q))}" data-fb="${esc(svImgFallback(q))}" referrerpolicy="no-referrer" alt="" loading="lazy" width="48" height="48" />` : ""}<h3 class="sv-q">${esc(q.question)}</h3>${q.options.length ? `<span class="sv-odds">×${svOdds(q)}</span>` : ""}</div>
       ${q.options.length ? `<div class="sv-mini" style="--n:${q.options.length}">${q.options.map((o) => `<span class="sv-mini-opt${q.result === o ? " is-win" : ""}"><span>${esc(svLabel(q, o))}</span><strong>${sh.pct(o)} %</strong><i style="width:${sh.pct(o)}%"></i></span>`).join("")}</div>` : ""}
       <p class="sv-foot muted-text">${q.result ? `<strong class="sv-res">Zaprto · ${esc(svLabel(q, q.result))}</strong> · ` : ""}${!q.options.length ? "Možnosti še niso določene." : sh.n ? svCount(sh.n) : "Še nihče ni stavil"}<span class="sv-go">Odpri ›</span></p>
     </a>`;
@@ -2315,7 +2321,7 @@ function svDetail(st, me, i) {
   const sel = sv.open?.q === i && !q.result ? sv.open.o : null;
   return `<p class="person-back sv-back">${q.result ? `<a href="#zabava/stavnica/pretekle">← Pretekle stave</a>` : `<a href="#zabava/stavnica">← Vse stave</a>`}</p>
     <article class="sv-detail">
-      <header class="sv-detail-head">${svImg(q) ? `<img class="sv-detail-img" src="${esc(svImg(q))}" alt="" width="96" height="96" />` : ""}
+      <header class="sv-detail-head">${svImg(q) ? `<img class="sv-detail-img" src="${esc(svImg(q))}" data-fb="${esc(svImgFallback(q))}" referrerpolicy="no-referrer" alt="" width="96" height="96" />` : ""}
         <div><h2 class="sv-q">${esc(q.question)}</h2>
         <p class="muted-text sv-detail-meta">${q.options.length ? `<span class="sv-odds">×${svOdds(q)}</span> zadetek vrne ${svOdds(q)}-kratni vložek · ` : ""}${sh.n ? svCount(sh.n) : "še brez stav"}</p></div></header>
       ${q.result ? `<p class="sv-meta"><strong class="sv-res">Zaprto · rezultat: ${esc(svLabel(q, q.result))}</strong></p>` : ""}
