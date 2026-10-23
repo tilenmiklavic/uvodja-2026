@@ -9,6 +9,9 @@
  *
  *   if (body.type === 'stavnica') return handleStavnica(body);
  *
+
+ * Needs common.gs (shared sign-in check and caching) in the same project.
+ *
  * then Deploy → Manage deployments → edit → New version (same /exec URL).
  *
  * Rules: everyone starts with STAVNICA_BUDGET zlatnikov. Fixed odds = number of options: a winning bet on a
@@ -17,15 +20,13 @@
  */
 const STAVNICA_SHEET_ID = "1Nc9q0aSElmn7I0tIMYxGIa1yS5wdgZFFcHYCEEKN678";
 const STAVNICA_BUDGET = 10;
-const STAVNICA_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
 const STAVNICA_BET_HEADER = ["Čas", "Vprašanje", "Opcija", "Vložek", "Ime", "E-naslov"];
 
 function handleStavnica(body) {
   const out = (o) => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
   try {
-    const res = UrlFetchApp.fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(body.credential || ""), { muteHttpExceptions: true });
-    const tok = res.getResponseCode() === 200 ? JSON.parse(res.getContentText()) : null;
-    if (!tok || tok.aud !== STAVNICA_CLIENT_ID || String(tok.email_verified) !== "true") return out({ ok: false, error: "prijava ni veljavna" });
+    const tok = siteVerify_(body.credential); // cached (common.gs)
+    if (!tok) return out({ ok: false, error: "prijava ni veljavna" });
     const me = String(tok.email).toLowerCase();
     const ss = SpreadsheetApp.openById(STAVNICA_SHEET_ID);
 

@@ -8,35 +8,36 @@
  *
  *   if (body.type === 'analitika') return handleAnalitika(body);
  *
+
+ * Needs common.gs (shared sign-in check and caching) in the same project.
+ *
  * then Deploy → Manage deployments → edit → New version. The first run asks for Forms + Drive access.
  */
 const ANALITIKA_FOLDERS = { svod: "1zYju21smiRzsXZQbUBBmZbl1ANsbjE4s", teme: "1UKyJsztoCxkvEUiJxIKr6iWQ-I6ZvJFO" };
-const ANALITIKA_MAILS_ID = "1vVw8vgcIjOjUmsnOIwnxBxTmD-piKkQ9-eap8kB_DDI";
-const ANALITIKA_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
 
 function handleAnalitika(body) {
   const out = (o) => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
   try {
-    const res = UrlFetchApp.fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(body.credential || ""), { muteHttpExceptions: true });
-    const tok = res.getResponseCode() === 200 ? JSON.parse(res.getContentText()) : null;
-    if (!tok || tok.aud !== ANALITIKA_CLIENT_ID || String(tok.email_verified) !== "true") return out({ ok: false, error: "prijava ni veljavna" });
-    const me = String(tok.email).toLowerCase();
-    const mails = SpreadsheetApp.openById(ANALITIKA_MAILS_ID).getSheetByName("mails").getDataRange().getDisplayValues();
-    const row = mails.find((r) => String(r[1]).trim().toLowerCase() === me);
-    if (!row || String(row[2]).trim().toLowerCase() !== "admin") return out({ ok: false, error: "ni dostopa" });
-
-    const forms = [];
-    Object.keys(ANALITIKA_FOLDERS).forEach((group) => {
-      const it = DriveApp.getFolderById(ANALITIKA_FOLDERS[group]).getFilesByType(MimeType.GOOGLE_FORMS);
-      while (it.hasNext()) {
-        const file = it.next();
-        forms.push(analitikaForm_(file.getId(), file.getName(), group));
-      }
-    });
-    return out({ ok: true, forms: forms });
+    const tok = siteVerify_(body.credential); // cached (common.gs)
+    if (!tok) return out({ ok: false, error: "prijava ni veljavna" });
+    if (siteRole_(tok.email) !== "admin") return out({ ok: false, error: "ni dostopa" });
+    return out(Object.assign({ ok: true }, siteCached_("analitika", analitikaCompute_)));
   } catch (err) {
     return out({ ok: false, error: String(err && err.message || err) });
   }
+}
+
+/** Numeric answers per form and question (also pre-computed by refreshSiteCaches in common.gs). */
+function analitikaCompute_() {
+  const forms = [];
+  Object.keys(ANALITIKA_FOLDERS).forEach((group) => {
+    const it = DriveApp.getFolderById(ANALITIKA_FOLDERS[group]).getFilesByType(MimeType.GOOGLE_FORMS);
+    while (it.hasNext()) {
+      const file = it.next();
+      forms.push(analitikaForm_(file.getId(), file.getName(), group));
+    }
+  });
+  return { forms: forms, computedAt: Date.now() };
 }
 
 function analitikaForm_(id, name, group) {

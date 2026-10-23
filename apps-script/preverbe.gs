@@ -14,7 +14,6 @@
  * Then Deploy → Manage deployments → edit the existing deployment → Version: New version → Deploy
  * (keeps the same /exec URL, so the site needs no change).
  */
-const PREVERBA_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
 const PREVERBA_SHEETS = {
   vprasanja: { id: "1onsfBDG_vBb_boLzcPijvKaF6kPvG9eKvP1Zx4RU5g0", label: "Vprašanje" },
   io: { id: "1AMY9UCiTdaGs-IOY5Frsfhyk18b-Q0V-yP0MQ1Ch330", label: "Vprašanje za IO" },
@@ -29,9 +28,8 @@ function handlePreverba(body) {
     if (!target || !text) return out({ ok: false, error: "neveljaven vnos" });
 
     // Only signed-in site users: verify the Google ID token the site sends
-    const res = UrlFetchApp.fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(body.credential || ""), { muteHttpExceptions: true });
-    const tok = res.getResponseCode() === 200 ? JSON.parse(res.getContentText()) : null;
-    if (!tok || tok.aud !== PREVERBA_CLIENT_ID || String(tok.email_verified) !== "true") return out({ ok: false, error: "prijava ni veljavna" });
+    const tok = siteVerify_(body.credential); // cached (common.gs)
+    if (!tok) return out({ ok: false, error: "prijava ni veljavna" });
 
     const anon = body.anon === true;
     const sheet = SpreadsheetApp.openById(target.id).getSheets()[0];
