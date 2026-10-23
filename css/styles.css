@@ -96,7 +96,7 @@ body {
   .tabs [data-tab="domov"] { order: 1; } .tabs [data-tab="casovnica"] { order: 2; } .tabs [data-tab="teme"] { order: 3; }
   .tabs [data-tab="gradiva"] { order: 4; } .tabs [data-tab="ekipa"] { order: 5; } .tabs [data-tab="os"] { order: 6; }
   .tabs [data-tab="uu"] { order: 7; } .tabs [data-tab="preverbe"] { order: 8; } .tabs [data-tab="zabava"] { order: 9; }
-  .tabs [data-tab="analitika"] { order: 10; } .tabs .nav-user { order: 11; }
+  .tabs [data-tab="vprasanja"] { order: 10; } .tabs [data-tab="analitika"] { order: 11; } .tabs .nav-user { order: 12; }
 }
 @media (max-width: 700px) {
   .header-inner { flex-wrap: nowrap; gap: .5rem; padding: .5rem .75rem; }
@@ -1675,3 +1675,12 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .ts-bar i { display: block; height: 100%; border-radius: 999px; background: var(--gold); }
 .ts-n { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .ts-note { font-size: .78rem; margin: .7rem 0 0; }
+
+/* —— Vprašanja (admin) —— */
+.vq-sum { margin: 0 0 .4rem; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--gold-soft); font: inherit; cursor: pointer; text-decoration: underline; }
+.vq-count { font-size: .75rem; padding: .05rem .45rem; border-radius: 999px; background: rgba(248,164,24,.18); color: var(--gold-soft); letter-spacing: 0; }
+.vq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .6rem; }
+.vq-card { padding: .85rem 1rem; display: flex; flex-direction: column; gap: .5rem; }
+.vq-card p { margin: 0; line-height: 1.45; overflow-wrap: anywhere; }
+.vq-card time { font-size: .75rem; margin-top: auto; }

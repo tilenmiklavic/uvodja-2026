@@ -207,7 +207,7 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
-const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "analitika"];
+const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "vprasanja", "analitika"];
 
 function loadUser() {
   try { const u = JSON.parse(localStorage.getItem("uvodja.user") || "null"); return u?.email ? u : null; } catch { return null; }
@@ -388,6 +388,7 @@ function setTab(name) {
   });
   if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
   if (name === "teme") decorateTemeScores();
+  if (name === "vprasanja") renderVprasanja();
   const zbm = /^zabava\/(wordle|stavnica)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   if (name === "zabava") {
@@ -1651,7 +1652,7 @@ function applyHash() {
     return;
   }
   if (hash === "info") { setTab("domov"); history.replaceState(null, "", "#domov"); return; }
-  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "analitika"].includes(hash)) {
+  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "vprasanja", "analitika"].includes(hash)) {
     setTab(hash);
     if (hash === "ekipa") showEkipaList();
     if (hash === "teme") showTemeList();
@@ -2174,7 +2175,7 @@ function logVisit(page) {
     }).catch(() => {});
   } catch {}
 }
-const PAGE_LABEL = { domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
+const PAGE_LABEL = { domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", vprasanja: "Vprašanja", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
 let visitsLoadedAt = 0;
 /* Role for an Analitika row: by e-mail, else by matching the name to a listed person (access.json people), else the default role */
 function visitRole(p) {
@@ -2548,6 +2549,50 @@ async function renderOcene(force = false) {
   }).join("")}</ol>` : `<p class="muted-text">Še ni končanih tem z ocenami.</p>`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-ocene-reload]")) renderOcene(true); });
+/* —— Vprašanja (admin): "Kaj te še zanima o tej temi?" answers per tema (Apps Script type "vprasanja") —— */
+const vq = { data: null, at: 0, loading: false, error: null };
+async function renderVprasanja(force = false) {
+  const box = $("#vq-body");
+  if (!box || !canSee("vprasanja")) return;
+  if (!vq.data || force || Date.now() - vq.at > 10 * 60000) {
+    if (vq.loading) return;
+    vq.loading = true;
+    try {
+      if (pvData === undefined) { try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; } }
+      const cfg = await wdConfig();
+      if (!cfg?.scriptUrl) throw Object.assign(new Error("config"), { kind: "config" });
+      const credential = await wdFreshToken();
+      if (!credential) throw Object.assign(new Error("auth"), { kind: "auth" });
+      const res = await wdPost(cfg.scriptUrl, { type: "vprasanja" }, credential);
+      if (!res?.ok) throw Object.assign(new Error(res?.error || "napaka"), { kind: /prijava/i.test(res?.error) ? "auth" : /dostop/i.test(res?.error) ? "denied" : "server" });
+      vq.data = res; vq.at = Date.now(); vq.error = null;
+    } catch (err) { vq.error = err; }
+    vq.loading = false;
+  }
+  if (!vq.data) {
+    const e = vq.error, k = e?.kind;
+    const msg = { auth: "Prijava je potekla – osveži prijavo v meniju.", denied: "Vprašanja vidi le admin.", offline: "Ni internetne povezave.", network: "Strežnik ni dosegljiv (slaba povezava?).", timeout: "Strežnik se ni odzval.", config: "Strežnik ni nastavljen." }[k]
+      || (/bad_date|invalid|unknown/i.test(e?.message || "") ? "Strežnik še ne pozna vprašanj (Apps Script ni posodobljen)." : `Vprašanj ni bilo mogoče naložiti (${e?.message || "napaka"}).`);
+    box.innerHTML = `<p class="muted-text">${esc(msg)}</p><button type="button" class="btn ghost" data-vq-reload>Poskusi znova</button>`;
+    return;
+  }
+  const forms = pvData?.temaForms || [], temas = state.data?.temas || {};
+  const temaOf = (tab) => {
+    const i = forms.findIndex((f) => f.responsesTab === tab.name), j = i >= 0 ? i : (parseInt(tab.name, 10) || 0) - 1;
+    const f = forms[j];
+    return f ? temas[f.tema]?.title || f.title : tab.name.replace(/^\d+\s*[_.-]?\s*/, "") || `Tema ${tab.name}`;
+  };
+  const when = (ts) => ts ? new Date(ts).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+  const tabs = (vq.data.tabs || []).filter((t) => t.items?.length)
+    .sort((a, b) => (parseInt(a.name, 10) || 99) - (parseInt(b.name, 10) || 99));
+  const total = tabs.reduce((a, t) => a + t.items.length, 0);
+  const cnt = (n) => `${n} ${n === 1 ? "vprašanje" : n === 2 ? "vprašanji" : n < 5 ? "vprašanja" : "vprašanj"}`;
+  box.innerHTML = tabs.length ? `<p class="muted-text vq-sum">${cnt(total)} iz ${tabs.length} ${tabs.length === 1 ? "teme" : "tem"} · <button type="button" class="link-btn" data-vq-reload>Osveži</button></p>` + tabs.map((t) => `<section class="vq-group">
+      <h3 class="pv-sub-h">${esc(temaOf(t))} <span class="vq-count">${t.items.length}</span></h3>
+      <div class="vq-grid">${[...t.items].sort((a, b) => (b.ts || 0) - (a.ts || 0)).map((x) => `<article class="card vq-card"><p>${esc(x.text).replace(/\n/g, "<br>")}</p>${x.ts ? `<time class="muted-text">${esc(when(x.ts))}</time>` : ""}</article>`).join("")}</div>
+    </section>`).join("") : `<p class="muted-text">Še ni vprašanj.</p>`;
+}
+document.addEventListener("click", (e) => { if (e.target.closest("[data-vq-reload]")) renderVprasanja(true); });
 /* Teme: ★ badge on list cards + "Ocena teme" card on a tema's page (SVOD/admin, same data as the leaderboard) */
 async function decorateTemeScores() {
   if (!canSeeOcene()) return;

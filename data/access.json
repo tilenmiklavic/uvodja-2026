@@ -1,5 +1,5 @@
 {
-  "_help": "Prepisano iz Drive 09_Arhiv/trop/mails (zavihka 'mails' + 'access'). roles.<vloga>.allow = dovoljene strani ('*' = vse; prazno = vse), deny = prepovedane (odštejejo se od allow). users = e-naslov → vloga; vsak drug prijavljen dobi defaultRole. Strani: domov, casovnica, teme, gradiva, ekipa, os, uu, preverbe, zabava, analitika. Opomba: to je le skrivanje strani v brskalniku, ne varnost – vsi podatki v repozitoriju so javni.",
+  "_help": "Prepisano iz Drive 09_Arhiv/trop/mails (zavihka 'mails' + 'access'). roles.<vloga>.allow = dovoljene strani ('*' = vse; prazno = vse), deny = prepovedane (odštejejo se od allow). users = e-naslov → vloga; vsak drug prijavljen dobi defaultRole. Strani: domov, casovnica, teme, gradiva, ekipa, os, uu, preverbe, zabava, vprasanja, analitika. Opomba: to je le skrivanje strani v brskalniku, ne varnost – vsi podatki v repozitoriju so javni.",
   "fetched": "2026-10-22",
   "defaultRole": "uu",
   "roles": {
@@ -12,7 +12,8 @@
     "svod": {
       "allow": [],
       "deny": [
-        "analitika"
+        "analitika",
+        "vprasanja"
       ]
     },
     "uu": {

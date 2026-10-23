@@ -66,8 +66,9 @@ function siteCached_(key, compute) {
   return value;
 }
 
-/** Time-driven trigger (every 10 min): pre-compute the leaderboard and Analitika so visitors never wait for them. */
+/** Time-driven trigger (every 10 min): pre-compute the leaderboard, Analitika and Vprašanja so visitors never wait for them. */
 function refreshSiteCaches() {
   siteCachePut_("ocene", oceneCompute_(), SITE_RESULT_TTL);
   siteCachePut_("analitika", analitikaCompute_(), SITE_RESULT_TTL);
+  if (typeof vprasanjaCompute_ === "function") siteCachePut_("vprasanja", vprasanjaCompute_(), SITE_RESULT_TTL);
 }
