@@ -118,8 +118,12 @@ body {
     flex-direction: column; gap: .25rem; min-width: 170px; padding: .5rem;
     background: rgba(12,22,32,0.98); border: 1px solid var(--line);
     border-radius: 12px; box-shadow: var(--shadow); z-index: 50;
+    /* never taller than the screen below the header: scroll inside instead of clipping Odjava */
+    max-height: calc(100vh - 4.5rem); max-height: calc(100dvh - 4.5rem - env(safe-area-inset-bottom));
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   }
   .nav-more.open { display: flex; }
+  .nav-more > * { flex-shrink: 0; }
   .nav-more .tab { text-align: left; border-radius: 10px; }
 }
 

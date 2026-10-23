@@ -174,6 +174,7 @@ function setUserMenu(open) {
   if (!m || !b) return;
   m.hidden = !open;
   b.setAttribute("aria-expanded", open ? "true" : "false");
+  if (open && m.closest(".nav-more.open")) m.scrollIntoView({ block: "nearest" }); // mobile ≡ menu scrolls; bring Odjava into view
 }
 document.addEventListener("click", (e) => {
   if (e.target.closest("#user-btn")) { e.stopPropagation(); setUserMenu($("#user-menu")?.hidden); return; }
