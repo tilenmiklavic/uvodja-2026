@@ -728,6 +728,12 @@ function renderTimetable() {
   renderDayStrip();
   syncTemaOnlyBtn();
   placeNowLine();
+  // Re-place the now line whenever the timeline's layout changes (cards expanded/collapsed, incl. animations)
+  if (!state.nowObserver && window.ResizeObserver) {
+    let raf = 0;
+    state.nowObserver = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(placeNowLine); });
+    state.nowObserver.observe(root);
+  }
   root.querySelectorAll("details.session").forEach((el) => {
     el.addEventListener("toggle", () => {
       const id = el.dataset.sessionId;
