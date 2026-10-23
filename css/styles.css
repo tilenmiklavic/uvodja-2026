@@ -1218,6 +1218,9 @@ body.auth-locked main, body.auth-locked #main-nav { display: none; }
 .wd-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
 .wd-head h2 { margin: 0; font-family: var(--serif); color: #fff; }
 .wd-sub { font-size: .85rem; }
+.wd-timer { margin: 0 0 0 auto; padding: .15rem .6rem; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.05); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink); }
+.wd-timer.is-done { border-color: var(--gold); color: var(--gold-soft); }
+.wd-time { font-size: .8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .wd-msg { min-height: 1.4em; margin: 0; text-align: center; font-weight: 700; color: var(--gold-soft); }
 .wd-board { display: grid; gap: 6px; justify-content: center; }
 .wd-row { display: grid; grid-template-columns: repeat(var(--wd-len, 5), max(34px, min(56px, calc((100vw - 60px) / var(--wd-len, 5)), calc((100svh - 400px) / 6)))); gap: 6px; }

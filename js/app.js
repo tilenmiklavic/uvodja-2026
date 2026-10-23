@@ -1765,7 +1765,19 @@ function wdScore(guess, answer) {
 const wdKey = (date) => `uvodja.wordle.${date}`;
 function wdStats() { try { return JSON.parse(localStorage.getItem("uvodja.wordle.stats")) || null; } catch { return null; } }
 function wdSaveGame() {
-  try { localStorage.setItem(wdKey(wd.puzzle.date), JSON.stringify({ guesses: wd.guesses, done: wd.done, won: wd.won })); } catch {}
+  try { localStorage.setItem(wdKey(wd.puzzle.date), JSON.stringify({ guesses: wd.guesses, done: wd.done, won: wd.won, startTs: wd.startTs, endTs: wd.endTs })); } catch {}
+}
+/* Timer: starts on the first letter of the first word, stops when the game ends (wall clock, survives reloads) */
+const wdFmtMs = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+const wdElapsed = () => (wd.startTs ? (wd.endTs || Date.now()) - wd.startTs : 0);
+function wdTick() {
+  const el = $("#wd-timer");
+  if (!el) return;
+  el.hidden = !wd.startTs;
+  el.classList.toggle("is-done", !!wd.endTs);
+  $("span", el).textContent = wdFmtMs(wdElapsed());
+  clearTimeout(wd.timer);
+  if (wd.startTs && !wd.endTs && state.wordleActive) wd.timer = setTimeout(wdTick, 1000 - (wdElapsed() % 1000));
 }
 function wdRecordResult() {
   const st = wdStats() || { played: 0, wins: 0, streak: 0, maxStreak: 0, lastN: null, dist: [0, 0, 0, 0, 0, 0] };
@@ -1809,10 +1821,12 @@ async function renderWordle() {
     wd.valid = wd.data.valid ? new Set(wd.data.valid.map((v) => wdDeobf(v, wd.data.key))) : null;
     let saved = null; try { saved = JSON.parse(localStorage.getItem(wdKey(p.date))); } catch {}
     wd.guesses = saved?.guesses || []; wd.done = !!saved?.done; wd.won = !!saved?.won; wd.cur = [];
+    wd.startTs = saved?.startTs || null; wd.endTs = saved?.endTs || null;
   }
   $("#wd-sub").textContent = `#${p.n} · ${wdFmtDate(p.date)}`;
   wdMsg(wd.done ? (wd.won ? "Bravo! 🎉" : `Beseda je bila: ${wd.answer.toUpperCase()}`) : "");
   drawWordle();
+  wdTick();
 }
 
 function drawWordle() {
@@ -1874,17 +1888,22 @@ function wdInput(k) {
     wd.guesses.push(guess); wd.cur = [];
     if (guess === wd.answer) { wd.done = true; wd.won = true; }
     else if (wd.guesses.length >= WD_MAX) { wd.done = true; }
+    if (wd.done) wd.endTs = Date.now();
     wdSaveGame();
+    wdTick();
     if (wd.done) {
       wdRecordResult();
-      wdSubmit({ date: wd.puzzle.date, guesses: wd.guesses.length, solved: wd.won,
+      wdSubmit({ date: wd.puzzle.date, guesses: wd.guesses.length, solved: wd.won, ms: wd.startTs ? wd.endTs - wd.startTs : null,
         grid: wd.guesses.map((g) => wdScore(g, wd.answer).map((x) => (x === "correct" ? "G" : x === "present" ? "Y" : ".")).join("")).join("/") });
     }
     wdMsg(wd.done ? (wd.won ? ["Genialno!", "Odlično!", "Super!", "Bravo!", "Dobro!", "Za las!"][wd.guesses.length - 1] + " 🎉" : `Beseda je bila: ${wd.answer.toUpperCase()}`) : "");
     drawWordle();
     return;
   }
-  if (wd.cur.length < L && /^\p{L}$/u.test(k)) { wd.cur.push(k.toLowerCase()); wdMsg(""); drawWordle(); }
+  if (wd.cur.length < L && /^\p{L}$/u.test(k)) {
+    if (!wd.startTs) { wd.startTs = Date.now(); wdSaveGame(); wdTick(); }
+    wd.cur.push(k.toLowerCase()); wdMsg(""); drawWordle();
+  }
 }
 function shakeRow() {
   const r = $("#wd-board .wd-row.current");
@@ -2002,11 +2021,12 @@ function renderScoreboard() {
   $$(".wd-stab").forEach((b) => b.setAttribute("aria-selected", b.dataset.stab === tab ? "true" : "false"));
   const today = ljNow().date;
   if (tab === "danes") {
+    const ms = (r) => (Number(r.ms) > 0 ? Number(r.ms) : Infinity); // no time (older results) sorts last within the same guesses
     const rows = wd.scores.filter((r) => r.date === today)
-      .sort((a, b) => (a.solved === b.solved ? a.guesses - b.guesses : a.solved ? -1 : 1));
+      .sort((a, b) => (a.solved === b.solved ? a.guesses - b.guesses || ms(a) - ms(b) : a.solved ? -1 : 1));
     body.innerHTML = rows.length ? `<ol class="wd-board-list">${rows.map((r, i) => {
       const w = wdWho(r.email, r.name);
-      return `<li><span class="wd-rank">${i + 1}.</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span><span class="wd-res${r.solved ? "" : " fail"}">${r.solved ? `${r.guesses}/6` : "X/6"}</span><span class="wd-pts">${r.solved ? 7 - r.guesses : 0} t</span></li>`;
+      return `<li><span class="wd-rank">${i + 1}.</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span>${Number(r.ms) > 0 ? `<span class="wd-time muted-text">⏱ ${wdFmtMs(Number(r.ms))}</span>` : ""}<span class="wd-res${r.solved ? "" : " fail"}">${r.solved ? `${r.guesses}/6` : "X/6"}</span><span class="wd-pts">${r.solved ? 7 - r.guesses : 0} t</span></li>`;
     }).join("")}</ol>` : `<p class="muted-text">Danes še ni rezultatov.</p>`;
     return;
   }
