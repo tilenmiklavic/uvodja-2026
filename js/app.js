@@ -1810,7 +1810,7 @@ async function renderWordle() {
   if (!p) {
     const next = wd.data.puzzles.find((x) => x.date > today);
     $("#wd-sub").textContent = "";
-    $("#wd-board").innerHTML = ""; $("#wd-kb").innerHTML = ""; $("#wd-actions").hidden = true;
+    $("#wd-board").innerHTML = ""; $("#wd-kb").innerHTML = "";
     wdMsg(next ? `Danes ni uganke. Naslednja: ${wdFmtDate(next.date)} 🧩` : "Vse uganke so rešene — hvala za igro! 🎉");
     renderWdStats();
     return;
@@ -1856,9 +1856,6 @@ function drawWordle() {
     const st = keyState[k.toLowerCase()] || "";
     return `<button type="button" class="wd-key ${st}" data-k="${k.toLowerCase()}">${k}</button>`;
   }).join("")}</div>`).join("");
-  const act = $("#wd-actions");
-  act.hidden = !wd.done;
-  act.innerHTML = wd.done ? `<button type="button" class="btn primary" id="wd-share">Deli rezultat</button>` : "";
   renderWdStats();
 }
 
@@ -1910,21 +1907,9 @@ function shakeRow() {
   if (!r) return;
   r.classList.remove("shake"); void r.offsetWidth; r.classList.add("shake");
 }
-async function wdShare() {
-  const L = wd.data.length;
-  const grid = wd.guesses.map((g) => wdScore(g, wd.answer).map((s) => (s === "correct" ? "🟩" : s === "present" ? "🟨" : "⬛")).join("")).join("\n");
-  const text = `U Vodja Wordle #${wd.puzzle.n} ${wd.won ? wd.guesses.length : "X"}/${WD_MAX}\n${grid}`;
-  try { await navigator.clipboard.writeText(text); wdMsg("Rezultat kopiran v odložišče 📋"); }
-  catch {
-    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
-    try { document.execCommand("copy"); wdMsg("Rezultat kopiran v odložišče 📋"); } catch { wdMsg(text); }
-    ta.remove();
-  }
-}
 document.addEventListener("click", (e) => {
   const k = e.target.closest("#wd-kb [data-k]");
-  if (k) { wdInput(k.dataset.k); return; }
-  if (e.target.closest("#wd-share")) wdShare();
+  if (k) wdInput(k.dataset.k);
 });
 document.addEventListener("keydown", (e) => {
   if (!state.wordleActive || e.ctrlKey || e.metaKey || e.altKey) return;

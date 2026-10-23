@@ -1237,7 +1237,6 @@ body.auth-locked main, body.auth-locked #main-nav { display: none; }
 .wd-key.absent { background: #2a2a2c; color: rgba(255,255,255,.45); }
 .wd-row.shake { animation: wdshake .35s; }
 @keyframes wdshake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
-.wd-actions { display: flex; justify-content: center; }
 .wd-kb { display: grid; gap: 6px; margin-top: .3rem; user-select: none; }
 .wd-kb-row { display: flex; gap: 4px; justify-content: center; }
 .wd-key {
