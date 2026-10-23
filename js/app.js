@@ -2543,8 +2543,11 @@ async function renderOs(groupN = null) {
     $("#os-detail").innerHTML = `<header class="os-detail-head"><h2>Skupina ${g.n}</h2>
         <p class="os-spr"><span class="muted-text">Spremljevalec</span> <strong>${who}</strong></p>
         <p class="muted-text">${g.members.length} udeležencev</p></header>
-      <ul class="os-people">${g.members.map((m) => `<li class="card os-person">${avatarHtml(m, "avatar-os")}
-        <div class="os-person-txt"><span class="os-name">${esc(m.name)}</span>${m.steg ? `<span class="os-steg muted-text">${esc(m.steg)}</span>` : ""}</div></li>`).join("")}</ul>`;
+      <ul class="os-people">${g.members.map((m) => {
+        const inner = `${avatarHtml(m, "avatar-os")}<div class="os-person-txt"><span class="os-name">${esc(m.name)}</span>${m.steg ? `<span class="os-steg muted-text">${esc(m.steg)}</span>` : ""}</div>`;
+        return canSee("uu") ? `<li><a class="card os-person os-person-link" href="#uu/${uuSlug(m.name)}">${inner}<span class="os-more" aria-hidden="true">›</span></a></li>`
+          : `<li class="card os-person">${inner}</li>`;
+      }).join("")}</ul>`;
     return;
   }
   if (!osData?.groups?.length) { box.innerHTML = `<p class="muted-text">Skupine še niso objavljene.</p>`; return; }

@@ -1322,6 +1322,9 @@ a.os-spr-link { text-decoration: underline; text-underline-offset: 3px; }
 .os-person { display: flex; align-items: center; gap: .85rem; padding: .75rem .9rem; min-width: 0; }
 .avatar-os { width: 72px; height: 72px; font-size: 1.4rem; border-width: 2px; border-color: rgba(248,164,24,0.45); }
 .os-person-txt { display: flex; flex-direction: column; min-width: 0; }
+.os-person-link { color: inherit; text-decoration: none; height: 100%; box-sizing: border-box; }
+.os-person-link:hover { border-color: var(--gold); }
+.os-person-link:hover .os-name { color: var(--gold-soft); }
 .os-person .os-name { font-size: 1.02rem; }
 #tab-os .person-back a { display: inline-flex; align-items: center; min-height: 44px; }
 
