@@ -1,5 +1,5 @@
 {
-  "_help": "Slike za vprašanja Stavnice: prvo pravilo, katerega »match« (regex, brez velikih/malih črk) ustreza besedilu vprašanja. Stolpec »image« (URL) v listu questions ima prednost. Slike so iz Wikimedia Commons (licence spodaj).",
+  "_help": "Slike za vprašanja Stavnice (brez ujemanja stran ustvari svojo sliko iz besedila vprašanja): prvo pravilo, katerega »match« (regex, brez velikih/malih črk) ustreza besedilu vprašanja. Stolpec »image« (URL) v listu questions ima prednost. Slike so iz Wikimedia Commons (licence spodaj).",
   "images": [
     {
       "match": "matej",
@@ -27,6 +27,5 @@
       "credit": "Derrick Coetzee, CC0",
       "source": "https://commons.wikimedia.org/wiki/File:Roll_of_toilet_paper_with_one_sheet_folded_down_in_front.jpg"
     }
-  ],
-  "fallback": "assets/logos/vodja-skull.png"
+  ]
 }

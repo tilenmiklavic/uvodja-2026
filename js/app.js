@@ -2305,8 +2305,28 @@ function svErrorHtml(e) {
 const svSlug = (q) => uuSlug(q.id);
 const svLabel = (q, o) => q.type === "boolean" ? ({ yes: "Da", no: "Ne" }[String(o).toLowerCase()] || o) : o;
 const svOdds = (q) => q.odds || q.options.length;
-/* Sheet image first; keyword image / skull as fallback (also used if the sheet image fails to load) */
-function svImgFallback(q) { return (sv.media?.images || []).find((m) => new RegExp(m.match, "i").test(q.question))?.src || sv.media?.fallback || ""; }
+/* Sheet image first, then keyword image, then a generated cover (also used if the sheet image fails to load) */
+function svImgFallback(q) { return (sv.media?.images || []).find((m) => new RegExp(m.match, "i").test(q.question))?.src || svGenImg(q); }
+/* Generated cover for questions without an image: gradient in a colour derived from the text, the main word's
+   two-letter abbreviation and a bet-type badge (DA/NE or #). Deterministic → the same question always looks the same. */
+const SV_STOP = new Set("ali bo bomo bodo bi je so se v na za pri iz po do od in ali ter kot ki ko kaj kdo koliko kolikrat kateri katera katero tekom med pred prvega drugega vikenda vikendu temo tema dan dneva".split(" "));
+function svGenImg(q) {
+  const text = String(q.question || "");
+  let h = 0; for (const ch of text) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  const hue = Math.round((h % 1000) * 137.508) % 360, hue2 = (hue + 35) % 360; // golden angle → well-spread colours
+  const raw = text.normalize("NFC").match(/[\p{L}]+/gu) || [];
+  // a name mid-sentence ("Tonka", "Matej") wins; otherwise the longest meaningful word
+  const name = raw.slice(1).find((w) => /^\p{Lu}\p{Ll}{2,}$/u.test(w) && !SV_STOP.has(w.toLowerCase()));
+  const main = name || raw.map((w) => w.toLowerCase()).filter((w) => !SV_STOP.has(w) && w.length > 2).sort((x, y) => y.length - x.length)[0] || "?";
+  const mono = main.slice(0, 2).toUpperCase().replace(/[<&>"]/g, "");
+  const glyph = q.type === "number" ? "#" : "?";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">`
+    + `<stop offset="0" stop-color="hsl(${hue},58%,42%)"/><stop offset="1" stop-color="hsl(${hue2},62%,20%)"/></linearGradient></defs>`
+    + `<rect width="96" height="96" fill="url(#g)"/><circle cx="80" cy="14" r="32" fill="#fff" opacity=".08"/><circle cx="8" cy="94" r="28" fill="#000" opacity=".14"/>`
+    + `<text x="44" y="60" text-anchor="middle" font-family="Nunito,system-ui,sans-serif" font-size="38" font-weight="800" fill="#fbf1d6">${mono}</text>`
+    + `<circle cx="78" cy="78" r="13" fill="#f8a418"/><text x="78" y="85" text-anchor="middle" font-family="Nunito,system-ui,sans-serif" font-size="19" font-weight="900" fill="#16242f">${glyph}</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
 function svImg(q) { return q.image || svImgFallback(q); }
 document.addEventListener("error", (e) => {
   const img = e.target;
