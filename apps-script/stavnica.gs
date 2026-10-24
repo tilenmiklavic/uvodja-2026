@@ -86,7 +86,7 @@ function stavnicaState_(ss, me, withPeople) {
   const imgFx = imgCol >= 0 && qRows.length ? qSheet.getRange(2, imgCol + 1, qRows.length, 1).getFormulas() : [];
   const imageAt = (i) => {
     const v = imgRaw[i] && imgRaw[i][0], fx = imgFx[i] && imgFx[i][0];
-    if (v && typeof v === "object" && typeof v.getContentUrl === "function") return v.getUrl() || v.getContentUrl(); // CellImage
+    if (v && typeof v === "object" && typeof v.getContentUrl === "function") return v.getContentUrl() || v.getUrl(); // CellImage: Google-hosted copy first (the source site may block hotlinking)
     const m = /^=IMAGE\(\s*"([^"]+)"/i.exec(fx || "");
     if (m) return m[1];
     return /^https?:\/\//i.test(String(v || "").trim()) ? String(v).trim() : "";
