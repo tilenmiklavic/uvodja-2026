@@ -2335,7 +2335,7 @@ function svBetRow(b, { who = true, question = true } = {}) {
     : resolved === "lost" ? `<strong class="is-lost" title="Ni zadel">0 ${SV_COIN}</strong>`
     : `<strong title="Če zadene (×${odds})">${pot} ${SV_COIN}</strong>`;
   return `<li class="sv-bet-item${resolved ? ` is-${resolved}` : ""}">
-    <div class="sv-bi-top${w ? " has-who" : ""}">${w ? `${w.av}<span class="sv-bi-who" title="${esc(w.title)}">${esc(w.label)}</span>` : ""}${question && q ? `<a class="sv-bi-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : question ? `<span class="sv-bi-q">${esc(b.question)}</span>` : ""}<span class="sv-bi-time muted-text">${esc(svAgo(b.ts))}</span></div>
+    <div class="sv-bi-top${w ? " has-who" : ""}">${!who ? `<span class="sv-state ${resolved ? `is-${resolved}` : "is-open"}">${resolved === "won" ? "Zadel" : resolved === "lost" ? "Ni zadel" : "V igri"}</span>` : ""}${w ? `${w.av}<span class="sv-bi-who" title="${esc(w.title)}">${esc(w.label)}</span>` : ""}${question && q ? `<a class="sv-bi-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : question ? `<span class="sv-bi-q">${esc(b.question)}</span>` : ""}<span class="sv-bi-time muted-text">${esc(svAgo(b.ts))}</span></div>
     <div class="sv-bi-facts">
       <span class="sv-fact sv-fact-pick"><small>Izbira</small><strong>${esc(q ? svLabel(q, b.option) : b.option)}</strong></span>
       <span class="sv-fact"><small>Vložek</small><strong>${b.amount} ${SV_COIN}</strong></span>
@@ -2357,9 +2357,9 @@ function svSections(bets, adjs) {
   const byTs = (a, b) => (b.ts || 0) - (a.ts || 0);
   const open = bets.filter((b) => b.payout === null).sort(byTs), done = bets.filter((b) => b.payout !== null).sort(byTs);
   const ad = [...(adjs || [])].sort(byTs);
-  const sec = (cls, title, items, render, empty) => (items.length || empty) ? `<section class="sv-sec sv-sec-${cls}">
+  const sec = (cls, title, items, render, empty) => (items.length || empty) ? `<div class="sv-sec sv-sec-${cls}">
       <h4 class="sv-sec-h"><span class="sv-sec-dot" aria-hidden="true"></span>${title}<span class="sv-sec-n">${items.length}</span></h4>
-      ${items.length ? `<ul class="sv-bets">${items.map(render).join("")}</ul>` : `<p class="muted-text sv-sec-empty">${empty}</p>`}</section>` : "";
+      ${items.length ? `<ul class="sv-bets">${items.map(render).join("")}</ul>` : `<p class="muted-text sv-sec-empty">${empty}</p>`}</div>` : "";
   const row = (b) => svBetRow(b, { who: false });
   return sec("active", "Aktivne stave", open, row, "Ni aktivnih stav.")
     + sec("done", "Zaključene stave", done, row, "")

@@ -1736,32 +1736,35 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .sv-adj-new summary { cursor: pointer; font-weight: 700; color: var(--gold-soft); margin-bottom: .2rem; }
 .sv-adj-new[open] summary { margin-bottom: .6rem; }
 
-/* —— Stavnica: gold coin + active / concluded sections —— */
+/* —— Stavnica: gold coin + active / concluded groups (flat: heading line + left stripe on cards) —— */
 .sv-coin { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -.16em; flex: none; }
-.sv-sec { margin-top: .9rem; padding: .7rem .7rem .75rem; border-radius: 14px; border: 1px solid var(--line); }
-.sv-sec:first-of-type { margin-top: .2rem; }
-.sv-sec-h { display: flex; align-items: center; gap: .45rem; margin: 0 0 .6rem; font-size: .78rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-.sv-sec-dot { width: .6rem; height: .6rem; border-radius: 50%; flex: none; }
-.sv-sec-n { margin-left: auto; font-size: .72rem; padding: .05rem .5rem; border-radius: 999px; background: rgba(0,0,0,.25); letter-spacing: 0; }
+.sv-sec { margin-top: 1.1rem; }
+.sv-sec:first-child { margin-top: .2rem; }
+.sv-sec-h { display: flex; align-items: center; gap: .5rem; margin: 0 0 .55rem; font-size: .74rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-muted); }
+.sv-sec-h::after { content: ""; flex: 1; height: 1px; background: var(--line); order: 3; }
+.sv-sec-dot { width: .55rem; height: .55rem; border-radius: 50%; flex: none; }
+.sv-sec-n { order: 2; font-size: .7rem; padding: .02rem .45rem; border-radius: 999px; background: rgba(255,255,255,.07); letter-spacing: 0; }
 .sv-sec-empty { margin: 0; font-size: .85rem; }
 .sv-sec .sv-bets { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
-/* Aktivne: warm gold */
-.sv-sec-active { background: rgba(248,164,24,.08); border-color: rgba(248,164,24,.45); }
 .sv-sec-active .sv-sec-h { color: var(--gold-soft); }
-.sv-sec-active .sv-sec-dot { background: var(--gold); box-shadow: 0 0 0 3px rgba(248,164,24,.25); animation: tok-pulse 2s ease-in-out infinite; }
-.sv-sec-active li.sv-bet-item { border-color: rgba(248,164,24,.35); background: rgba(248,164,24,.07); }
-/* Zaključene: cool, muted */
-.sv-sec-done { background: rgba(120,150,190,.07); border-color: rgba(150,175,210,.3); }
-.sv-sec-done .sv-sec-h { color: #a9bcd6; }
+.sv-sec-active .sv-sec-dot { background: var(--gold); }
 .sv-sec-done .sv-sec-dot { background: #8fa6c4; }
-.sv-sec-done li.sv-bet-item { background: rgba(10,20,30,.35); border-color: rgba(150,175,210,.22); }
-.sv-sec-done li.sv-bet-item.is-won { border-color: rgba(107,142,35,.75); background: rgba(107,142,35,.16); }
-.sv-sec-done .sv-fact-pick { background: rgba(150,175,210,.12); box-shadow: inset 0 0 0 1px rgba(150,175,210,.3); }
-.sv-sec-done .sv-fact-pick strong { color: #c9d6e8; }
-/* Popravki */
-.sv-sec-adj { background: rgba(255,255,255,.03); border-style: dashed; }
-.sv-sec-adj .sv-sec-h { color: var(--ink-muted); }
 .sv-sec-adj .sv-sec-dot { background: var(--ink-muted); }
+/* cards: one coloured stripe on the left shows the state */
+.sv-sec li.sv-bet-item, .sv-sec li.sv-adj-item { border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.05); }
+.sv-sec-active li.sv-bet-item { border-left-color: var(--gold); }
+.sv-sec-done li.sv-bet-item { border-left-color: #6f819a; background: rgba(255,255,255,0.03); }
+.sv-sec-done li.sv-bet-item.is-won { border-left-color: var(--band-green); background: rgba(107,142,35,.1); opacity: 1; }
+.sv-sec-done li.sv-bet-item.is-lost { opacity: .75; }
+.sv-sec-done .sv-fact-pick { background: rgba(255,255,255,.06); box-shadow: none; }
+.sv-sec-done .sv-fact-pick strong { color: var(--ink); }
+.sv-sec li.sv-adj-item.is-plus { border-left-color: var(--gold); background: rgba(248,164,24,.08); }
+.sv-sec li.sv-adj-item.is-minus { border-left-color: #e5484d; background: rgba(229,72,77,.08); }
+/* status pill */
+.sv-state { flex: none; order: 9; margin-left: .2rem; padding: .05rem .5rem; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .03em; white-space: nowrap; }
+.sv-state.is-open { background: rgba(248,164,24,.16); color: var(--gold-soft); }
+.sv-state.is-won { background: rgba(107,142,35,.25); color: #a8d47a; }
+.sv-state.is-lost { background: rgba(255,255,255,.07); color: var(--ink-muted); }
+.sv-bi-top .sv-bi-time { order: 8; }
 .sv-p-hist { padding: 0 .75rem .75rem; }
-@media (prefers-reduced-motion: reduce) { .sv-sec-active .sv-sec-dot { animation: none; } }
 .zb-choice img { background: transparent; }
