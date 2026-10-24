@@ -2327,7 +2327,8 @@ function svGenImg(q) {
     + `<circle cx="78" cy="78" r="13" fill="#f8a418"/><text x="78" y="85" text-anchor="middle" font-family="Nunito,system-ui,sans-serif" font-size="19" font-weight="900" fill="#16242f">${glyph}</text></svg>`;
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
-function svImg(q) { return q.image || svImgFallback(q); }
+/* Google Sheets images come at =s2048; ask for a small version (cards show 48 px, the detail page 96 px) */
+function svImg(q, size = 192) { return q.image ? q.image.replace(/=s\d+(?=\?|$)/, `=s${size}`) : svImgFallback(q); }
 document.addEventListener("error", (e) => {
   const img = e.target;
   if (img?.tagName === "IMG" && img.dataset.fb && img.getAttribute("src") !== img.dataset.fb) img.src = img.dataset.fb;
@@ -2443,7 +2444,7 @@ function svDetail(st, me, i) {
   const sel = sv.open?.q === i && !q.result ? sv.open.o : null;
   return `<p class="person-back sv-back">${q.result ? `<a href="#zabava/stavnica/pretekle">← Pretekle stave</a>` : `<a href="#zabava/stavnica">← Vse stave</a>`}</p>
     <article class="sv-detail">
-      <header class="sv-detail-head">${svImg(q) ? `<img class="sv-detail-img" src="${esc(svImg(q))}" data-fb="${esc(svImgFallback(q))}" referrerpolicy="no-referrer" alt="" width="96" height="96" />` : ""}
+      <header class="sv-detail-head">${svImg(q) ? `<img class="sv-detail-img" src="${esc(svImg(q, 288))}" data-fb="${esc(svImgFallback(q))}" referrerpolicy="no-referrer" alt="" width="96" height="96" />` : ""}
         <div><h2 class="sv-q">${esc(q.question)}</h2>
         <p class="muted-text sv-detail-meta">${q.options.length ? `<span class="sv-odds">×${svOdds(q)}</span> zadetek vrne ${svOdds(q)}-kratni vložek · ` : ""}${sh.n ? svCount(sh.n) : "še brez stav"}</p></div></header>
       ${q.result ? `<p class="sv-meta"><strong class="sv-res">Zaprto · rezultat: ${esc(svLabel(q, q.result))}</strong></p>` : ""}
