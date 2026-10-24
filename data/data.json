@@ -24,7 +24,7 @@
       "programId": "10xDmjgoYQrPWPA_PTVzpI-o4Hxot0_urdb5xK4rtjx4",
       "folderId": "166EnwAANG6DbhPG8EwAfIYS7jc3rgz6i"
     },
-    "generatedAt": "2026-10-23",
+    "generatedAt": "2026-10-24",
     "matchStats": {
       "matched": 19,
       "unmatched_program": 9,
@@ -190,12 +190,12 @@
       {
         "dayId": "vikend1-sobota",
         "day": "Sobota, 24. 10. 2026",
-        "name": "Jakob G."
+        "name": "Petra"
       },
       {
         "dayId": "vikend1-nedelja",
         "day": "Nedelja, 25. 10. 2026",
-        "name": "Petra"
+        "name": "Jakob S."
       },
       {
         "dayId": "vikend2-cetrtek",
@@ -210,7 +210,7 @@
       {
         "dayId": "vikend2-sobota",
         "day": "Sobota, 7. 11. 2026",
-        "name": "Jakob S."
+        "name": "Jakob G."
       },
       {
         "dayId": "vikend2-nedelja",
@@ -580,7 +580,7 @@
       "weekday": "Sobota",
       "date": "2026-10-24",
       "label": "Sobota, 24. 10. 2026",
-      "timekeeper": "Jakob G.",
+      "timekeeper": "Petra",
       "sessions": [
         {
           "id": "vikend1-sobota-bujenje-0700",
@@ -1000,7 +1000,7 @@
       "weekday": "Nedelja",
       "date": "2026-10-25",
       "label": "Nedelja, 25. 10. 2026",
-      "timekeeper": "Petra",
+      "timekeeper": "Jakob S.",
       "sessions": [
         {
           "id": "vikend1-nedelja-zajtrk-0700",
@@ -1667,7 +1667,7 @@
       "weekday": "Sobota",
       "date": "2026-11-07",
       "label": "Sobota, 7. 11. 2026",
-      "timekeeper": "Jakob S.",
+      "timekeeper": "Jakob G.",
       "sessions": [
         {
           "id": "vikend2-sobota-bujenje-0700",
@@ -3357,16 +3357,6 @@
           "source": "Časovnica – stolpec Kdo"
         },
         {
-          "type": "timekeeper",
-          "typeLabel": "Time keeper",
-          "dayId": "vikend1-sobota",
-          "dayLabel": "Sobota, 24. 10. 2026",
-          "date": "2026-10-24",
-          "sortKey": "2026-10-24-00:00",
-          "href": "#day-vikend1-sobota",
-          "label": "Time keeper · Sobota, 24. 10. 2026"
-        },
-        {
           "type": "activity",
           "typeLabel": "Odgovorni za aktivnost",
           "sessionId": "vikend1-sobota-os-2000",
@@ -3559,6 +3549,16 @@
           "source": "Časovnica – stolpec Kdo"
         },
         {
+          "type": "timekeeper",
+          "typeLabel": "Time keeper",
+          "dayId": "vikend2-sobota",
+          "dayLabel": "Sobota, 7. 11. 2026",
+          "date": "2026-11-07",
+          "sortKey": "2026-11-07-00:00",
+          "href": "#day-vikend2-sobota",
+          "label": "Time keeper · Sobota, 7. 11. 2026"
+        },
+        {
           "type": "tema",
           "typeLabel": "Odgovorni za dodatno temo",
           "sessionId": "vikend2-sobota-ziva-knjiznica-z-io-jem-1-5h-1800",
@@ -3737,12 +3737,12 @@
         {
           "type": "timekeeper",
           "typeLabel": "Time keeper",
-          "dayId": "vikend2-sobota",
-          "dayLabel": "Sobota, 7. 11. 2026",
-          "date": "2026-11-07",
-          "sortKey": "2026-11-07-00:00",
-          "href": "#day-vikend2-sobota",
-          "label": "Time keeper · Sobota, 7. 11. 2026"
+          "dayId": "vikend1-nedelja",
+          "dayLabel": "Nedelja, 25. 10. 2026",
+          "date": "2026-10-25",
+          "sortKey": "2026-10-25-00:00",
+          "href": "#day-vikend1-nedelja",
+          "label": "Time keeper · Nedelja, 25. 10. 2026"
         },
         {
           "type": "tema",
@@ -4383,6 +4383,16 @@
           "label": "11:00–13:00 · Jaz, vodja"
         },
         {
+          "type": "timekeeper",
+          "typeLabel": "Time keeper",
+          "dayId": "vikend1-sobota",
+          "dayLabel": "Sobota, 24. 10. 2026",
+          "date": "2026-10-24",
+          "sortKey": "2026-10-24-00:00",
+          "href": "#day-vikend1-sobota",
+          "label": "Time keeper · Sobota, 24. 10. 2026"
+        },
+        {
           "type": "tema",
           "typeLabel": "Odgovorni za dodatno temo",
           "sessionId": "vikend1-sobota-zacetki-skavtstva-1-5h-2100",
@@ -4397,16 +4407,6 @@
           "sortKey": "2026-10-24-21:00",
           "href": "#sid-vikend1-sobota-zacetki-skavtstva-1-5h-2100",
           "label": "21:00–23:00 · Začetki skavtstva"
-        },
-        {
-          "type": "timekeeper",
-          "typeLabel": "Time keeper",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "sortKey": "2026-10-25-00:00",
-          "href": "#day-vikend1-nedelja",
-          "label": "Time keeper · Nedelja, 25. 10. 2026"
         },
         {
           "type": "tema",
@@ -4897,8 +4897,8 @@
       "name": "Jakob Gostiša",
       "shortName": "Jakob G.",
       "counts": {
-        "total": 16,
-        "teme": 6,
+        "total": 15,
+        "teme": 5,
         "timekeeper": 1,
         "zadolzitve": 5,
         "zadolzitvePre": 3,
@@ -5034,8 +5034,8 @@
       "name": "Nejka Miklavič",
       "shortName": "Nejka",
       "counts": {
-        "total": 9,
-        "teme": 4,
+        "total": 10,
+        "teme": 5,
         "timekeeper": 1,
         "zadolzitve": 4,
         "zadolzitvePre": 3,
@@ -5708,9 +5708,9 @@
           "num": 2,
           "units": "2",
           "voditelj1": {
-            "name": "Jakob Gostiša",
-            "slug": "jakob-gostisa",
-            "shortName": "Jakob G."
+            "name": "Nejka Miklavič",
+            "slug": "nejka-miklavic",
+            "shortName": "Nejka"
           },
           "voditelj2": {
             "name": "Jakob Stele",

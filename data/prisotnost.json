@@ -1,6 +1,6 @@
 {
   "_help": "Odsotnosti udeležencev (UU), prepisane iz stolpca »Opombe« v Drive 03_UU/UU U Vodja 2026 (zavihek »Seznam udeležencev«). Čas »from«/»to« je v HH:MM; brez njiju velja za cel dan. »tentative« = negotovo (v opombi je vprašaj ali neznana ura). Udeleženci brez vnosa so prisotni ves čas.",
-  "fetched": "2026-10-23",
+  "fetched": "2026-10-24",
   "absences": [
     { "name": "Monika Medvešček", "day": "vikend1-petek", "to": "12:00", "tentative": true, "note": "petek 23. 10. zamudi (ura ni znana)" },
     { "name": "Maša Mahkovec", "day": "vikend2-petek", "to": "13:30", "note": "petek 6. 11. pride okoli kosila" },
@@ -33,7 +33,7 @@
     { "name": "Kristina Čop", "day": "vikend1-petek", "to": "12:00", "tentative": true, "note": "petek 23. 10. zamudi (ura ni znana)" },
     { "name": "Neža Mauko", "day": "vikend1-petek", "to": "12:00", "tentative": true, "note": "23. 10. zamudi (ura ni znana)" },
     { "name": "Maja Jarc", "day": "vikend1-petek", "to": "16:00", "note": "petek 23. 10. pride do 16h" },
-    { "name": "Nika Ravnikar", "day": "vikend2-cetrtek", "note": "četrtek 5. 11. ni" },
-    { "name": "Nika Ravnikar", "day": "vikend2-petek", "to": "14:00", "note": "petek 6. 11. do nekje 14.00" }
+    { "name": "Nika Ravnikar", "day": "vikend2-cetrtek", "note": "četrtek 5. 11. ni, petek 6. 11. do nekje 14.00" },
+    { "name": "Nika Ravnikar", "day": "vikend2-petek", "to": "14:00", "note": "četrtek 5. 11. ni, petek 6. 11. do nekje 14.00" }
   ]
 }
