@@ -2385,7 +2385,8 @@ async function renderStavnica(force = false) {
   const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
   const qi = st.questions.findIndex((q) => svSlug(q) === sv.view);
   const isAdminView = !!st.people && effectiveRole(state.user?.email) === "admin"; // overview only in the admin view (not when simulating)
-  const tab = sv.view === "profil" || sv.view === "pretekle" || (sv.view === "pregled" && isAdminView) ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
+  const playerSlug = isAdminView && /^igralec\//.test(sv.view) ? sv.view.slice(8) : null;
+  const tab = playerSlug ? "pregled" : sv.view === "profil" || sv.view === "pretekle" || (sv.view === "pregled" && isAdminView) ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
   const tabs = `<div class="pv-ftabs" role="tablist" aria-label="Stavnica">
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica" aria-selected="${tab === "stave"}">Stave</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/pretekle" aria-selected="${tab === "pretekle"}">Pretekle stave</a>
@@ -2394,6 +2395,7 @@ async function renderStavnica(force = false) {
     </div>`;
   let body;
   if (tab === "profil") body = svProfile(st, me);
+  else if (playerSlug) body = svPlayer(st, playerSlug);
   else if (tab === "pregled") body = svOverview(st);
   else if (qi >= 0) body = svDetail(st, me, qi);
   else body = svList(st, tab === "pretekle");
@@ -2440,28 +2442,27 @@ function svDetail(st, me, i) {
     </article>
     <section class="sv-list"><h3>Zadnje stave na to vprašanje</h3>${svRecent(st.recent.filter((b) => b.question === q.id), false)}</section>`;
 }
-/* Admin: all players with balances and their transactions */
-function svOverview(st) {
-  const people = [...(st.people || [])].sort((a, b) => b.balance - a.balance || b.staked - a.staked || a.name.localeCompare(b.name, "sl"));
-  const sum = (k) => people.reduce((a, p) => a + (p[k] || 0), 0);
-  const nBets = people.reduce((a, p) => a + p.bets.length, 0);
-  const adjForm = (p) => `<form class="sv-adj-form" data-sv-adj data-email="${esc(p?.email || "")}" data-name="${esc(p?.name || "")}">
+/* Admin: all players with balances; each links to their detail page */
+const svPlayerSlug = (email) => uuSlug(email);
+function svAdjForm(p) {
+  return `<form class="sv-adj-form" data-sv-adj data-email="${esc(p?.email || "")}" data-name="${esc(p?.name || "")}">
       ${p ? "" : `<input type="email" name="email" placeholder="e-naslov igralca" list="sv-emails" required autocomplete="off" aria-label="E-naslov" />`}
       <input type="number" name="amount" min="1" max="1000" step="1" value="1" required aria-label="Znesek" />
       <input type="text" name="reason" placeholder="Razlog (vidi ga igralec)" maxlength="200" required aria-label="Razlog" />
       <div class="sv-adj-btns"><button type="submit" class="btn primary" name="dir" value="1">+ Dodaj</button><button type="submit" class="btn ghost" name="dir" value="-1">− Odvzemi</button></div>
       <p class="sv-status" role="status" aria-live="polite"></p>
     </form>`;
+}
+function svOverview(st) {
+  const people = [...(st.people || [])].sort((a, b) => b.balance - a.balance || b.staked - a.staked || a.name.localeCompare(b.name, "sl"));
+  const sum = (k) => people.reduce((a, p) => a + (p[k] || 0), 0);
+  const nBets = people.reduce((a, p) => a + p.bets.length, 0);
   const row = (p, i) => {
-    const w = wdWho(p.email, p.name);
-    return `<details class="sv-person" data-email="${esc(p.email)}"${sv.openPerson === p.email ? " open" : ""}>
-      <summary><span class="sv-p-rank">${i + 1}.</span>${w.av}<span class="sv-p-name" title="${esc(p.email)}">${esc(p.name || p.email)}</span>
-        <span class="sv-p-bal" title="Stanje">${SV_COIN} ${p.balance}</span></summary>
-      <div class="sv-p-stats"><span><small>Vloženo</small><strong>${p.staked}</strong></span><span><small>Priigrano</small><strong>${p.won}</strong></span><span><small>V igri</small><strong>${p.open}</strong></span><span><small>Popravki</small><strong>${p.adjusted > 0 ? "+" : ""}${p.adjusted || 0}</strong></span></div>
-      <p class="muted-text sv-p-mail">${esc(p.email)}</p>
-      <div class="sv-p-adj"><p class="sv-p-adj-h">Popravek stanja</p>${adjForm(p)}</div>
-      <div class="sv-p-hist">${svSections(p.bets, p.adjustments)}</div>
-    </details>`;
+    const w = wdWho(p.email, p.name), open = p.bets.filter((b) => b.payout === null).length;
+    return `<a class="sv-person-link" href="#zabava/stavnica/igralec/${esc(svPlayerSlug(p.email))}">
+      <span class="sv-p-rank">${i + 1}.</span>${w.av}
+      <span class="sv-p-main"><span class="sv-p-name">${esc(p.name || p.email)}</span><span class="sv-p-sub muted-text">${p.bets.length} stav${open ? ` · ${open} aktivnih` : ""}${p.adjusted ? ` · popravki ${p.adjusted > 0 ? "+" : ""}${p.adjusted}` : ""}</span></span>
+      <span class="sv-p-bal" title="Stanje">${SV_COIN} ${p.balance}</span><span class="sv-go" aria-hidden="true">›</span></a>`;
   };
   return `<div class="sv-stats">
       <div class="card"><span class="muted-text">Igralcev</span><strong>${people.length}</strong></div>
@@ -2469,11 +2470,101 @@ function svOverview(st) {
       <div class="card"><span class="muted-text">Vloženo</span><strong>${sum("staked")}</strong></div>
       <div class="card"><span class="muted-text">Izplačano</span><strong>${sum("won")}</strong></div>
     </div>
-    <p class="muted-text sv-help">Samo za admina. Stanje = ${st.budget} − vloženo + priigrano + popravki; »V igri« so vložki na še nerazrešenih vprašanjih. Klikni igralca za vse njegove stave in popravek stanja.</p>
-    <details class="card sv-adj-new"><summary>Popravek za drugega igralca (po e-naslovu)</summary>${adjForm(null)}
+    <p class="muted-text sv-help">Samo za admina. Stanje = ${st.budget} − vloženo + priigrano + popravki. Klikni igralca za podrobnosti, graf in popravek stanja.</p>
+    <details class="card sv-adj-new"><summary>Popravek za drugega igralca (po e-naslovu)</summary>${svAdjForm(null)}
       <datalist id="sv-emails">${people.map((p) => `<option value="${esc(p.email)}">${esc(p.name)}</option>`).join("")}</datalist></details>
     <section class="sv-list"><h3>Igralci</h3>${people.length ? `<div class="sv-people">${people.map(row).join("")}</div>` : `<p class="muted-text">Še nihče ni stavil.</p>`}</section>`;
 }
+/* Stanje (free coins) and portfelj (stanje + stakes still in play) after every event, oldest first */
+function svSeries(st, p) {
+  const qById = Object.fromEntries(st.questions.map((q) => [q.id, q]));
+  const ev = [];
+  for (const b of p.bets) {
+    const q = qById[b.question], label = (q ? svLabel(q, b.option) : b.option);
+    ev.push({ ts: b.ts, dB: -b.amount, dP: 0, kind: "bet", text: `Stava ${b.amount} na »${label}« · ${b.question}` });
+    if (b.payout !== null) {
+      const ts = q?.resolvedAt || Math.max(b.ts + 1, Date.now() - 1);
+      ev.push({ ts, dB: b.payout, dP: b.payout - b.amount, kind: b.payout ? "win" : "loss", text: `${b.payout ? `Zadel +${b.payout}` : `Ni zadel (−${b.amount})`} · ${b.question}` });
+    }
+  }
+  for (const a of p.adjustments || []) ev.push({ ts: a.ts, dB: a.amount, dP: a.amount, kind: "adj", text: `Popravek ${a.amount > 0 ? "+" : ""}${a.amount} · ${a.reason}` });
+  ev.sort((x, y) => x.ts - y.ts || (x.kind === "bet" ? -1 : 1));
+  let bal = st.budget, port = st.budget;
+  const t0 = ev.length ? ev[0].ts - 60000 : Date.now() - 3600000;
+  const pts = [{ ts: t0, bal, port, text: `Začetek: ${st.budget}` }];
+  for (const e of ev) { bal += e.dB; port += e.dP; pts.push({ ts: e.ts, bal, port, text: e.text, kind: e.kind }); }
+  pts.push({ ts: Math.max(Date.now(), pts[pts.length - 1].ts + 60000), bal, port, text: "Zdaj", now: true });
+  return pts;
+}
+const SV_C_BAL = "#c08214", SV_C_PORT = "#3a84c9";
+function svChart(pts) {
+  // drawn at (roughly) the on-screen width so text stays readable on phones
+  const W = Math.round(Math.min(680, Math.max(300, (document.querySelector("#stavnica")?.clientWidth || 640) - 60))), H = W < 420 ? 220 : 250, L = 30, R = W < 420 ? 58 : 66, T = 14, B = 28;
+  const t0 = pts[0].ts, t1 = pts[pts.length - 1].ts;
+  const vals = pts.flatMap((p) => [p.bal, p.port]);
+  const lo = Math.min(0, ...vals), hiRaw = Math.max(...vals), step = hiRaw - lo > 40 ? 10 : hiRaw - lo > 16 ? 5 : 2;
+  const hi = Math.ceil((hiRaw + 1) / step) * step;
+  const x = (t) => L + ((t - t0) / (t1 - t0 || 1)) * (W - L - R), y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+  const stepPath = (k) => pts.map((p, i) => (i ? `H${x(p.ts).toFixed(1)}V${y(p[k]).toFixed(1)}` : `M${x(p.ts).toFixed(1)},${y(p[k]).toFixed(1)}`)).join("");
+  const grid = []; for (let v = lo; v <= hi; v += step) grid.push(`<line class="svc-grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="svc-tick" x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`);
+  const fmt = (t) => new Date(t).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+  const xs = W < 420 ? [[t0, "start"], [t1, "end"]] : [[t0, "start"], [t0 + (t1 - t0) / 2, "middle"], [t1, "end"]];
+  const xt = xs.map(([t, anchor]) => `<text class="svc-tick" x="${x(t)}" y="${H - 8}" text-anchor="${anchor}">${esc(fmt(t))}</text>`).join("");
+  const last = pts[pts.length - 1];
+  const dots = pts.slice(1, -1).map((p) => `<circle class="svc-dot" cx="${x(p.ts)}" cy="${y(p.bal)}" r="3.5" fill="${SV_C_BAL}"/><circle class="svc-dot" cx="${x(p.ts)}" cy="${y(p.port)}" r="3.5" fill="${SV_C_PORT}"/>`).join("");
+  // end labels (nudged apart when the lines end close together)
+  let yb = y(last.bal), yp = y(last.port); if (Math.abs(yb - yp) < 14) { if (yb <= yp) { yb -= 7; yp += 7; } else { yb += 7; yp -= 7; } }
+  return `<svg class="svc-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Stanje in portfelj skozi čas" data-pts='${esc(JSON.stringify(pts.map((p) => [p.ts, p.bal, p.port, p.text])))}' data-geo="${[W, H, L, R, T, B, t0, t1, lo, hi].join(",")}">
+      ${grid.join("")}${xt}
+      <path class="svc-line" d="${stepPath("port")}" stroke="${SV_C_PORT}"/><path class="svc-line" d="${stepPath("bal")}" stroke="${SV_C_BAL}"/>${dots}
+      <text class="svc-end" x="${W - R + 6}" y="${yp + 4}" fill="currentColor">Portfelj ${last.port}</text>
+      <text class="svc-end" x="${W - R + 6}" y="${yb + 4}" fill="currentColor">Stanje ${last.bal}</text>
+      <line class="svc-cross" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/>
+      <rect class="svc-hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}"/>
+    </svg>`;
+}
+function svPlayer(st, slug) {
+  const p = (st.people || []).find((x) => svPlayerSlug(x.email) === slug);
+  if (!p) return `<p class="person-back sv-back"><a href="#zabava/stavnica/pregled">← Pregled</a></p><div class="card sv-empty"><p>Igralec ni najden.</p></div>`;
+  const w = wdWho(p.email, p.name), pts = svSeries(st, p), open = p.bets.filter((b) => b.payout === null);
+  const potential = open.reduce((a, b) => a + b.amount * (b.odds || 1), 0), last = pts[pts.length - 1];
+  const fmt = (t) => new Date(t).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+  return `<p class="person-back sv-back"><a href="#zabava/stavnica/pregled">← Pregled</a></p>
+    <header class="card sv-player-head">${w.av.replace("avatar-sm", "avatar-os")}<div><h2>${esc(p.name || p.email)}</h2><p class="muted-text">${esc(p.email)}</p></div>
+      <div class="sv-player-bal"><small>Stanje</small><strong>${SV_COIN} ${p.balance}</strong></div></header>
+    <div class="sv-stats">
+      <div class="card"><span class="muted-text">Portfelj</span><strong>${last.port}</strong></div>
+      <div class="card"><span class="muted-text">V igri</span><strong>${p.open}</strong></div>
+      <div class="card"><span class="muted-text">Vloženo</span><strong>${p.staked}</strong></div>
+      <div class="card"><span class="muted-text">Priigrano</span><strong>${p.won}</strong></div>
+      <div class="card"><span class="muted-text">Možen dobitek</span><strong>${potential}</strong></div>
+      <div class="card"><span class="muted-text">Popravki</span><strong>${p.adjusted > 0 ? "+" : ""}${p.adjusted || 0}</strong></div>
+    </div>
+    <section class="card svc-card"><div class="svc-head"><h3>Stanje in portfelj</h3>
+        <span class="svc-legend"><span><i style="background:${SV_C_BAL}"></i>Stanje</span><span><i style="background:${SV_C_PORT}"></i>Portfelj (stanje + vložki v igri)</span></span></div>
+      ${svChart(pts)}
+      <details class="pvc-table"><summary>Dogodki</summary><table><thead><tr><th>Čas</th><th>Dogodek</th><th>Stanje</th><th>Portfelj</th></tr></thead><tbody>${pts.slice(1, -1).reverse().map((x) => `<tr><td>${esc(fmt(x.ts))}</td><td>${esc(x.text)}</td><td>${x.bal}</td><td>${x.port}</td></tr>`).join("")}</tbody></table></details>
+    </section>
+    <section class="card sv-p-adj-card"><h3>Popravek stanja</h3>${svAdjForm(p)}</section>
+    <section class="sv-list">${svSections(p.bets, p.adjustments)}</section>`;
+}
+/* Chart hover: crosshair + tooltip at the last event before the pointer */
+document.addEventListener("pointermove", (e) => {
+  const svg = e.target.closest?.(".svc-svg"); const tipEl = $("#svc-tip");
+  if (!svg) { if (tipEl) tipEl.hidden = true; $$(".svc-cross").forEach((c) => c.setAttribute("visibility", "hidden")); return; }
+  const [W, H, L, R, T, B, t0, t1] = svg.dataset.geo.split(",").map(Number), pts = JSON.parse(svg.dataset.pts);
+  const r = svg.getBoundingClientRect(), sx = ((e.clientX - r.left) / r.width) * W;
+  const t = t0 + ((sx - L) / (W - L - R)) * (t1 - t0);
+  let i = 0; while (i + 1 < pts.length && pts[i + 1][0] <= t) i++;
+  const p = pts[i], cx = L + ((p[0] - t0) / (t1 - t0 || 1)) * (W - L - R);
+  const cross = $(".svc-cross", svg); cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
+  const tip = tipEl || document.body.appendChild(Object.assign(document.createElement("div"), { id: "svc-tip", className: "pvc-tip", role: "tooltip" }));
+  tip.innerHTML = `<strong>${esc(new Date(p[0]).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }))}</strong><br>${esc(p[3])}<br><span style="color:${SV_C_BAL}">●</span> Stanje <b>${p[1]}</b> · <span style="color:${SV_C_PORT}">●</span> Portfelj <b>${p[2]}</b>`;
+  tip.hidden = false; tip.style.whiteSpace = "normal";
+  const tr = tip.getBoundingClientRect();
+  tip.style.left = `${Math.min(window.innerWidth - tr.width - 8, Math.max(8, e.clientX - tr.width / 2))}px`;
+  tip.style.top = `${Math.max(8, r.top + (T / H) * r.height - tr.height - 6)}px`;
+});
 function svProfile(st, me) {
   const open = me.bets.filter((b) => b.payout === null), done = me.bets.filter((b) => b.payout !== null);
   const pending = open.reduce((a, b) => a + b.amount * (b.odds || 1), 0);
@@ -2533,13 +2624,13 @@ document.addEventListener("submit", async (e) => {
   $$("button", f).forEach((b) => (b.disabled = true)); status.className = "sv-status"; status.textContent = "Shranjujem …";
   try {
     sv.state = await svCall({ action: "adjust", email, amount, reason, name });
-    sv.fetchedAt = Date.now(); sv.openPerson = email; renderStavnica();
+    sv.fetchedAt = Date.now(); renderStavnica();
   } catch (err) {
     status.className = "sv-status is-err"; status.textContent = `Ni uspelo (${{ auth: "prijava je potekla", offline: "ni povezave", network: "strežnik ni dosegljiv", timeout: "strežnik se ni odzval" }[err.kind] || err.message}).`;
     $$("button", f).forEach((b) => (b.disabled = false));
   }
 });
-document.addEventListener("toggle", (e) => { const d = e.target; if (d.classList?.contains("sv-person")) sv.openPerson = d.open ? d.dataset.email : (sv.openPerson === d.dataset.email ? null : sv.openPerson); }, true);
+
 document.addEventListener("submit", async (e) => {
   const f = e.target.closest("#stavnica form.sv-bet");
   if (!f) return;

@@ -107,6 +107,18 @@ function stavnicaState_(ss, me, withPeople) {
   const byId = {};
   questions.forEach((q) => (byId[q.id] = q));
 
+  // When was each question resolved? The sheet has no timestamp, so remember the first time we see a value in "resolved"
+  const props = PropertiesService.getScriptProperties();
+  let resolvedAt = {};
+  try { resolvedAt = JSON.parse(props.getProperty("sv_resolved") || "{}"); } catch (e) {}
+  let changed = false;
+  questions.forEach((q) => {
+    if (q.result && !resolvedAt[q.id]) { resolvedAt[q.id] = Date.now(); changed = true; }
+    if (!q.result && resolvedAt[q.id]) { delete resolvedAt[q.id]; changed = true; }
+    q.resolvedAt = resolvedAt[q.id] || null;
+  });
+  if (changed) props.setProperty("sv_resolved", JSON.stringify(resolvedAt));
+
   const bSheet = ss.getSheetByName("bets");
   const bRows = bSheet.getLastRow() > 1 ? bSheet.getRange(2, 1, bSheet.getLastRow() - 1, 6).getValues() : [];
   const bets = bRows.map((r) => ({ ts: new Date(r[0]).getTime(), question: String(r[1]).trim(), option: String(r[2]), amount: Number(r[3]) || 0, name: String(r[4] || ""), email: String(r[5] || "").toLowerCase() }))
