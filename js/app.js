@@ -2360,14 +2360,17 @@ async function renderStavnica(force = false) {
   if (!sv.state) { box.innerHTML = svErrorHtml(sv.error); return; }
   const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
   const qi = st.questions.findIndex((q) => svSlug(q) === sv.view);
-  const tab = sv.view === "profil" || sv.view === "pretekle" ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
+  const isAdminView = !!st.people && effectiveRole(state.user?.email) === "admin"; // overview only in the admin view (not when simulating)
+  const tab = sv.view === "profil" || sv.view === "pretekle" || (sv.view === "pregled" && isAdminView) ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
   const tabs = `<div class="pv-ftabs" role="tablist" aria-label="Stavnica">
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica" aria-selected="${tab === "stave"}">Stave</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/pretekle" aria-selected="${tab === "pretekle"}">Pretekle stave</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/profil" aria-selected="${tab === "profil"}">Profil <span class="sv-tab-bal">🪙 ${me.balance}</span></a>
+      ${isAdminView ? `<a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/pregled" aria-selected="${tab === "pregled"}">Pregled</a>` : ""}
     </div>`;
   let body;
   if (tab === "profil") body = svProfile(st, me);
+  else if (tab === "pregled") body = svOverview(st);
   else if (qi >= 0) body = svDetail(st, me, qi);
   else body = svList(st, tab === "pretekle");
   box.innerHTML = `<div class="pv-folder">${tabs}<div class="pv-fpanel sv-panel">${body}</div></div>`;
@@ -2412,6 +2415,30 @@ function svDetail(st, me, i) {
       </form>` : ""}
     </article>
     <section class="sv-list"><h3>Zadnje stave na to vprašanje</h3>${svRecent(st.recent.filter((b) => b.question === q.id), false)}</section>`;
+}
+/* Admin: all players with balances and their transactions */
+function svOverview(st) {
+  const people = [...(st.people || [])].sort((a, b) => b.balance - a.balance || b.staked - a.staked || a.name.localeCompare(b.name, "sl"));
+  const sum = (k) => people.reduce((a, p) => a + (p[k] || 0), 0);
+  const nBets = people.reduce((a, p) => a + p.bets.length, 0);
+  const row = (p, i) => {
+    const w = wdWho(p.email, p.name);
+    return `<details class="sv-person">
+      <summary><span class="sv-p-rank">${i + 1}.</span>${w.av}<span class="sv-p-name" title="${esc(p.email)}">${esc(p.name || p.email)}</span>
+        <span class="sv-p-bal" title="Stanje">🪙 ${p.balance}</span></summary>
+      <div class="sv-p-stats"><span><small>Vloženo</small><strong>${p.staked}</strong></span><span><small>Priigrano</small><strong>${p.won}</strong></span><span><small>V igri</small><strong>${p.open}</strong></span><span><small>Stav</small><strong>${p.bets.length}</strong></span></div>
+      <p class="muted-text sv-p-mail">${esc(p.email)}</p>
+      <ul class="sv-bets">${p.bets.map((b) => svBetRow(b, { who: false })).join("")}</ul>
+    </details>`;
+  };
+  return `<div class="sv-stats">
+      <div class="card"><span class="muted-text">Igralcev</span><strong>${people.length}</strong></div>
+      <div class="card"><span class="muted-text">Stav</span><strong>${nBets}</strong></div>
+      <div class="card"><span class="muted-text">Vloženo</span><strong>${sum("staked")}</strong></div>
+      <div class="card"><span class="muted-text">Izplačano</span><strong>${sum("won")}</strong></div>
+    </div>
+    <p class="muted-text sv-help">Samo za admina. Stanje = ${st.budget} − vloženo + priigrano; »V igri« so vložki na še nerazrešenih vprašanjih. Klikni igralca za vse njegove stave.</p>
+    <section class="sv-list"><h3>Igralci</h3>${people.length ? `<div class="sv-people">${people.map(row).join("")}</div>` : `<p class="muted-text">Še nihče ni stavil.</p>`}</section>`;
 }
 function svProfile(st, me) {
   const open = me.bets.filter((b) => b.payout === null), done = me.bets.filter((b) => b.payout !== null);

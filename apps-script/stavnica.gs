@@ -48,13 +48,14 @@ function handleStavnica(body) {
         SpreadsheetApp.flush();
       } finally { lock.releaseLock(); }
     }
-    return out(Object.assign({ ok: true }, stavnicaState_(ss, me)));
+    const st = stavnicaState_(ss, me, siteRole_(me) === "admin"); // admins also get the overview of all players
+    return out(Object.assign({ ok: true }, st));
   } catch (err) {
     return out({ ok: false, error: String(err && err.message || err) });
   }
 }
 
-function stavnicaState_(ss, me) {
+function stavnicaState_(ss, me, withPeople) {
   const qSheet = ss.getSheetByName("questions");
   const qRange = qSheet.getDataRange();
   const qRows = qRange.getDisplayValues();
@@ -112,5 +113,25 @@ function stavnicaState_(ss, me) {
     return { ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout };
   });
   const recent = bets.slice(-200).reverse().map((b) => ({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, name: b.name }));
-  return { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won, staked: staked, won: won, bets: mine.reverse() } };
+  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won, staked: staked, won: won, bets: mine.reverse() } };
+  if (withPeople) {
+    // Admin overview: every player's balance and all their bets (newest first)
+    const byEmail = {};
+    bets.forEach((b) => {
+      const q = byId[b.question], payout = q.result ? (b.option === q.result ? b.amount * q.odds : 0) : null;
+      const p = byEmail[b.email] || (byEmail[b.email] = { email: b.email, name: b.name, staked: 0, won: 0, open: 0, bets: [] });
+      p.name = b.name || p.name;
+      p.staked += b.amount;
+      if (payout) p.won += payout;
+      if (payout === null) p.open += b.amount;
+      p.bets.push({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout });
+    });
+    state.people = Object.keys(byEmail).map((k) => {
+      const p = byEmail[k];
+      p.balance = STAVNICA_BUDGET - p.staked + p.won;
+      p.bets.reverse();
+      return p;
+    });
+  }
+  return state;
 }
