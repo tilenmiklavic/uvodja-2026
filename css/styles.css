@@ -1768,3 +1768,10 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .sv-bi-top .sv-bi-time { order: 8; }
 .sv-p-hist { padding: 0 .75rem .75rem; }
 .zb-choice img { background: transparent; }
+
+/* Open bets: payout is only potential → dashed gold box, "do N ×odds" */
+.sv-fact.is-potential { background: rgba(248,164,24,.06); outline: 1px dashed rgba(248,164,24,.75); outline-offset: -1px; }
+.sv-fact.is-potential small { color: var(--gold-soft); white-space: nowrap; }
+.sv-fact.is-potential strong { color: var(--gold-soft); display: flex; align-items: baseline; flex-wrap: wrap; gap: .15rem .25rem; }
+.sv-pot-pre { font-size: .72rem; font-weight: 700; opacity: .85; }
+.sv-pot-x { font-size: .66rem; font-weight: 800; padding: 0 .35rem; border-radius: 999px; background: rgba(248,164,24,.2); align-self: center; }

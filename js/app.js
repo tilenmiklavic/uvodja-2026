@@ -2333,13 +2333,13 @@ function svBetRow(b, { who = true, question = true } = {}) {
   const w = who ? wdWho("", b.name) : null;
   const out = resolved === "won" ? `<strong class="is-win" title="Zadel">+${b.payout ?? pot} ${SV_COIN}</strong>`
     : resolved === "lost" ? `<strong class="is-lost" title="Ni zadel">0 ${SV_COIN}</strong>`
-    : `<strong title="Če zadene (×${odds})">${pot} ${SV_COIN}</strong>`;
+    : `<strong title="Če zadene: vložek × ${odds}"><span class="sv-pot-pre">do</span> ${pot} ${SV_COIN}<span class="sv-pot-x">×${odds}</span></strong>`;
   return `<li class="sv-bet-item${resolved ? ` is-${resolved}` : ""}">
     <div class="sv-bi-top${w ? " has-who" : ""}">${!who ? `<span class="sv-state ${resolved ? `is-${resolved}` : "is-open"}">${resolved === "won" ? "Zadel" : resolved === "lost" ? "Ni zadel" : "V igri"}</span>` : ""}${w ? `${w.av}<span class="sv-bi-who" title="${esc(w.title)}">${esc(w.label)}</span>` : ""}${question && q ? `<a class="sv-bi-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : question ? `<span class="sv-bi-q">${esc(b.question)}</span>` : ""}<span class="sv-bi-time muted-text">${esc(svAgo(b.ts))}</span></div>
     <div class="sv-bi-facts">
       <span class="sv-fact sv-fact-pick"><small>Izbira</small><strong>${esc(q ? svLabel(q, b.option) : b.option)}</strong></span>
       <span class="sv-fact"><small>Vložek</small><strong>${b.amount} ${SV_COIN}</strong></span>
-      <span class="sv-fact sv-fact-out"><small>Dobitek</small>${out}</span>
+      <span class="sv-fact sv-fact-out${resolved ? "" : " is-potential"}"><small>${resolved ? "Dobitek" : "Možen dobitek"}</small>${out}</span>
     </div>
   </li>`;
 }
