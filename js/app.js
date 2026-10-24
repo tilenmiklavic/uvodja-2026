@@ -2549,7 +2549,7 @@ async function renderOcene(force = false) {
   }).join("")}</ol>` : `<p class="muted-text">Še ni končanih tem z ocenami.</p>`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-ocene-reload]")) renderOcene(true); });
-/* —— Vprašanja (admin): "Kaj te še zanima o tej temi?" answers per tema (Apps Script type "vprasanja") —— */
+/* —— Vprašanja (SVOD + admin): "Kaj te še zanima o tej temi?" answers per tema (Apps Script type "vprasanja") —— */
 const vq = { data: null, at: 0, loading: false, error: null };
 async function renderVprasanja(force = false) {
   const box = $("#vq-body");
@@ -2571,7 +2571,7 @@ async function renderVprasanja(force = false) {
   }
   if (!vq.data) {
     const e = vq.error, k = e?.kind;
-    const msg = { auth: "Prijava je potekla – osveži prijavo v meniju.", denied: "Vprašanja vidi le admin.", offline: "Ni internetne povezave.", network: "Strežnik ni dosegljiv (slaba povezava?).", timeout: "Strežnik se ni odzval.", config: "Strežnik ni nastavljen." }[k]
+    const msg = { auth: "Prijava je potekla – osveži prijavo v meniju.", denied: "Vprašanja vidita le SVOD in admin.", offline: "Ni internetne povezave.", network: "Strežnik ni dosegljiv (slaba povezava?).", timeout: "Strežnik se ni odzval.", config: "Strežnik ni nastavljen." }[k]
       || (/bad_date|invalid|unknown/i.test(e?.message || "") ? "Strežnik še ne pozna vprašanj (Apps Script ni posodobljen)." : `Vprašanj ni bilo mogoče naložiti (${e?.message || "napaka"}).`);
     box.innerHTML = `<p class="muted-text">${esc(msg)}</p><button type="button" class="btn ghost" data-vq-reload>Poskusi znova</button>`;
     return;

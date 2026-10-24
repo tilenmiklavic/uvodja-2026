@@ -1,8 +1,8 @@
 /**
- * Vprašanja (admin): answers to "Kaj te še zanima o tej temi?" from the tema feedback responses
+ * Vprašanja (SVOD + admin): answers to "Kaj te še zanima o tej temi?" from the tema feedback responses
  * (Drive Preverbe/Preverbe tem/"0_Vsi odgovori preverb", one tab per tema). Responses are anonymous;
  * only the timestamp and the answer text are returned, placeholder answers ("/", "-", "nič" …) are skipped.
- * Admins can tick questions as answered (action "mark"); ticks are shared and stored in the script properties.
+ * SVOD and admins can tick questions as answered (action "mark"); ticks are shared and stored in the script properties.
  *
  * Needs common.gs and ocene.gs (OCENE_SHEET_ID) in the same project. Hook it into doPost:
  *
@@ -15,7 +15,7 @@ function handleVprasanja(body) {
   try {
     const tok = siteVerify_(body.credential); // cached (common.gs)
     if (!tok) return out({ ok: false, error: "prijava ni veljavna" });
-    if (siteRole_(tok.email) !== "admin") return out({ ok: false, error: "ni dostopa" });
+    if (["svod", "admin"].indexOf(siteRole_(tok.email)) < 0) return out({ ok: false, error: "ni dostopa" });
     if (body.action === "mark") {
       const lock = LockService.getScriptLock();
       lock.waitLock(10000);
