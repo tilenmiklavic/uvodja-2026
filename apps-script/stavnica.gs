@@ -74,6 +74,24 @@ function handleStavnica(body) {
   }
 }
 
+/**
+ * Google Sheets in-cell images are served with "Cross-Origin-Resource-Policy: same-site", so browsers refuse to show
+ * them on the site. Fetch a small copy here instead and send it inline as a data: URL (cached 6 h per image).
+ */
+function stavnicaImage_(url) {
+  if (!/^https:\/\/docs\.google\.com\/sheets-images-rt\//.test(url || "")) return url || "";
+  const cache = CacheService.getScriptCache(), key = "img:" + siteHash_(url).slice(0, 32);
+  const hit = cache.get(key);
+  if (hit) return hit;
+  try {
+    const res = UrlFetchApp.fetch(url.replace(/=s\d+(?=\?|$)/, "=s160"), { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) return "";
+    const blob = res.getBlob(), data = "data:" + (blob.getContentType() || "image/jpeg") + ";base64," + Utilities.base64Encode(blob.getBytes());
+    if (data.length < 95000) cache.put(key, data, 21600);
+    return data;
+  } catch (e) { return ""; }
+}
+
 function stavnicaState_(ss, me, withPeople) {
   const qSheet = ss.getSheetByName("questions");
   const qRange = qSheet.getDataRange();
@@ -101,7 +119,7 @@ function stavnicaState_(ss, me, withPeople) {
     const result = resCol >= 0 ? String(r[resCol] || "").trim() : "";
     // match the resolved value to an option case-insensitively ("Yes" → "yes")
     const win = options.find((o) => o.toLowerCase() === result.toLowerCase()) || result;
-    const image = imageAt(x.i);
+    const image = stavnicaImage_(imageAt(x.i));
     return { id: question, question: question, type: type, options: options, odds: options.length, result: win, image: image, people: {} };
   });
   const byId = {};
