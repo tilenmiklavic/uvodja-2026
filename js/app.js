@@ -2434,6 +2434,7 @@ function svList(st, past = false) {
     </a>`;
   };
   const qs = st.questions.filter((q) => !!q.result === past);
+  if (!past) qs.reverse(); // sheet rows are appended, so the last row is the newest bet
   if (past) return qs.length ? qs.map(card).join("") : `<div class="card sv-empty"><p>Še ni razrešenih stav.</p><p class="muted-text">Ko je vprašanje razrešeno, se preseli sem.</p></div>`;
   return `${qs.length ? qs.map(card).join("") : `<div class="card sv-empty"><p>Ni odprtih stav.</p><p class="muted-text">Razrešene stave so pod <a href="#zabava/stavnica/pretekle">Pretekle stave</a>.</p></div>`}
     <section class="sv-list"><h3>Zadnje stave</h3>${svRecent(st.recent.slice(0, 25), true)}</section>
