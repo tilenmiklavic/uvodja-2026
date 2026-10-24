@@ -14,6 +14,7 @@
  *
  * then Deploy → Manage deployments → edit → New version (same /exec URL).
  *
+ * Admins can add or take away zlatniki (action "adjust", sheet "popravki"); players see these in "Moje stave".
  * Rules: everyone starts with STAVNICA_BUDGET zlatnikov. Fixed odds = number of options: a winning bet on a
  * yes/no question pays 2× the stake, on a 3-option question 3×, … Other people's bets don't change the odds.
  * When the "resolved" column of a question is filled in, betting on it closes and winners get their payout.
@@ -21,6 +22,8 @@
 const STAVNICA_SHEET_ID = "1Nc9q0aSElmn7I0tIMYxGIa1yS5wdgZFFcHYCEEKN678";
 const STAVNICA_BUDGET = 10;
 const STAVNICA_BET_HEADER = ["Čas", "Vprašanje", "Opcija", "Vložek", "Ime", "E-naslov"];
+const STAVNICA_ADJ_SHEET = "popravki"; // admin balance adjustments (created on first use)
+const STAVNICA_ADJ_HEADER = ["Čas", "E-naslov", "Ime", "Znesek", "Razlog", "Admin"];
 
 function handleStavnica(body) {
   const out = (o) => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
@@ -45,6 +48,22 @@ function handleStavnica(body) {
         const sh = ss.getSheetByName("bets");
         if (sh.getLastRow() === 0) sh.appendRow(STAVNICA_BET_HEADER);
         sh.appendRow([new Date(), q.question, String(body.option), amount, tok.name || body.name || "", me]);
+        SpreadsheetApp.flush();
+      } finally { lock.releaseLock(); }
+    }
+    if (body.action === "adjust") {
+      if (siteRole_(me) !== "admin") return out({ ok: false, error: "ni dostopa" });
+      const email = String(body.email || "").trim().toLowerCase(), amount = Math.trunc(Number(body.amount));
+      const reason = String(body.reason || "").trim().slice(0, 200);
+      if (!/^[^@\s]+@[^@\s]+$/.test(email)) return out({ ok: false, error: "neveljaven e-naslov" });
+      if (!amount || Math.abs(amount) > 1000) return out({ ok: false, error: "znesek mora biti med -1000 in 1000 (ne 0)" });
+      if (!reason) return out({ ok: false, error: "manjka razlog" });
+      const lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        let sh = ss.getSheetByName(STAVNICA_ADJ_SHEET);
+        if (!sh) { sh = ss.insertSheet(STAVNICA_ADJ_SHEET); sh.appendRow(STAVNICA_ADJ_HEADER); }
+        sh.appendRow([new Date(), email, String(body.name || "").slice(0, 100), amount, /^[=+\-@]/.test(reason) ? "'" + reason : reason, me]);
         SpreadsheetApp.flush();
       } finally { lock.releaseLock(); }
     }
@@ -103,7 +122,13 @@ function stavnicaState_(ss, me, withPeople) {
     q.people[b.option] = (q.people[b.option] || 0) + 1;
   });
 
-  // Balance: budget − all stakes + payouts (stake × odds) from resolved questions
+  // Admin adjustments (+/−), sheet "popravki": Čas | E-naslov | Ime | Znesek | Razlog | Admin
+  const aSheet = ss.getSheetByName(STAVNICA_ADJ_SHEET);
+  const adjs = aSheet && aSheet.getLastRow() > 1 ? aSheet.getRange(2, 1, aSheet.getLastRow() - 1, 6).getValues()
+    .map((r) => ({ ts: new Date(r[0]).getTime(), email: String(r[1] || "").trim().toLowerCase(), name: String(r[2] || ""), amount: Math.trunc(Number(r[3])) || 0, reason: String(r[4] || "") }))
+    .filter((a) => a.email && a.amount) : [];
+
+  // Balance: budget − all stakes + payouts (stake × odds) from resolved questions + adjustments
   let staked = 0, won = 0;
   const mine = bets.filter((b) => b.email === me).map((b) => {
     const q = byId[b.question];
@@ -113,23 +138,33 @@ function stavnicaState_(ss, me, withPeople) {
     return { ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout };
   });
   const recent = bets.slice(-200).reverse().map((b) => ({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, name: b.name }));
-  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won, staked: staked, won: won, bets: mine.reverse() } };
+  const myAdj = adjs.filter((a) => a.email === me).map((a) => ({ ts: a.ts, amount: a.amount, reason: a.reason }));
+  const adjSum = myAdj.reduce((t, a) => t + a.amount, 0);
+  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won + adjSum, staked: staked, won: won, adjusted: adjSum, bets: mine.reverse(), adjustments: myAdj.reverse() } };
   if (withPeople) {
     // Admin overview: every player's balance and all their bets (newest first)
     const byEmail = {};
+    const person = (email, name) => byEmail[email] || (byEmail[email] = { email: email, name: name, staked: 0, won: 0, open: 0, adjusted: 0, bets: [], adjustments: [] });
     bets.forEach((b) => {
       const q = byId[b.question], payout = q.result ? (b.option === q.result ? b.amount * q.odds : 0) : null;
-      const p = byEmail[b.email] || (byEmail[b.email] = { email: b.email, name: b.name, staked: 0, won: 0, open: 0, bets: [] });
+      const p = person(b.email, b.name);
       p.name = b.name || p.name;
       p.staked += b.amount;
       if (payout) p.won += payout;
       if (payout === null) p.open += b.amount;
       p.bets.push({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout });
     });
+    adjs.forEach((a) => {
+      const p = person(a.email, a.name);
+      if (!p.name) p.name = a.name;
+      p.adjusted += a.amount;
+      p.adjustments.push({ ts: a.ts, amount: a.amount, reason: a.reason });
+    });
     state.people = Object.keys(byEmail).map((k) => {
       const p = byEmail[k];
-      p.balance = STAVNICA_BUDGET - p.staked + p.won;
+      p.balance = STAVNICA_BUDGET - p.staked + p.won + p.adjusted;
       p.bets.reverse();
+      p.adjustments.reverse();
       return p;
     });
   }

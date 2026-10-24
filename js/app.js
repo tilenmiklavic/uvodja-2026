@@ -2341,6 +2341,21 @@ function svBetRow(b, { who = true, question = true } = {}) {
     </div>
   </li>`;
 }
+/* Admin adjustment (+/−) as a distinct card in Moje stave / Pregled */
+function svAdjRow(a) {
+  const plus = a.amount > 0;
+  return `<li class="sv-adj-item ${plus ? "is-plus" : "is-minus"}">
+    <span class="sv-adj-ico" aria-hidden="true">${plus ? "🎁" : "⚠️"}</span>
+    <div class="sv-adj-main"><strong>${plus ? `Admin je dodal +${a.amount} 🪙` : `Admin je odvzel ${Math.abs(a.amount)} 🪙`}</strong>${a.reason ? `<span>${esc(a.reason)}</span>` : ""}</div>
+    <span class="sv-bi-time muted-text">${esc(svAgo(a.ts))}</span>
+  </li>`;
+}
+/* Bets + adjustments in one newest-first list (open bets first when openFirst) */
+function svHistory(bets, adjs, openFirst) {
+  const items = [...bets.map((b) => ({ k: "b", ts: b.ts, b })), ...(adjs || []).map((a) => ({ k: "a", ts: a.ts, a }))]
+    .sort((x, y) => (openFirst ? (x.k === "b" && x.b.payout === null ? 0 : 1) - (y.k === "b" && y.b.payout === null ? 0 : 1) : 0) || (y.ts || 0) - (x.ts || 0));
+  return items.map((x) => (x.k === "a" ? svAdjRow(x.a) : svBetRow(x.b, { who: false }))).join("");
+}
 function svRecent(list, withQuestion) {
   if (!list.length) return `<p class="muted-text">Še ni stav.</p>`;
   return `<ul class="sv-bets">${list.map((b) => svBetRow(b, { who: true, question: withQuestion })).join("")}</ul>`;
@@ -2421,14 +2436,22 @@ function svOverview(st) {
   const people = [...(st.people || [])].sort((a, b) => b.balance - a.balance || b.staked - a.staked || a.name.localeCompare(b.name, "sl"));
   const sum = (k) => people.reduce((a, p) => a + (p[k] || 0), 0);
   const nBets = people.reduce((a, p) => a + p.bets.length, 0);
+  const adjForm = (p) => `<form class="sv-adj-form" data-sv-adj data-email="${esc(p?.email || "")}" data-name="${esc(p?.name || "")}">
+      ${p ? "" : `<input type="email" name="email" placeholder="e-naslov igralca" list="sv-emails" required autocomplete="off" aria-label="E-naslov" />`}
+      <input type="number" name="amount" min="1" max="1000" step="1" value="1" required aria-label="Znesek" />
+      <input type="text" name="reason" placeholder="Razlog (vidi ga igralec)" maxlength="200" required aria-label="Razlog" />
+      <div class="sv-adj-btns"><button type="submit" class="btn primary" name="dir" value="1">+ Dodaj</button><button type="submit" class="btn ghost" name="dir" value="-1">− Odvzemi</button></div>
+      <p class="sv-status" role="status" aria-live="polite"></p>
+    </form>`;
   const row = (p, i) => {
     const w = wdWho(p.email, p.name);
-    return `<details class="sv-person">
+    return `<details class="sv-person" data-email="${esc(p.email)}"${sv.openPerson === p.email ? " open" : ""}>
       <summary><span class="sv-p-rank">${i + 1}.</span>${w.av}<span class="sv-p-name" title="${esc(p.email)}">${esc(p.name || p.email)}</span>
         <span class="sv-p-bal" title="Stanje">🪙 ${p.balance}</span></summary>
-      <div class="sv-p-stats"><span><small>Vloženo</small><strong>${p.staked}</strong></span><span><small>Priigrano</small><strong>${p.won}</strong></span><span><small>V igri</small><strong>${p.open}</strong></span><span><small>Stav</small><strong>${p.bets.length}</strong></span></div>
+      <div class="sv-p-stats"><span><small>Vloženo</small><strong>${p.staked}</strong></span><span><small>Priigrano</small><strong>${p.won}</strong></span><span><small>V igri</small><strong>${p.open}</strong></span><span><small>Popravki</small><strong>${p.adjusted > 0 ? "+" : ""}${p.adjusted || 0}</strong></span></div>
       <p class="muted-text sv-p-mail">${esc(p.email)}</p>
-      <ul class="sv-bets">${p.bets.map((b) => svBetRow(b, { who: false })).join("")}</ul>
+      <div class="sv-p-adj"><p class="sv-p-adj-h">Popravek stanja</p>${adjForm(p)}</div>
+      <ul class="sv-bets">${svHistory(p.bets, p.adjustments, false)}</ul>
     </details>`;
   };
   return `<div class="sv-stats">
@@ -2437,7 +2460,9 @@ function svOverview(st) {
       <div class="card"><span class="muted-text">Vloženo</span><strong>${sum("staked")}</strong></div>
       <div class="card"><span class="muted-text">Izplačano</span><strong>${sum("won")}</strong></div>
     </div>
-    <p class="muted-text sv-help">Samo za admina. Stanje = ${st.budget} − vloženo + priigrano; »V igri« so vložki na še nerazrešenih vprašanjih. Klikni igralca za vse njegove stave.</p>
+    <p class="muted-text sv-help">Samo za admina. Stanje = ${st.budget} − vloženo + priigrano + popravki; »V igri« so vložki na še nerazrešenih vprašanjih. Klikni igralca za vse njegove stave in popravek stanja.</p>
+    <details class="card sv-adj-new"><summary>Popravek za drugega igralca (po e-naslovu)</summary>${adjForm(null)}
+      <datalist id="sv-emails">${people.map((p) => `<option value="${esc(p.email)}">${esc(p.name)}</option>`).join("")}</datalist></details>
     <section class="sv-list"><h3>Igralci</h3>${people.length ? `<div class="sv-people">${people.map(row).join("")}</div>` : `<p class="muted-text">Še nihče ni stavil.</p>`}</section>`;
 }
 function svProfile(st, me) {
@@ -2451,9 +2476,10 @@ function svProfile(st, me) {
       <div class="card"><span class="muted-text">Vloženo</span><strong>${me.staked ?? me.bets.reduce((a, b) => a + b.amount, 0)}</strong></div>
       <div class="card"><span class="muted-text">Priigrano</span><strong>${me.won ?? done.reduce((a, b) => a + (b.payout || 0), 0)}</strong></div>
       <div class="card"><span class="muted-text">Možen dobitek</span><strong>${pending}</strong></div>
+      ${me.adjusted ? `<div class="card sv-stat-adj"><span class="muted-text">Popravki admina</span><strong>${me.adjusted > 0 ? "+" : ""}${me.adjusted}</strong></div>` : ""}
     </div>
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
-    <section class="sv-list"><h3>Moje stave</h3>${me.bets.length ? `<ul class="sv-bets">${[...open, ...done].map((b) => svBetRow(b, { who: false })).join("")}</ul>` : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
+    <section class="sv-list"><h3>Moje stave</h3>${me.bets.length || me.adjustments?.length ? `<ul class="sv-bets">${svHistory(me.bets, me.adjustments, true)}</ul>` : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
 }
 /* Hourly background check (and on return to the tab after >1 h): re-render only if bets changed and no bet slip is open */
 const SV_REFRESH_MS = 60 * 60 * 1000;
@@ -2485,6 +2511,26 @@ document.addEventListener("click", (e) => {
   else if (e.target.closest("a[href^='#zabava/stavnica']")) sv.open = null;
 });
 document.addEventListener("input", (e) => { if (e.target.closest("#stavnica form.sv-bet")) svUpdatePayout(); });
+/* Admin: add / take away zlatniki */
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest("#stavnica form[data-sv-adj]");
+  if (!f) return;
+  e.preventDefault();
+  const dir = Number(e.submitter?.value || 1), amount = Math.abs(Math.trunc(Number(f.amount.value))) * dir;
+  const email = (f.dataset.email || f.email?.value || "").trim().toLowerCase(), reason = f.reason.value.trim(), status = $(".sv-status", f);
+  if (!email || !amount || !reason) return;
+  const name = f.dataset.name || sv.state.people?.find((p) => p.email === email)?.name || "";
+  if (!confirm(`${amount > 0 ? "Dodam" : "Odvzamem"} ${Math.abs(amount)} 🪙 ${amount > 0 ? "igralcu" : "igralcu"} ${name || email}?\nRazlog: ${reason}`)) return;
+  $$("button", f).forEach((b) => (b.disabled = true)); status.className = "sv-status"; status.textContent = "Shranjujem …";
+  try {
+    sv.state = await svCall({ action: "adjust", email, amount, reason, name });
+    sv.fetchedAt = Date.now(); sv.openPerson = email; renderStavnica();
+  } catch (err) {
+    status.className = "sv-status is-err"; status.textContent = `Ni uspelo (${{ auth: "prijava je potekla", offline: "ni povezave", network: "strežnik ni dosegljiv", timeout: "strežnik se ni odzval" }[err.kind] || err.message}).`;
+    $$("button", f).forEach((b) => (b.disabled = false));
+  }
+});
+document.addEventListener("toggle", (e) => { const d = e.target; if (d.classList?.contains("sv-person")) sv.openPerson = d.open ? d.dataset.email : (sv.openPerson === d.dataset.email ? null : sv.openPerson); }, true);
 document.addEventListener("submit", async (e) => {
   const f = e.target.closest("#stavnica form.sv-bet");
   if (!f) return;
