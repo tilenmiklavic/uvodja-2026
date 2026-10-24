@@ -1,6 +1,6 @@
 {
   "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin).",
-  "fetched": "2026-10-22",
+  "fetched": "2026-10-24",
   "temaForms": [
     {
       "tema": "jaz-vodja",
@@ -19,6 +19,24 @@
       "title": "Preverba teme Katoliško skavtstvo",
       "formId": "1NYBFYRRLFRpsJA4subkf0tU-s6NDT6MJsb4OrjWiWHo",
       "responsesTab": "3_Katoliska Duh"
+    },
+    {
+      "tema": "skavtska-pot",
+      "title": "Preverba teme Skavtska pot",
+      "formId": "1j8wmyvr_em29Yd1Q4XdusTLf6-hSk_nG0MPdabrR8Hk",
+      "responsesTab": "4"
+    },
+    {
+      "tema": "vodenje-voditeljev",
+      "title": "Preverba teme Vodenje voditeljev",
+      "formId": "1KuBklIUYymxS9Z_XXvW1spOkXGPTXS2_eptUiLwpJ3Y",
+      "responsesTab": "5"
+    },
+    {
+      "tema": "skavti-v-mladinskem-delu",
+      "title": "Preverba teme Skavti v mladinskem delu",
+      "formId": "1pUUJ8wdtg0KIDzDc_B47yXxChKNHSa2mHA-sJy8FarA",
+      "responsesTab": "6"
     }
   ],
   "general": [
