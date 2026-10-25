@@ -24,7 +24,7 @@
       "programId": "10xDmjgoYQrPWPA_PTVzpI-o4Hxot0_urdb5xK4rtjx4",
       "folderId": "166EnwAANG6DbhPG8EwAfIYS7jc3rgz6i"
     },
-    "generatedAt": "2026-10-24",
+    "generatedAt": "2026-10-25",
     "matchStats": {
       "matched": 19,
       "unmatched_program": 9,
@@ -54,7 +54,8 @@
         "katoliško skavtstvo",
         "osebno spremljanje voditeljev",
         "vodenje procesov",
-        "administrativno vodenje"
+        "administrativno vodenje",
+        "pridobivanje sredstev"
       ]
     },
     "branding": {
@@ -1075,10 +1076,49 @@
           "isTema": false
         },
         {
-          "id": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
-          "title": "Izbirne teme (1. sklop)",
+          "id": "vikend1-nedelja-os-1000",
+          "title": "OS",
           "start": "10:00",
+          "end": "11:00",
+          "kind": "logistics",
+          "trainers": [
+            "Barbara",
+            "Jakob G"
+          ],
+          "matchedProgram": false,
+          "programKey": null,
+          "goals": [],
+          "contents": [],
+          "sources": [],
+          "notes": [],
+          "duration": null,
+          "category": "logistics",
+          "mikronacrt": null,
+          "isTema": false
+        },
+        {
+          "id": "vikend1-nedelja-malica-1100",
+          "title": "Malica",
+          "start": "11:00",
           "end": "11:30",
+          "kind": "logistics",
+          "trainers": [],
+          "matchedProgram": false,
+          "programKey": null,
+          "goals": [],
+          "contents": [],
+          "sources": [],
+          "notes": [],
+          "duration": null,
+          "category": "logistics",
+          "mikronacrt": null,
+          "isTema": false
+        },
+        {
+          "id": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
+          "title": "Izbirne teme (1. sklop)",
+          "start": "11:30",
+          "end": "13:00",
           "kind": "program",
           "trainers": [],
           "matchedProgram": true,
@@ -1108,45 +1148,6 @@
           "isIzbirneBlock": true
         },
         {
-          "id": "vikend1-nedelja-malica-1130",
-          "title": "Malica",
-          "start": "11:30",
-          "end": "12:00",
-          "kind": "logistics",
-          "trainers": [],
-          "matchedProgram": false,
-          "programKey": null,
-          "goals": [],
-          "contents": [],
-          "sources": [],
-          "notes": [],
-          "duration": null,
-          "category": "logistics",
-          "mikronacrt": null,
-          "isTema": false
-        },
-        {
-          "id": "vikend1-nedelja-os-1200",
-          "title": "OS",
-          "start": "12:00",
-          "end": "13:00",
-          "kind": "logistics",
-          "trainers": [
-            "Barbara",
-            "Jakob G"
-          ],
-          "matchedProgram": false,
-          "programKey": null,
-          "goals": [],
-          "contents": [],
-          "sources": [],
-          "notes": [],
-          "duration": null,
-          "category": "logistics",
-          "mikronacrt": null,
-          "isTema": false
-        },
-        {
           "id": "vikend1-nedelja-kosilo-in-pospravljanje-1300",
           "title": "Kosilo in pospravljanje",
           "start": "13:00",
@@ -1165,52 +1166,53 @@
           "isTema": false
         },
         {
-          "id": "vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
-          "title": "Osebno spremljanje voditeljev",
+          "id": "vikend1-nedelja-krizno-komuniciranje-in-stiske-1-5h-1530",
+          "title": "Krizno komuniciranje in stiske",
           "start": "15:30",
-          "end": "17:30",
+          "end": "17:00",
           "kind": "program",
           "trainers": [
-            "Barbara",
-            "Jakob G"
+            "Tilen",
+            "Petra"
           ],
           "matchedProgram": true,
-          "programKey": "osebno spremljanje voditeljev",
+          "programKey": "krizno komuniciranje in stiske",
           "goals": [
-            "UU pozna pomembnost in koncept osebnega spremljanja ter razliko med OS člana in voditelja.",
-            "UU pozna sopotništvo in mentorstvo kot obliki OS voditeljev.",
-            "UU razume VSKM kot pripomoček pri osebnem spremljanju in ON voditeljev."
+            "UU ozavestijo, da je urejena administracija ključni nastavek za krizno komuniciranje.",
+            "UU poznajo protokol kriznega komuniciranja in vlogo (stego)vodje.",
+            "UU dobro pozna dokument ZOM.",
+            "UU pozna sistem in podporo ZSKSS na področju duševnega zdravja.",
+            "UU se zavedajo moralne in kazenske odgovornosti."
           ],
           "contents": [
-            "koncept in tehnike osebnega spremljanja voditeljev",
-            "sopotništvo/mentorstvo – povezava s Ciklom prostovoljstva"
+            "cikel kriznega upravljanja",
+            "delo z realnimi primeri",
+            "dokument ZOM"
           ],
           "sources": [
             {
-              "title": "ON voditelja – navodila (september 2025)",
-              "url": "https://drive.google.com/file/d/1R1dBVnmzqM37cAClJDQKCnPTFoO6Hqa5/view?usp=sharing"
+              "title": "11_Krizne situacije in stiske",
+              "url": "https://docs.google.com/document/d/1A74FgegYf5AywQx1m3zFZIGYGQ4U9dBW/edit"
             },
             {
-              "title": "Cikel prostovoljstva v ZSKSS",
-              "url": "https://drive.google.com/file/d/1UjIvrge5-l2o3Ov8etyrXVxG7HX4pJzk/view?usp=sharing"
+              "title": "U Vodja_Krizne situacije in stiske",
+              "url": "https://docs.google.com/document/d/1GKhk-eAimFOAiI5GlICXmpHEGxa-eC0RYhG71hALVJs/edit?tab=t.0"
             }
           ],
           "notes": [
-            "VSKM kot orodje/navdih, ne za kljukanje kompetenc.",
-            "Raketa je pripomoček za OS članov, ne voditeljev.",
-            "Dobre prakse izvajanja OS."
+            "Veliko vprašanj UU → suverenost trenerjev."
           ],
-          "duration": "2h",
+          "duration": "1,5h",
           "category": "tema",
           "mikronacrt": {
             "status": "exists",
-            "title": "07_Osebno spremljanje voditeljev",
-            "url": "https://docs.google.com/document/d/1Hu6KOesXxELele1H_8Y1N9uS2UtZsLJYPu1BDJE26fc/edit",
-            "fileId": "1Hu6KOesXxELele1H_8Y1N9uS2UtZsLJYPu1BDJE26fc",
-            "created": "2026-10-12"
+            "title": "09_Krizno komuniciranje in stiske",
+            "url": "https://docs.google.com/document/d/1pyLvkImgaPnVDrHhiOa4pXe0BtHW8GzDpgH11lvSNO4/edit",
+            "fileId": "1pyLvkImgaPnVDrHhiOa4pXe0BtHW8GzDpgH11lvSNO4",
+            "created": "2026-10-06"
           },
           "isTema": true,
-          "temaSlug": "osebno-spremljanje-voditeljev"
+          "temaSlug": "krizno-komuniciranje-in-stiske"
         }
       ]
     },
@@ -1524,58 +1526,57 @@
           "isTema": false
         },
         {
-          "id": "vikend2-petek-krizno-komuniciranje-in-stiske-1-5h-1700",
-          "title": "Krizno komuniciranje in stiske",
+          "id": "vikend2-petek-osebno-spremljanje-voditeljev-2h-1700",
+          "title": "Osebno spremljanje voditeljev",
           "start": "17:00",
-          "end": "18:30",
+          "end": "19:00",
           "kind": "program",
           "trainers": [
-            "Tilen",
-            "Petra"
+            "Barbara",
+            "Jakob G"
           ],
           "matchedProgram": true,
-          "programKey": "krizno komuniciranje in stiske",
+          "programKey": "osebno spremljanje voditeljev",
           "goals": [
-            "UU ozavestijo, da je urejena administracija ključni nastavek za krizno komuniciranje.",
-            "UU poznajo protokol kriznega komuniciranja in vlogo (stego)vodje.",
-            "UU dobro pozna dokument ZOM.",
-            "UU pozna sistem in podporo ZSKSS na področju duševnega zdravja.",
-            "UU se zavedajo moralne in kazenske odgovornosti."
+            "UU pozna pomembnost in koncept osebnega spremljanja ter razliko med OS člana in voditelja.",
+            "UU pozna sopotništvo in mentorstvo kot obliki OS voditeljev.",
+            "UU razume VSKM kot pripomoček pri osebnem spremljanju in ON voditeljev."
           ],
           "contents": [
-            "cikel kriznega upravljanja",
-            "delo z realnimi primeri",
-            "dokument ZOM"
+            "koncept in tehnike osebnega spremljanja voditeljev",
+            "sopotništvo/mentorstvo – povezava s Ciklom prostovoljstva"
           ],
           "sources": [
             {
-              "title": "11_Krizne situacije in stiske",
-              "url": "https://docs.google.com/document/d/1A74FgegYf5AywQx1m3zFZIGYGQ4U9dBW/edit"
+              "title": "ON voditelja – navodila (september 2025)",
+              "url": "https://drive.google.com/file/d/1R1dBVnmzqM37cAClJDQKCnPTFoO6Hqa5/view?usp=sharing"
             },
             {
-              "title": "U Vodja_Krizne situacije in stiske",
-              "url": "https://docs.google.com/document/d/1GKhk-eAimFOAiI5GlICXmpHEGxa-eC0RYhG71hALVJs/edit?tab=t.0"
+              "title": "Cikel prostovoljstva v ZSKSS",
+              "url": "https://drive.google.com/file/d/1UjIvrge5-l2o3Ov8etyrXVxG7HX4pJzk/view?usp=sharing"
             }
           ],
           "notes": [
-            "Veliko vprašanj UU → suverenost trenerjev."
+            "VSKM kot orodje/navdih, ne za kljukanje kompetenc.",
+            "Raketa je pripomoček za OS članov, ne voditeljev.",
+            "Dobre prakse izvajanja OS."
           ],
-          "duration": "1,5h",
+          "duration": "2h",
           "category": "tema",
           "mikronacrt": {
             "status": "exists",
-            "title": "09_Krizno komuniciranje in stiske",
-            "url": "https://docs.google.com/document/d/1pyLvkImgaPnVDrHhiOa4pXe0BtHW8GzDpgH11lvSNO4/edit",
-            "fileId": "1pyLvkImgaPnVDrHhiOa4pXe0BtHW8GzDpgH11lvSNO4",
-            "created": "2026-10-06"
+            "title": "07_Osebno spremljanje voditeljev",
+            "url": "https://docs.google.com/document/d/1Hu6KOesXxELele1H_8Y1N9uS2UtZsLJYPu1BDJE26fc/edit",
+            "fileId": "1Hu6KOesXxELele1H_8Y1N9uS2UtZsLJYPu1BDJE26fc",
+            "created": "2026-10-12"
           },
           "isTema": true,
-          "temaSlug": "krizno-komuniciranje-in-stiske"
+          "temaSlug": "osebno-spremljanje-voditeljev"
         },
         {
-          "id": "vikend2-petek-vprasanja-prosti-cas-1830",
+          "id": "vikend2-petek-vprasanja-prosti-cas-1900",
           "title": "Vprašanja / prosti čas",
-          "start": "18:30",
+          "start": "19:00",
           "end": "19:30",
           "kind": "logistics",
           "trainers": [],
@@ -3048,18 +3049,35 @@
           "source": "Časovnica – stolpec Kdo"
         },
         {
-          "type": "tema",
-          "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "type": "activity",
+          "typeLabel": "Odgovorni za aktivnost",
+          "sessionId": "vikend1-nedelja-os-1000",
           "dayId": "vikend1-nedelja",
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
           "start": "10:00",
-          "end": "17:30",
+          "end": "11:00",
+          "title": "OS",
+          "category": "logistics",
+          "programKey": null,
+          "sortKey": "2026-10-25-10:00",
+          "href": "#sid-vikend1-nedelja-os-1000",
+          "label": "10:00–11:00 · OS",
+          "source": "Časovnica – stolpec Kdo"
+        },
+        {
+          "type": "tema",
+          "typeLabel": "Odgovorni za izbirno temo",
+          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
+          "dayId": "vikend1-nedelja",
+          "dayLabel": "Nedelja, 25. 10. 2026",
+          "date": "2026-10-25",
+          "start": "11:30",
+          "end": "13:00",
           "title": "Državna raven / Skavti na mednarodni ravni",
           "category": "izbirna",
-          "sortKey": "2026-10-25-10:00-Državna raven / Skavti na mednarodni ravni",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sortKey": "2026-10-25-11:30",
+          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "label": "Državna raven / Skavti na mednarodni ravni · 1. in 2. del",
           "moduleKey": "državna raven",
           "parts": 2,
@@ -3067,13 +3085,13 @@
           "programKey": "državna raven",
           "sessions": [
             {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "dayId": "vikend1-nedelja",
               "dayLabel": "Nedelja, 25. 10. 2026",
               "date": "2026-10-25",
-              "start": "10:00",
-              "end": "11:30",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "start": "11:30",
+              "end": "13:00",
+              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "title": "Državna raven / Skavti na mednarodni ravni (v bloku: Izbirne teme (1. sklop))"
             },
             {
@@ -3088,39 +3106,6 @@
             }
           ],
           "note": "10:00–11:30 · 16:00–17:30"
-        },
-        {
-          "type": "activity",
-          "typeLabel": "Odgovorni za aktivnost",
-          "sessionId": "vikend1-nedelja-os-1200",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "start": "12:00",
-          "end": "13:00",
-          "title": "OS",
-          "category": "logistics",
-          "programKey": null,
-          "sortKey": "2026-10-25-12:00",
-          "href": "#sid-vikend1-nedelja-os-1200",
-          "label": "12:00–13:00 · OS",
-          "source": "Časovnica – stolpec Kdo"
-        },
-        {
-          "type": "tema",
-          "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "start": "15:30",
-          "end": "17:30",
-          "title": "Osebno spremljanje voditeljev",
-          "category": "tema",
-          "programKey": "osebno spremljanje voditeljev",
-          "sortKey": "2026-10-25-15:30",
-          "href": "#sid-vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
-          "label": "15:30–17:30 · Osebno spremljanje voditeljev"
         },
         {
           "type": "timekeeper",
@@ -3148,6 +3133,22 @@
           "href": "#sid-vikend2-petek-os-malica-sladoled-iz-meka-mcflurry-1530",
           "label": "15:30–17:00 · OS (+ malica, sladoled iz meka, mcflurry)",
           "source": "Časovnica – stolpec Kdo"
+        },
+        {
+          "type": "tema",
+          "typeLabel": "Odgovorni za temo",
+          "sessionId": "vikend2-petek-osebno-spremljanje-voditeljev-2h-1700",
+          "dayId": "vikend2-petek",
+          "dayLabel": "Petek, 6. 11. 2026",
+          "date": "2026-11-06",
+          "start": "17:00",
+          "end": "19:00",
+          "title": "Osebno spremljanje voditeljev",
+          "category": "tema",
+          "programKey": "osebno spremljanje voditeljev",
+          "sortKey": "2026-11-06-17:00",
+          "href": "#sid-vikend2-petek-osebno-spremljanje-voditeljev-2h-1700",
+          "label": "17:00–19:00 · Osebno spremljanje voditeljev"
         },
         {
           "type": "tema",
@@ -3374,18 +3375,35 @@
           "source": "Časovnica – stolpec Kdo"
         },
         {
-          "type": "tema",
-          "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "type": "activity",
+          "typeLabel": "Odgovorni za aktivnost",
+          "sessionId": "vikend1-nedelja-os-1000",
           "dayId": "vikend1-nedelja",
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
           "start": "10:00",
-          "end": "17:30",
+          "end": "11:00",
+          "title": "OS",
+          "category": "logistics",
+          "programKey": null,
+          "sortKey": "2026-10-25-10:00",
+          "href": "#sid-vikend1-nedelja-os-1000",
+          "label": "10:00–11:00 · OS",
+          "source": "Časovnica – stolpec Kdo"
+        },
+        {
+          "type": "tema",
+          "typeLabel": "Odgovorni za izbirno temo",
+          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
+          "dayId": "vikend1-nedelja",
+          "dayLabel": "Nedelja, 25. 10. 2026",
+          "date": "2026-10-25",
+          "start": "11:30",
+          "end": "13:00",
           "title": "Državna raven / Skavti na mednarodni ravni",
           "category": "izbirna",
-          "sortKey": "2026-10-25-10:00-Državna raven / Skavti na mednarodni ravni",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sortKey": "2026-10-25-11:30",
+          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "label": "Državna raven / Skavti na mednarodni ravni · 1. in 2. del",
           "moduleKey": "državna raven",
           "parts": 2,
@@ -3393,13 +3411,13 @@
           "programKey": "državna raven",
           "sessions": [
             {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "dayId": "vikend1-nedelja",
               "dayLabel": "Nedelja, 25. 10. 2026",
               "date": "2026-10-25",
-              "start": "10:00",
-              "end": "11:30",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "start": "11:30",
+              "end": "13:00",
+              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "title": "Državna raven / Skavti na mednarodni ravni (v bloku: Izbirne teme (1. sklop))"
             },
             {
@@ -3418,16 +3436,16 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "dayId": "vikend1-nedelja",
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
-          "start": "10:00",
-          "end": "17:30",
+          "start": "11:30",
+          "end": "13:00",
           "title": "Retorika",
           "category": "izbirna",
-          "sortKey": "2026-10-25-10:00-Retorika",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sortKey": "2026-10-25-11:30",
+          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "label": "Retorika · 1. in 2. del",
           "moduleKey": "retorika",
           "parts": 2,
@@ -3435,13 +3453,13 @@
           "programKey": "retorika",
           "sessions": [
             {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "dayId": "vikend1-nedelja",
               "dayLabel": "Nedelja, 25. 10. 2026",
               "date": "2026-10-25",
-              "start": "10:00",
-              "end": "11:30",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "start": "11:30",
+              "end": "13:00",
+              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "title": "Retorika (v bloku: Izbirne teme (1. sklop))"
             },
             {
@@ -3456,39 +3474,6 @@
             }
           ],
           "note": "10:00–11:30 · 16:00–17:30"
-        },
-        {
-          "type": "activity",
-          "typeLabel": "Odgovorni za aktivnost",
-          "sessionId": "vikend1-nedelja-os-1200",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "start": "12:00",
-          "end": "13:00",
-          "title": "OS",
-          "category": "logistics",
-          "programKey": null,
-          "sortKey": "2026-10-25-12:00",
-          "href": "#sid-vikend1-nedelja-os-1200",
-          "label": "12:00–13:00 · OS",
-          "source": "Časovnica – stolpec Kdo"
-        },
-        {
-          "type": "tema",
-          "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "start": "15:30",
-          "end": "17:30",
-          "title": "Osebno spremljanje voditeljev",
-          "category": "tema",
-          "programKey": "osebno spremljanje voditeljev",
-          "sortKey": "2026-10-25-15:30",
-          "href": "#sid-vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
-          "label": "15:30–17:30 · Osebno spremljanje voditeljev"
         },
         {
           "type": "tema",
@@ -3547,6 +3532,22 @@
           "href": "#sid-vikend2-petek-os-malica-sladoled-iz-meka-mcflurry-1530",
           "label": "15:30–17:00 · OS (+ malica, sladoled iz meka, mcflurry)",
           "source": "Časovnica – stolpec Kdo"
+        },
+        {
+          "type": "tema",
+          "typeLabel": "Odgovorni za temo",
+          "sessionId": "vikend2-petek-osebno-spremljanje-voditeljev-2h-1700",
+          "dayId": "vikend2-petek",
+          "dayLabel": "Petek, 6. 11. 2026",
+          "date": "2026-11-06",
+          "start": "17:00",
+          "end": "19:00",
+          "title": "Osebno spremljanje voditeljev",
+          "category": "tema",
+          "programKey": "osebno spremljanje voditeljev",
+          "sortKey": "2026-11-06-17:00",
+          "href": "#sid-vikend2-petek-osebno-spremljanje-voditeljev-2h-1700",
+          "label": "17:00–19:00 · Osebno spremljanje voditeljev"
         },
         {
           "type": "timekeeper",
@@ -3891,16 +3892,16 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "dayId": "vikend1-nedelja",
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
-          "start": "10:00",
-          "end": "17:30",
+          "start": "11:30",
+          "end": "13:00",
           "title": "Priprava in vodenje proračuna",
           "category": "izbirna",
-          "sortKey": "2026-10-25-10:00-Priprava in vodenje proračuna",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sortKey": "2026-10-25-11:30",
+          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "label": "Priprava in vodenje proračuna · 1. in 2. del",
           "moduleKey": "priprava in vodenje proračuna",
           "parts": 2,
@@ -3908,13 +3909,13 @@
           "programKey": "priprava in vodenje proračuna",
           "sessions": [
             {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "dayId": "vikend1-nedelja",
               "dayLabel": "Nedelja, 25. 10. 2026",
               "date": "2026-10-25",
-              "start": "10:00",
-              "end": "11:30",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "start": "11:30",
+              "end": "13:00",
+              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "title": "Priprava in vodenje proračuna (v bloku: Izbirne teme (1. sklop))"
             },
             {
@@ -4411,16 +4412,16 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "dayId": "vikend1-nedelja",
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
-          "start": "10:00",
-          "end": "17:30",
+          "start": "11:30",
+          "end": "13:00",
           "title": "Administrativno vodenje stega",
           "category": "izbirna",
-          "sortKey": "2026-10-25-10:00-Administrativno vodenje stega",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sortKey": "2026-10-25-11:30",
+          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "label": "Administrativno vodenje stega · 1. in 2. del",
           "moduleKey": "administrativno vodenje",
           "parts": 2,
@@ -4428,13 +4429,13 @@
           "programKey": "administrativno vodenje",
           "sessions": [
             {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "dayId": "vikend1-nedelja",
               "dayLabel": "Nedelja, 25. 10. 2026",
               "date": "2026-10-25",
-              "start": "10:00",
-              "end": "11:30",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "start": "11:30",
+              "end": "13:00",
+              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "title": "Administrativno vodenje stega (v bloku: Izbirne teme (1. sklop))"
             },
             {
@@ -4453,18 +4454,55 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend2-petek-krizno-komuniciranje-in-stiske-1-5h-1700",
-          "dayId": "vikend2-petek",
-          "dayLabel": "Petek, 6. 11. 2026",
-          "date": "2026-11-06",
-          "start": "17:00",
-          "end": "18:30",
+          "sessionId": "vikend1-nedelja-krizno-komuniciranje-in-stiske-1-5h-1530",
+          "dayId": "vikend1-nedelja",
+          "dayLabel": "Nedelja, 25. 10. 2026",
+          "date": "2026-10-25",
+          "start": "15:30",
+          "end": "17:00",
           "title": "Krizno komuniciranje in stiske",
           "category": "tema",
           "programKey": "krizno komuniciranje in stiske",
-          "sortKey": "2026-11-06-17:00",
-          "href": "#sid-vikend2-petek-krizno-komuniciranje-in-stiske-1-5h-1700",
-          "label": "17:00–18:30 · Krizno komuniciranje in stiske"
+          "sortKey": "2026-10-25-15:30",
+          "href": "#sid-vikend1-nedelja-krizno-komuniciranje-in-stiske-1-5h-1530",
+          "label": "15:30–17:00 · Krizno komuniciranje in stiske"
+        },
+        {
+          "type": "zadolzitev",
+          "typeLabel": "Zadolžitve",
+          "phase": "during",
+          "phaseLabel": "Med dogodkom",
+          "sessionId": "vikend2-petek-vprasanja-prosti-cas-1900",
+          "dayId": "vikend2-petek",
+          "dayLabel": "Petek, 6. 11. 2026",
+          "date": "2026-11-06",
+          "start": "19:00",
+          "end": "19:30",
+          "title": "Vprašanja / prosti čas",
+          "note": "pet 6.11. ob 18:30, sob 7.11. ob 13:00 in 17:30",
+          "sortKey": "2026-11-06-19:00",
+          "href": "#sid-vikend2-petek-vprasanja-prosti-cas-1900",
+          "label": "Vprašanja / prosti čas · Vprašanja / prosti čas",
+          "slots": [
+            {
+              "href": "#sid-vikend2-petek-vprasanja-prosti-cas-1900",
+              "dayLabel": "Petek, 6. 11. 2026",
+              "weekday": "Petek",
+              "date": "2026-11-06",
+              "start": "18:30",
+              "end": "19:30"
+            },
+            {
+              "href": "#sid-vikend2-sobota-vprasanja-prosti-cas-1300",
+              "dayLabel": "Sobota, 7. 11. 2026",
+              "weekday": "Sobota",
+              "date": "2026-11-07",
+              "start": "13:00",
+              "end": "14:00"
+            }
+          ],
+          "source": "Zadolžitve",
+          "sourceUrl": "https://docs.google.com/spreadsheets/d/1I0mAnMRhJpAG6rVwXKBvJ5VSbY8hqLiG5s-X6hsfO10/edit"
         },
         {
           "type": "tema",
@@ -4572,43 +4610,6 @@
           ],
           "source": "Zadolžitve",
           "sourceUrl": "https://docs.google.com/spreadsheets/d/1I0mAnMRhJpAG6rVwXKBvJ5VSbY8hqLiG5s-X6hsfO10/edit"
-        },
-        {
-          "type": "zadolzitev",
-          "typeLabel": "Zadolžitve",
-          "phase": "during",
-          "phaseLabel": "Med dogodkom",
-          "sessionId": "vikend2-petek-vprasanja-prosti-cas-1830",
-          "dayId": "vikend2-petek",
-          "dayLabel": "Petek, 6. 11. 2026",
-          "date": "2026-11-06",
-          "start": "18:30",
-          "end": "19:30",
-          "title": "Vprašanja / prosti čas",
-          "note": "pet 6.11. ob 18:30, sob 7.11. ob 13:00 in 17:30",
-          "sortKey": "6-2026-11-06-18:30-z-Vprašanja / prosti čas",
-          "href": "#sid-vikend2-petek-vprasanja-prosti-cas-1830",
-          "label": "Vprašanja / prosti čas · Vprašanja / prosti čas",
-          "slots": [
-            {
-              "href": "#sid-vikend2-petek-vprasanja-prosti-cas-1830",
-              "dayLabel": "Petek, 6. 11. 2026",
-              "weekday": "Petek",
-              "date": "2026-11-06",
-              "start": "18:30",
-              "end": "19:30"
-            },
-            {
-              "href": "#sid-vikend2-sobota-vprasanja-prosti-cas-1300",
-              "dayLabel": "Sobota, 7. 11. 2026",
-              "weekday": "Sobota",
-              "date": "2026-11-07",
-              "start": "13:00",
-              "end": "14:00"
-            }
-          ],
-          "source": "Zadolžitve",
-          "sourceUrl": "https://docs.google.com/spreadsheets/d/1I0mAnMRhJpAG6rVwXKBvJ5VSbY8hqLiG5s-X6hsfO10/edit"
         }
       ],
       "counts": {
@@ -4662,16 +4663,16 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "dayId": "vikend1-nedelja",
           "dayLabel": "Nedelja, 25. 10. 2026",
           "date": "2026-10-25",
-          "start": "10:00",
-          "end": "17:30",
+          "start": "11:30",
+          "end": "13:00",
           "title": "Pridobivanje sredstev",
           "category": "izbirna",
-          "sortKey": "2026-10-25-10:00-Pridobivanje sredstev",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+          "sortKey": "2026-10-25-11:30",
+          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
           "label": "Pridobivanje sredstev · 1. in 2. del",
           "moduleKey": "pridobivanje sredstev",
           "parts": 2,
@@ -4679,13 +4680,13 @@
           "programKey": "pridobivanje sredstev",
           "sessions": [
             {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "dayId": "vikend1-nedelja",
               "dayLabel": "Nedelja, 25. 10. 2026",
               "date": "2026-10-25",
-              "start": "10:00",
-              "end": "11:30",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+              "start": "11:30",
+              "end": "13:00",
+              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "title": "Pridobivanje sredstev (v bloku: Izbirne teme (1. sklop))"
             },
             {
@@ -4700,6 +4701,22 @@
             }
           ],
           "note": "10:00–11:30 · 16:00–17:30"
+        },
+        {
+          "type": "tema",
+          "typeLabel": "Odgovorni za temo",
+          "sessionId": "vikend1-nedelja-krizno-komuniciranje-in-stiske-1-5h-1530",
+          "dayId": "vikend1-nedelja",
+          "dayLabel": "Nedelja, 25. 10. 2026",
+          "date": "2026-10-25",
+          "start": "15:30",
+          "end": "17:00",
+          "title": "Krizno komuniciranje in stiske",
+          "category": "tema",
+          "programKey": "krizno komuniciranje in stiske",
+          "sortKey": "2026-10-25-15:30",
+          "href": "#sid-vikend1-nedelja-krizno-komuniciranje-in-stiske-1-5h-1530",
+          "label": "15:30–17:00 · Krizno komuniciranje in stiske"
         },
         {
           "type": "tema",
@@ -4741,22 +4758,6 @@
             }
           ],
           "note": "09:00–11:00 · 11:30–13:30"
-        },
-        {
-          "type": "tema",
-          "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend2-petek-krizno-komuniciranje-in-stiske-1-5h-1700",
-          "dayId": "vikend2-petek",
-          "dayLabel": "Petek, 6. 11. 2026",
-          "date": "2026-11-06",
-          "start": "17:00",
-          "end": "18:30",
-          "title": "Krizno komuniciranje in stiske",
-          "category": "tema",
-          "programKey": "krizno komuniciranje in stiske",
-          "sortKey": "2026-11-06-17:00",
-          "href": "#sid-vikend2-petek-krizno-komuniciranje-in-stiske-1-5h-1700",
-          "label": "17:00–18:30 · Krizno komuniciranje in stiske"
         },
         {
           "type": "tema",
@@ -5441,7 +5442,7 @@
       ],
       "sessions": [
         {
-          "href": "#sid-vikend2-petek-vprasanja-prosti-cas-1830",
+          "href": "#sid-vikend2-petek-vprasanja-prosti-cas-1900",
           "dayId": "vikend2-petek",
           "dayLabel": "Petek, 6. 11. 2026",
           "date": "2026-11-06",
@@ -6353,16 +6354,16 @@
       },
       "occurrences": [
         {
-          "sessionId": "vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "start": "15:30",
-          "end": "17:30",
+          "sessionId": "vikend2-petek-osebno-spremljanje-voditeljev-2h-1700",
+          "dayId": "vikend2-petek",
+          "dayLabel": "Petek, 6. 11. 2026",
+          "date": "2026-11-06",
+          "start": "17:00",
+          "end": "19:00",
           "duration": "2h",
           "durationMinutes": null,
           "title": "Osebno spremljanje voditeljev",
-          "href": "#sid-vikend1-nedelja-osebno-spremljanje-voditeljev-2h-1530",
+          "href": "#sid-vikend2-petek-osebno-spremljanje-voditeljev-2h-1700",
           "trainers": [
             "Barbara",
             "Jakob G"
@@ -6756,16 +6757,16 @@
       },
       "occurrences": [
         {
-          "sessionId": "vikend2-petek-krizno-komuniciranje-in-stiske-1-5h-1700",
-          "dayId": "vikend2-petek",
-          "dayLabel": "Petek, 6. 11. 2026",
-          "date": "2026-11-06",
-          "start": "17:00",
-          "end": "18:30",
+          "sessionId": "vikend1-nedelja-krizno-komuniciranje-in-stiske-1-5h-1530",
+          "dayId": "vikend1-nedelja",
+          "dayLabel": "Nedelja, 25. 10. 2026",
+          "date": "2026-10-25",
+          "start": "15:30",
+          "end": "17:00",
           "duration": "1,5h",
           "durationMinutes": 90,
           "title": "Krizno komuniciranje in stiske",
-          "href": "#sid-vikend2-petek-krizno-komuniciranje-in-stiske-1-5h-1700",
+          "href": "#sid-vikend1-nedelja-krizno-komuniciranje-in-stiske-1-5h-1530",
           "trainers": [
             "Tilen",
             "Petra"
@@ -7102,14 +7103,14 @@
         }
       ],
       "mikronacrt": {
-        "status": "missing",
-        "title": null,
-        "url": null,
-        "fileId": null,
-        "label": "Ne obstaja",
-        "modifiedTime": null,
-        "textHash": null,
-        "cacheFile": null
+        "status": "exists",
+        "title": "13_Pridobivanje sredstev",
+        "url": "https://docs.google.com/document/d/1xi4BQcW-WR1Vvp9GwazKjgN5OqDyLQMRgxoDS48eHUY/edit",
+        "fileId": "1xi4BQcW-WR1Vvp9GwazKjgN5OqDyLQMRgxoDS48eHUY",
+        "label": "Odpri mikronačrt",
+        "modifiedTime": "2026-10-24T22:52:31.922Z",
+        "textHash": "23361c140087b1fc",
+        "cacheFile": "pridobivanje-sredstev.txt"
       },
       "occurrences": [],
       "parts": 0,
@@ -7897,14 +7898,14 @@
       "slug": "pridobivanje-sredstev",
       "title": "Pridobivanje sredstev",
       "category": "izbirna",
-      "status": "ni_mikronacrta",
+      "status": "potrebuje_dopolnitev",
       "counts": {
         "vkljuceno": 0,
-        "delno": 0,
-        "manjka": 5,
+        "delno": 5,
+        "manjka": 0,
         "total": 5
       },
-      "hasMikronacrt": false,
+      "hasMikronacrt": true,
       "duration": "1h",
       "durationMinutes": null,
       "parts": 0,
@@ -7998,16 +7999,16 @@
   ],
   "izbirneBlocks": [
     {
-      "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1000",
+      "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
       "dayId": "vikend1-nedelja",
       "dayLabel": "Nedelja, 25. 10. 2026",
       "date": "2026-10-25",
-      "start": "10:00",
-      "end": "11:30",
+      "start": "11:30",
+      "end": "13:00",
       "duration": "1,5h",
       "durationMinutes": 90,
       "title": "Izbirne teme (1. sklop)",
-      "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1000",
+      "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
       "trainers": [],
       "weekend": 1,
       "relatedTemas": [

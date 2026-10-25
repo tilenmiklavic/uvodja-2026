@@ -519,49 +519,49 @@
     "pridobivanje-sredstev": {
       "title": "Pridobivanje sredstev",
       "programKey": "pridobivanje sredstev",
-      "status": "ni_mikronacrta",
+      "status": "potrebuje_dopolnitev",
       "counts": {
         "vkljuceno": 0,
-        "delno": 0,
-        "manjka": 5,
+        "delno": 5,
+        "manjka": 0,
         "total": 5
       },
       "items": [
         {
           "text": "načini pridobivanja sredstev",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "status": "delno",
+          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
         },
         {
           "text": "prijavljanje na razpise",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "status": "delno",
+          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
         },
         {
           "text": "proaktivnost vodje",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "status": "delno",
+          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
         },
         {
           "text": "povezava med programom in pridobivanjem sredstev",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "status": "delno",
+          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
         },
         {
           "text": "dobre prakse",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "status": "delno",
+          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
         }
       ],
       "contentsHash": "a5155c4dc8f88d20",
       "mikronacrt": {
-        "status": "missing",
-        "fileId": null,
-        "modifiedTime": null,
-        "textHash": null,
-        "cacheFile": null
+        "status": "exists",
+        "fileId": "1xi4BQcW-WR1Vvp9GwazKjgN5OqDyLQMRgxoDS48eHUY",
+        "modifiedTime": "2026-10-24T22:52:31.922Z",
+        "textHash": "23361c140087b1fc",
+        "cacheFile": "pridobivanje-sredstev.txt"
       },
-      "judgedAt": null
+      "judgedAt": "2026-10-25T08:00:00+02:00"
     },
     "retorika": {
       "title": "Retorika",
