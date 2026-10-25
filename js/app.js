@@ -2694,13 +2694,22 @@ function loadOcene(force = false) {
   return oceneP;
 }
 const canSeeOcene = () => ["svod", "admin"].includes(effectiveRole(state.user?.email));
-/* Grade stats for one tema slug from the responses tabs (null if none yet) */
+/* Scored feedback per tema: one entry per tema form, plus one per "split" part of a shared form (Izbirne teme:
+   responses filtered per tema into their own tab, optionally with its own facilitators instead of the tema's odgovorni) */
+function pvScoreEntries() {
+  return (pvData?.temaForms || []).flatMap((f, i) => f.split
+    ? f.split.map((x) => ({ tema: x.tema, responsesTab: x.responsesTab, occs: pvFormOccs(f), who: x.odgovorni || null }))
+    : f.tema ? [{ tema: f.tema, responsesTab: f.responsesTab, i, occs: pvFormOccs(f), who: null }] : []);
+}
+const pvTabFor = (tabs, e) => tabs.find((t) => t.name === e.responsesTab) || (e.i != null ? tabs.find((t) => parseInt(t.name, 10) === e.i + 1) : null);
+/* Grade stats for one tema slug from the responses tabs, all parts merged (null if none yet) */
 function temaScore(slug) {
-  const tabs = ocene.data?.tabs || [], forms = pvData?.temaForms || [];
-  const i = forms.findIndex((f) => f.tema === slug);
-  if (i < 0) return null;
-  const tab = tabs.find((t) => t.name === forms[i].responsesTab) || tabs.find((t) => parseInt(t.name, 10) === i + 1);
-  return tab?.n ? tab : null;
+  const tabs = ocene.data?.tabs || [];
+  const hit = pvScoreEntries().filter((e) => e.tema === slug).map((e) => pvTabFor(tabs, e)).filter((t) => t?.n);
+  if (!hit.length) return null;
+  if (hit.length === 1) return hit[0];
+  const n = hit.reduce((a, t) => a + t.n, 0), sum = hit.reduce((a, t) => a + t.sum, 0);
+  return { ...hit[0], n, sum, avg: sum / n, dist: [0, 1, 2, 3, 4].map((k) => hit.reduce((a, t) => a + (t.dist?.[k] || 0), 0)) };
 }
 const scoreFmt = (x) => x.toFixed(2).replace(".", ",");
 async function renderOcene(force = false) {
@@ -2717,11 +2726,11 @@ async function renderOcene(force = false) {
   }
   const tabs = ocene.data.tabs || [], temas = state.data?.temas || {}, people = state.data?.people || {};
   const now = ljNow(), nowKey = `${now.date} ${now.label}`;
-  const tabFor = (f, i) => tabs.find((t) => t.name === f.responsesTab) || tabs.find((t) => parseInt(t.name, 10) === i + 1);
-  const done = (pvData?.temaForms || []).map((f, i) => {
-    const t = temas[f.tema], tab = tabFor(f, i);
-    const last = (t?.occurrences || []).map((o) => `${o.date} ${o.end}`).sort().pop();
-    return t && tab?.n && last && last <= nowKey ? { slug: f.tema, title: t.title, tab, who: t.odgovorni || [] } : null;
+  const done = pvScoreEntries().map((e) => {
+    const t = temas[e.tema], tab = pvTabFor(tabs, e);
+    const last = e.occs.map((o) => `${o.date} ${o.end}`).sort().pop();
+    const who = e.who ? e.who.map((slug) => ({ slug, name: people[slug]?.name || slug })) : t?.odgovorni || [];
+    return t && tab?.n && last && last <= nowKey ? { slug: e.tema, title: t.title, tab, who } : null;
   }).filter(Boolean);
   const agg = {};
   done.forEach((d) => d.who.forEach((w) => {
@@ -2773,6 +2782,8 @@ async function renderVprasanja(force = false) {
   }
   const forms = pvData?.temaForms || [], temas = state.data?.temas || {};
   const temaOf = (tab) => {
+    const part = forms.flatMap((f) => f.split || []).find((x) => x.responsesTab === tab.name);
+    if (part) return temas[part.tema]?.title || tab.name;
     const i = forms.findIndex((f) => f.responsesTab === tab.name), j = i >= 0 ? i : (parseInt(tab.name, 10) || 0) - 1;
     const f = forms[j];
     return f ? pvFormName(f) : tab.name.replace(/^\d+\s*[_.-]?\s*/, "") || `Tema ${tab.name}`;

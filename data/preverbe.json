@@ -1,5 +1,5 @@
 {
-  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas) ali – če ni teme (npr. Izbirne teme) – s termini časovnice (»sessions« = id-ji sej v data.json days, »name« = prikazano ime). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin).",
+  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas) ali – če ni teme (npr. Izbirne teme) – s termini časovnice (»sessions« = id-ji sej v data.json days, »name« = prikazano ime). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin). »split« = skupen obrazec več tem (Izbirne teme): odgovori so po vprašanju »Katere teme si se udeležil?« (»option«) razdeljeni v ločene zavihke (»responsesTab«) in pripisani »odgovorni« (slugi oseb) namesto odgovornim teme.",
   "fetched": "2026-10-25",
   "temaForms": [
     {
@@ -39,11 +39,38 @@
       "responsesTab": "6"
     },
     {
-      "sessions": ["vikend1-nedelja-izbirne-teme-1-sklop-1130"],
+      "sessions": [
+        "vikend1-nedelja-izbirne-teme-1-sklop-1130"
+      ],
       "name": "Izbirne teme",
       "title": "Preverba teme Izbirne teme",
       "formId": "1OHBTE8oXxufgnp9qZtSe5FIvgzhDTwodSh5gDYs1Pn0",
-      "responsesTab": "7"
+      "split": [
+        {
+          "tema": "administrativno-vodenje-stega",
+          "option": "Administracija stega",
+          "responsesTab": "7a Administrativno",
+          "odgovorni": [
+            "petra-zupan"
+          ]
+        },
+        {
+          "tema": "pridobivanje-sredstev",
+          "option": "Pridobivanje sredstev",
+          "responsesTab": "7b Pridobivanje",
+          "odgovorni": [
+            "tilen-miklavic"
+          ]
+        },
+        {
+          "tema": "drzavna-raven-skavti-na-mednarodni-ravni",
+          "option": "Državna raven",
+          "responsesTab": "7c Državna raven",
+          "odgovorni": [
+            "petra-zupan"
+          ]
+        }
+      ]
     }
   ],
   "general": [
