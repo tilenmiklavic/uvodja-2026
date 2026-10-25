@@ -2775,7 +2775,7 @@ async function renderVprasanja(force = false) {
   const temaOf = (tab) => {
     const i = forms.findIndex((f) => f.responsesTab === tab.name), j = i >= 0 ? i : (parseInt(tab.name, 10) || 0) - 1;
     const f = forms[j];
-    return f ? temas[f.tema]?.title || f.title : tab.name.replace(/^\d+\s*[_.-]?\s*/, "") || `Tema ${tab.name}`;
+    return f ? pvFormName(f) : tab.name.replace(/^\d+\s*[_.-]?\s*/, "") || `Tema ${tab.name}`;
   };
   const when = (ts) => ts ? new Date(ts).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
   const tabs = (vq.data.tabs || []).filter((t) => t.items?.length)
@@ -2970,14 +2970,20 @@ function renderPvSvod(box) {
 /* Only temas that started today and ended less than PV_GRACE minutes ago (per the timeline); checked every minute,
    forms are added/removed in place so open ones keep their answers */
 const PV_GRACE = 120;
+/* A form is tied to a tema (its timeline occurrences) or, for e.g. Izbirne teme, directly to timeline session ids */
+function pvFormOccs(f) {
+  if (f.tema) return state.data?.temas?.[f.tema]?.occurrences || [];
+  const ids = [].concat(f.sessions || []);
+  return (state.data?.days || []).flatMap((d) => d.sessions.filter((s) => ids.includes(s.id)).map((s) => ({ date: d.date, start: s.start, end: s.end })));
+}
+const pvFormName = (f) => state.data?.temas?.[f.tema]?.title || f.name || f.title.replace(/^Preverba teme\s*/i, "");
 function renderPvTeme(box) {
-  const now = ljNow(), today = now.date, temas = state.data?.temas || {};
+  const now = ljNow(), today = now.date;
   const todays = (pvData?.temaForms || []).flatMap((f) => {
-    const t = temas[f.tema];
-    const occs = (t?.occurrences || []).filter((o) => o.date === today).sort((a, b) => a.start.localeCompare(b.start));
+    const occs = pvFormOccs(f).filter((o) => o.date === today).sort((a, b) => a.start.localeCompare(b.start));
     if (!occs.length) return [];
     const end = occs.map((o) => o.end).sort().pop(); // last part of the tema today (pt.1 / pt.2)
-    return [{ ...f, name: t.title, occ: { start: occs[0].start, end } }];
+    return [{ ...f, name: pvFormName(f), occ: { start: occs[0].start, end } }];
   }).sort((a, b) => a.occ.start.localeCompare(b.occ.start));
   const forms = todays.filter((f) => toMin(f.occ.start) <= now.min && now.min < toMin(f.occ.end) + PV_GRACE);
   if (!forms.length) {
@@ -2987,7 +2993,7 @@ function renderPvTeme(box) {
       box.innerHTML = `<div class="card pv-empty"><p>Preverbe današnjih tem so zaprte.</p><p class="muted-text">Obrazec je na voljo od začetka teme do 2 uri po njenem koncu.</p></div>`;
       return;
     }
-    const next = later ? null : (pvData?.temaForms || []).flatMap((f) => (temas[f.tema]?.occurrences || []).map((o) => o.date)).filter((d) => d > today).sort()[0];
+    const next = later ? null : (pvData?.temaForms || []).flatMap((f) => pvFormOccs(f).map((o) => o.date)).filter((d) => d > today).sort()[0];
     box.innerHTML = later
       ? `<div class="card pv-empty"><p>Preverbe tem bodo na voljo, ko se tema začne.</p><p class="muted-text">${later === todays[0] ? "Prva danes" : "Naslednja"}: ${esc(later.name)} ob ${esc(later.occ.start)}.</p></div>`
       : `<div class="card pv-empty"><p>Danes ni preverb tem.</p>${next ? `<p class="muted-text">Naslednje preverbe: ${Number(next.slice(8))}. ${Number(next.slice(5, 7))}.</p>` : ""}</div>`;

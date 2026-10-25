@@ -1,6 +1,6 @@
 {
-  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin).",
-  "fetched": "2026-10-24",
+  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas) ali – če ni teme (npr. Izbirne teme) – s termini časovnice (»sessions« = id-ji sej v data.json days, »name« = prikazano ime). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin).",
+  "fetched": "2026-10-25",
   "temaForms": [
     {
       "tema": "jaz-vodja",
@@ -37,6 +37,13 @@
       "title": "Preverba teme Skavti v mladinskem delu",
       "formId": "1pUUJ8wdtg0KIDzDc_B47yXxChKNHSa2mHA-sJy8FarA",
       "responsesTab": "6"
+    },
+    {
+      "sessions": ["vikend1-nedelja-izbirne-teme-1-sklop-1130"],
+      "name": "Izbirne teme",
+      "title": "Preverba teme Izbirne teme",
+      "formId": "1OHBTE8oXxufgnp9qZtSe5FIvgzhDTwodSh5gDYs1Pn0",
+      "responsesTab": "7"
     }
   ],
   "general": [
