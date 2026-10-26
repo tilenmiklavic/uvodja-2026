@@ -34,7 +34,6 @@
     "notes": [
       "Vsebina vzeta iz časovnice (zavihek »Časovnica - akutalna 2026«) in dokumenta PROGRAM U VODJA_2026.",
       "Zavihek »Časovnica - stara 2025« ni vključen (lanska izvedba).",
-      "Izbirne teme (1. in 2. sklop) so v časovnici kot bloki – podrobnosti po sklopih niso razčlenjene.",
       "Mikronačrti v mapi Teme/Mikronačrti so deloma še v pripravi (2026)."
     ],
     "mikronacrtSource": {
@@ -1127,14 +1126,10 @@
           "contents": [
             "Administrativno vodenje stega (1h)",
             "Pridobivanje sredstev (1h)",
-            "Retorika (1h)",
-            "Priprava in vodenje proračuna (1h)",
-            "Državna raven / Skavti na mednarodni ravni (1h)"
+            "Državna raven (1h)"
           ],
           "sources": [],
-          "notes": [
-            "Blok izbirnih tem – razporeditev po sklopih ni razčlenjena v časovnici."
-          ],
+          "notes": [],
           "duration": null,
           "category": "izbirna",
           "mikronacrt": {
@@ -1877,16 +1872,12 @@
           "programKey": "izbirne teme",
           "goals": [],
           "contents": [
-            "Administrativno vodenje stega (1h)",
-            "Pridobivanje sredstev (1h)",
-            "Retorika (1h)",
             "Priprava in vodenje proračuna (1h)",
-            "Državna raven / Skavti na mednarodni ravni (1h)"
+            "Retorika (1h)",
+            "Administrativno vodenje stega (1h)"
           ],
           "sources": [],
-          "notes": [
-            "Blok izbirnih tem – razporeditev po sklopih ni razčlenjena v časovnici."
-          ],
+          "notes": [],
           "duration": null,
           "category": "izbirna",
           "mikronacrt": {
@@ -2774,7 +2765,7 @@
       }
     },
     "državna raven": {
-      "title": "Državna raven / Skavti na mednarodni ravni",
+      "title": "Državna raven",
       "duration": "1h",
       "category": "izbirna",
       "goals": [
@@ -3074,14 +3065,14 @@
           "date": "2026-10-25",
           "start": "11:30",
           "end": "13:00",
-          "title": "Državna raven / Skavti na mednarodni ravni",
+          "title": "Državna raven",
           "category": "izbirna",
           "sortKey": "2026-10-25-11:30",
           "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-          "label": "Državna raven / Skavti na mednarodni ravni · 1. in 2. del",
+          "label": "11:30–13:00 · Državna raven",
           "moduleKey": "državna raven",
-          "parts": 2,
-          "partsLabel": "1. in 2. del",
+          "parts": 1,
+          "partsLabel": null,
           "programKey": "državna raven",
           "sessions": [
             {
@@ -3092,20 +3083,10 @@
               "start": "11:30",
               "end": "13:00",
               "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-              "title": "Državna raven / Skavti na mednarodni ravni (v bloku: Izbirne teme (1. sklop))"
-            },
-            {
-              "sessionId": "vikend2-sobota-izbirne-teme-2-sklop-1600",
-              "dayId": "vikend2-sobota",
-              "dayLabel": "Sobota, 7. 11. 2026",
-              "date": "2026-11-07",
-              "start": "16:00",
-              "end": "17:30",
-              "href": "#sid-vikend2-sobota-izbirne-teme-2-sklop-1600",
-              "title": "Državna raven / Skavti na mednarodni ravni (v bloku: Izbirne teme (2. sklop))"
+              "title": "Državna raven (v bloku: Izbirne teme (1. sklop))"
             }
           ],
-          "note": "10:00–11:30 · 16:00–17:30"
+          "note": "11:30–13:00"
         },
         {
           "type": "timekeeper",
@@ -3394,74 +3375,22 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "start": "11:30",
-          "end": "13:00",
-          "title": "Državna raven / Skavti na mednarodni ravni",
-          "category": "izbirna",
-          "sortKey": "2026-10-25-11:30",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-          "label": "Državna raven / Skavti na mednarodni ravni · 1. in 2. del",
-          "moduleKey": "državna raven",
-          "parts": 2,
-          "partsLabel": "1. in 2. del",
-          "programKey": "državna raven",
-          "sessions": [
-            {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
-              "dayId": "vikend1-nedelja",
-              "dayLabel": "Nedelja, 25. 10. 2026",
-              "date": "2026-10-25",
-              "start": "11:30",
-              "end": "13:00",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-              "title": "Državna raven / Skavti na mednarodni ravni (v bloku: Izbirne teme (1. sklop))"
-            },
-            {
-              "sessionId": "vikend2-sobota-izbirne-teme-2-sklop-1600",
-              "dayId": "vikend2-sobota",
-              "dayLabel": "Sobota, 7. 11. 2026",
-              "date": "2026-11-07",
-              "start": "16:00",
-              "end": "17:30",
-              "href": "#sid-vikend2-sobota-izbirne-teme-2-sklop-1600",
-              "title": "Državna raven / Skavti na mednarodni ravni (v bloku: Izbirne teme (2. sklop))"
-            }
-          ],
-          "note": "10:00–11:30 · 16:00–17:30"
-        },
-        {
-          "type": "tema",
-          "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "start": "11:30",
-          "end": "13:00",
+          "sessionId": "vikend2-sobota-izbirne-teme-2-sklop-1600",
+          "dayId": "vikend2-sobota",
+          "dayLabel": "Sobota, 7. 11. 2026",
+          "date": "2026-11-07",
+          "start": "16:00",
+          "end": "17:30",
           "title": "Retorika",
           "category": "izbirna",
-          "sortKey": "2026-10-25-11:30",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-          "label": "Retorika · 1. in 2. del",
+          "sortKey": "2026-11-07-16:00",
+          "href": "#sid-vikend2-sobota-izbirne-teme-2-sklop-1600",
+          "label": "16:00–17:30 · Retorika",
           "moduleKey": "retorika",
-          "parts": 2,
-          "partsLabel": "1. in 2. del",
+          "parts": 1,
+          "partsLabel": null,
           "programKey": "retorika",
           "sessions": [
-            {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
-              "dayId": "vikend1-nedelja",
-              "dayLabel": "Nedelja, 25. 10. 2026",
-              "date": "2026-10-25",
-              "start": "11:30",
-              "end": "13:00",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-              "title": "Retorika (v bloku: Izbirne teme (1. sklop))"
-            },
             {
               "sessionId": "vikend2-sobota-izbirne-teme-2-sklop-1600",
               "dayId": "vikend2-sobota",
@@ -3473,7 +3402,7 @@
               "title": "Retorika (v bloku: Izbirne teme (2. sklop))"
             }
           ],
-          "note": "10:00–11:30 · 16:00–17:30"
+          "note": "16:00–17:30"
         },
         {
           "type": "tema",
@@ -3682,8 +3611,8 @@
         }
       ],
       "counts": {
-        "total": 15,
-        "teme": 5,
+        "total": 14,
+        "teme": 4,
         "timekeeper": 1,
         "zadolzitve": 5,
         "zadolzitvePre": 3,
@@ -3744,6 +3673,38 @@
           "sortKey": "2026-10-25-00:00",
           "href": "#day-vikend1-nedelja",
           "label": "Time keeper · Nedelja, 25. 10. 2026"
+        },
+        {
+          "type": "tema",
+          "typeLabel": "Odgovorni za izbirno temo",
+          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
+          "dayId": "vikend1-nedelja",
+          "dayLabel": "Nedelja, 25. 10. 2026",
+          "date": "2026-10-25",
+          "start": "11:30",
+          "end": "13:00",
+          "title": "Državna raven",
+          "category": "izbirna",
+          "sortKey": "2026-10-25-11:30",
+          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
+          "label": "11:30–13:00 · Državna raven",
+          "moduleKey": "državna raven",
+          "parts": 1,
+          "partsLabel": null,
+          "programKey": "državna raven",
+          "sessions": [
+            {
+              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
+              "dayId": "vikend1-nedelja",
+              "dayLabel": "Nedelja, 25. 10. 2026",
+              "date": "2026-10-25",
+              "start": "11:30",
+              "end": "13:00",
+              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
+              "title": "Državna raven (v bloku: Izbirne teme (1. sklop))"
+            }
+          ],
+          "note": "11:30–13:00"
         },
         {
           "type": "tema",
@@ -3831,8 +3792,8 @@
         }
       ],
       "counts": {
-        "total": 8,
-        "teme": 3,
+        "total": 9,
+        "teme": 4,
         "timekeeper": 1,
         "zadolzitve": 4,
         "zadolzitvePre": 3,
@@ -3892,32 +3853,22 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za izbirno temo",
-          "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
-          "dayId": "vikend1-nedelja",
-          "dayLabel": "Nedelja, 25. 10. 2026",
-          "date": "2026-10-25",
-          "start": "11:30",
-          "end": "13:00",
+          "sessionId": "vikend2-sobota-izbirne-teme-2-sklop-1600",
+          "dayId": "vikend2-sobota",
+          "dayLabel": "Sobota, 7. 11. 2026",
+          "date": "2026-11-07",
+          "start": "16:00",
+          "end": "17:30",
           "title": "Priprava in vodenje proračuna",
           "category": "izbirna",
-          "sortKey": "2026-10-25-11:30",
-          "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-          "label": "Priprava in vodenje proračuna · 1. in 2. del",
+          "sortKey": "2026-11-07-16:00",
+          "href": "#sid-vikend2-sobota-izbirne-teme-2-sklop-1600",
+          "label": "16:00–17:30 · Priprava in vodenje proračuna",
           "moduleKey": "priprava in vodenje proračuna",
-          "parts": 2,
-          "partsLabel": "1. in 2. del",
+          "parts": 1,
+          "partsLabel": null,
           "programKey": "priprava in vodenje proračuna",
           "sessions": [
-            {
-              "sessionId": "vikend1-nedelja-izbirne-teme-1-sklop-1130",
-              "dayId": "vikend1-nedelja",
-              "dayLabel": "Nedelja, 25. 10. 2026",
-              "date": "2026-10-25",
-              "start": "11:30",
-              "end": "13:00",
-              "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-              "title": "Priprava in vodenje proračuna (v bloku: Izbirne teme (1. sklop))"
-            },
             {
               "sessionId": "vikend2-sobota-izbirne-teme-2-sklop-1600",
               "dayId": "vikend2-sobota",
@@ -3929,7 +3880,7 @@
               "title": "Priprava in vodenje proračuna (v bloku: Izbirne teme (2. sklop))"
             }
           ],
-          "note": "10:00–11:30 · 16:00–17:30"
+          "note": "16:00–17:30"
         }
       ],
       "counts": {
@@ -4449,7 +4400,7 @@
               "title": "Administrativno vodenje stega (v bloku: Izbirne teme (2. sklop))"
             }
           ],
-          "note": "10:00–11:30 · 16:00–17:30"
+          "note": "11:30–13:00 · 16:00–17:30"
         },
         {
           "type": "tema",
@@ -4673,10 +4624,10 @@
           "category": "izbirna",
           "sortKey": "2026-10-25-11:30",
           "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
-          "label": "Pridobivanje sredstev · 1. in 2. del",
+          "label": "11:30–13:00 · Pridobivanje sredstev",
           "moduleKey": "pridobivanje sredstev",
-          "parts": 2,
-          "partsLabel": "1. in 2. del",
+          "parts": 1,
+          "partsLabel": null,
           "programKey": "pridobivanje sredstev",
           "sessions": [
             {
@@ -4688,19 +4639,9 @@
               "end": "13:00",
               "href": "#sid-vikend1-nedelja-izbirne-teme-1-sklop-1130",
               "title": "Pridobivanje sredstev (v bloku: Izbirne teme (1. sklop))"
-            },
-            {
-              "sessionId": "vikend2-sobota-izbirne-teme-2-sklop-1600",
-              "dayId": "vikend2-sobota",
-              "dayLabel": "Sobota, 7. 11. 2026",
-              "date": "2026-11-07",
-              "start": "16:00",
-              "end": "17:30",
-              "href": "#sid-vikend2-sobota-izbirne-teme-2-sklop-1600",
-              "title": "Pridobivanje sredstev (v bloku: Izbirne teme (2. sklop))"
             }
           ],
-          "note": "10:00–11:30 · 16:00–17:30"
+          "note": "11:30–13:00"
         },
         {
           "type": "tema",
@@ -4898,8 +4839,8 @@
       "name": "Jakob Gostiša",
       "shortName": "Jakob G.",
       "counts": {
-        "total": 15,
-        "teme": 5,
+        "total": 14,
+        "teme": 4,
         "timekeeper": 1,
         "zadolzitve": 5,
         "zadolzitvePre": 3,
@@ -4918,8 +4859,8 @@
       "name": "Jakob Stele",
       "shortName": "Jakob S.",
       "counts": {
-        "total": 8,
-        "teme": 3,
+        "total": 9,
+        "teme": 4,
         "timekeeper": 1,
         "zadolzitve": 4,
         "zadolzitvePre": 3,
@@ -7217,7 +7158,7 @@
             "shortName": "Jakob G."
           },
           "voditelj2": null,
-          "kdaj": "Nedelja 1",
+          "kdaj": "Sobota 2",
           "obrazec": "14_Retorika"
         }
       ],
@@ -7336,7 +7277,7 @@
       "id": "drzavna-raven-skavti-na-mednarodni-ravni",
       "slug": "drzavna-raven-skavti-na-mednarodni-ravni",
       "programKey": "državna raven",
-      "title": "Državna raven / Skavti na mednarodni ravni",
+      "title": "Državna raven",
       "category": "izbirna",
       "duration": "1h",
       "contents": [
@@ -7358,14 +7299,14 @@
       "notes": [],
       "odgovorni": [
         {
-          "name": "Jakob Gostiša",
-          "slug": "jakob-gostisa",
-          "shortName": "Jakob G."
-        },
-        {
           "name": "Barbara Hrastar",
           "slug": "barbara-hrastar",
           "shortName": "Barbara"
+        },
+        {
+          "name": "Jakob Stele",
+          "slug": "jakob-stele",
+          "shortName": "Jakob S."
         }
       ],
       "mikronacrt": {
@@ -7387,16 +7328,16 @@
           "num": 16,
           "units": "1.5",
           "voditelj1": {
-            "name": "Jakob Gostiša",
-            "slug": "jakob-gostisa",
-            "shortName": "Jakob G."
-          },
-          "voditelj2": {
             "name": "Barbara Hrastar",
             "slug": "barbara-hrastar",
             "shortName": "Barbara"
           },
-          "kdaj": "Sobota 2",
+          "voditelj2": {
+            "name": "Jakob Stele",
+            "slug": "jakob-stele",
+            "shortName": "Jakob S."
+          },
+          "kdaj": "Nedelja 1",
           "obrazec": null
         }
       ],
@@ -7879,7 +7820,7 @@
     },
     {
       "slug": "drzavna-raven-skavti-na-mednarodni-ravni",
-      "title": "Državna raven / Skavti na mednarodni ravni",
+      "title": "Državna raven",
       "category": "izbirna",
       "status": "potrebuje_dopolnitev",
       "counts": {
@@ -8021,8 +7962,8 @@
           "title": "Pridobivanje sredstev"
         },
         {
-          "slug": "retorika",
-          "title": "Retorika"
+          "slug": "drzavna-raven-skavti-na-mednarodni-ravni",
+          "title": "Državna raven"
         }
       ]
     },
@@ -8045,8 +7986,8 @@
           "title": "Priprava in vodenje proračuna"
         },
         {
-          "slug": "drzavna-raven-skavti-na-mednarodni-ravni",
-          "title": "Državna raven / Skavti na mednarodni ravni"
+          "slug": "retorika",
+          "title": "Retorika"
         },
         {
           "slug": "administrativno-vodenje-stega",
