@@ -49,7 +49,6 @@
         "upravljanje in spremljanje sprememb",
         "jaz, vodja",
         "vodenje voditeljev",
-        "državna raven",
         "katoliško skavtstvo",
         "osebno spremljanje voditeljev",
         "vodenje procesov",
@@ -2795,11 +2794,10 @@
         "Barbara"
       ],
       "mikronacrt": {
-        "status": "exists",
-        "title": "18_International evening",
-        "url": "https://docs.google.com/document/d/1nKHTS1DMnggOEIb26BvCCWJ1KXdfVHmXlXeJzJZeTmE/edit",
-        "fileId": "1nKHTS1DMnggOEIb26BvCCWJ1KXdfVHmXlXeJzJZeTmE",
-        "created": "2026-10-08"
+        "status": "missing",
+        "title": null,
+        "url": null,
+        "label": "Ne obstaja"
       }
     },
     "pričevanje svod-a": {
@@ -7310,14 +7308,14 @@
         }
       ],
       "mikronacrt": {
-        "status": "exists",
-        "title": "18_International evening",
-        "url": "https://docs.google.com/document/d/1nKHTS1DMnggOEIb26BvCCWJ1KXdfVHmXlXeJzJZeTmE/edit",
-        "fileId": "1nKHTS1DMnggOEIb26BvCCWJ1KXdfVHmXlXeJzJZeTmE",
-        "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-08T18:36:24.655Z",
-        "textHash": "a1446ccef2e28786",
-        "cacheFile": "drzavna-raven-skavti-na-mednarodni-ravni.txt"
+        "status": "missing",
+        "title": null,
+        "url": null,
+        "fileId": null,
+        "label": "Ne obstaja",
+        "modifiedTime": null,
+        "textHash": null,
+        "cacheFile": null
       },
       "occurrences": [],
       "parts": 0,
@@ -7343,34 +7341,34 @@
       ],
       "relatedFiles": [],
       "coverage": {
-        "status": "potrebuje_dopolnitev",
+        "status": "ni_mikronacrta",
         "items": [
           {
             "text": "zgodovina svetovnega skavtstva",
-            "status": "delno",
-            "evidence": "V Vsebini: ključne letnice/dogodki; v Poteku ni ločene aktivnosti za zgodovino (le uvod/izkušnje)."
+            "status": "manjka",
+            "evidence": "Ni mikronačrta 2026."
           },
           {
             "text": "WAGGGS, WOSM, ICCG, ICCS",
-            "status": "vkljuceno",
-            "evidence": "Potek »Kaj je«: WAGGGS (+ Helen Storrow, JLS, centri), WOSM, ICCG, ICCS; tudi pričevanja (Academy, ICCG, Jamboree)."
+            "status": "manjka",
+            "evidence": "Ni mikronačrta 2026."
           },
           {
             "text": "medkulturni dialog",
-            "status": "delno",
-            "evidence": "V Vsebini: teorija o medkulturnem dialogu; Potek ima uvod o mednarodnem povezovanju in pogovor po otočkih, brez eksplicitne teorije."
+            "status": "manjka",
+            "evidence": "Ni mikronačrta 2026."
           }
         ],
         "counts": {
-          "vkljuceno": 1,
-          "delno": 2,
-          "manjka": 0,
+          "vkljuceno": 0,
+          "delno": 0,
+          "manjka": 3,
           "total": 3
         },
-        "judgedAt": "2026-10-09T07:16:25+02:00",
+        "judgedAt": null,
         "contentsHash": "360e61aa0c10aa2a",
-        "mikronacrtModifiedTime": "2026-10-08T18:36:24.655Z",
-        "mikronacrtTextHash": "a1446ccef2e28786"
+        "mikronacrtModifiedTime": null,
+        "mikronacrtTextHash": null
       }
     },
     "pricevanje-svod-a": {
@@ -7822,14 +7820,14 @@
       "slug": "drzavna-raven-skavti-na-mednarodni-ravni",
       "title": "Državna raven",
       "category": "izbirna",
-      "status": "potrebuje_dopolnitev",
+      "status": "ni_mikronacrta",
       "counts": {
-        "vkljuceno": 1,
-        "delno": 2,
-        "manjka": 0,
+        "vkljuceno": 0,
+        "delno": 0,
+        "manjka": 3,
         "total": 3
       },
-      "hasMikronacrt": true,
+      "hasMikronacrt": false,
       "duration": "1h",
       "durationMinutes": null,
       "parts": 0,

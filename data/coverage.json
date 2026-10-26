@@ -633,41 +633,41 @@
       "judgedAt": null
     },
     "drzavna-raven-skavti-na-mednarodni-ravni": {
-      "title": "Državna raven / Skavti na mednarodni ravni",
+      "title": "Državna raven",
       "programKey": "državna raven",
-      "status": "potrebuje_dopolnitev",
+      "status": "ni_mikronacrta",
       "counts": {
-        "vkljuceno": 1,
-        "delno": 2,
-        "manjka": 0,
+        "vkljuceno": 0,
+        "delno": 0,
+        "manjka": 3,
         "total": 3
       },
       "items": [
         {
           "text": "zgodovina svetovnega skavtstva",
-          "status": "delno",
-          "evidence": "V Vsebini: ključne letnice/dogodki; v Poteku ni ločene aktivnosti za zgodovino (le uvod/izkušnje)."
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
         },
         {
           "text": "WAGGGS, WOSM, ICCG, ICCS",
-          "status": "vkljuceno",
-          "evidence": "Potek »Kaj je«: WAGGGS (+ Helen Storrow, JLS, centri), WOSM, ICCG, ICCS; tudi pričevanja (Academy, ICCG, Jamboree)."
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
         },
         {
           "text": "medkulturni dialog",
-          "status": "delno",
-          "evidence": "V Vsebini: teorija o medkulturnem dialogu; Potek ima uvod o mednarodnem povezovanju in pogovor po otočkih, brez eksplicitne teorije."
+          "status": "manjka",
+          "evidence": "Ni mikronačrta 2026."
         }
       ],
       "contentsHash": "360e61aa0c10aa2a",
       "mikronacrt": {
-        "status": "exists",
-        "fileId": "1nKHTS1DMnggOEIb26BvCCWJ1KXdfVHmXlXeJzJZeTmE",
-        "modifiedTime": "2026-10-08T18:36:24.655Z",
-        "textHash": "a1446ccef2e28786",
-        "cacheFile": "drzavna-raven-skavti-na-mednarodni-ravni.txt"
+        "status": "missing",
+        "fileId": null,
+        "modifiedTime": null,
+        "textHash": null,
+        "cacheFile": null
       },
-      "judgedAt": "2026-10-09T07:16:25+02:00"
+      "judgedAt": null
     },
     "pricevanje-svod-a": {
       "title": "Pričevanje SVOD-a",
