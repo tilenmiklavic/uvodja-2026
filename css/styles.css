@@ -1635,7 +1635,7 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .pv-ftab.pv-tab[hidden] { display: none; }
 
 /* —— Analitika: candle charts (Preverbe) —— */
-.pvc-card { margin-top: 1.25rem; }
+.an-h { margin: 0 0 .75rem; font-size: 1.15rem; }
 .pvc-note { font-size: .85rem; }
 .pvc-block { margin: 0 0 1.4rem; }
 .pvc-block h4 { margin: 0 0 .5rem; font-size: 1rem; }
@@ -1825,3 +1825,15 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .svc-hit { fill: transparent; cursor: crosshair; }
 .sv-p-adj-card { padding: .9rem 1rem; margin-bottom: .4rem; }
 .sv-p-adj-card h3 { margin: 0 0 .6rem; font-size: 1rem; }
+
+/* —— Install as app (PWA) bar —— */
+.install-bar { position: fixed; z-index: 150; left: 50%; transform: translateX(-50%); bottom: max(12px, env(safe-area-inset-bottom)); width: min(560px, calc(100vw - 24px));
+  display: flex; align-items: center; gap: .7rem; padding: .65rem .7rem; border-radius: 14px; background: var(--card-solid); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.install-bar[hidden] { display: none; }
+.install-bar img { flex: none; width: 44px; height: 44px; border-radius: 10px; }
+.install-text { flex: 1; min-width: 0; }
+.install-title { margin: 0; font-weight: 800; font-size: .92rem; color: var(--ink); }
+.install-sub { margin: .1rem 0 0; font-size: .8rem; color: var(--ink-muted); }
+.install-go { flex: none; min-height: 40px; padding: 0 .9rem; }
+.install-x { flex: none; width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-muted); font-size: 1.4rem; line-height: 1; cursor: pointer; }
+.install-x:hover { color: var(--ink); background: rgba(255,255,255,0.06); }

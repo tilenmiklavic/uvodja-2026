@@ -360,10 +360,11 @@ function applyAuth() {
       ${roleOf(u.email) === "admin" ? `<div class="sim-switch" role="group" aria-label="Pogled kot"><span class="sim-label">Pogled kot</span>${SIM_ROLES.map((r) =>
         `<button type="button" class="sim-opt" data-sim-role="${r}" aria-pressed="${effectiveRole(u.email) === r}">${r.toUpperCase()}</button>`).join("")}</div>` : ""}
       <div class="tok-box"><p class="tok-line" id="tok-line"></p><button type="button" class="user-menu-item" id="tok-refresh" data-tok-refresh>Osveži prijavo</button><div id="tok-gsi" class="tok-gsi"></div></div>
-      ${own}<button type="button" class="user-menu-item user-signout" data-signout>Odjava</button>
+      ${own}<button type="button" class="user-menu-item" data-install hidden>Namesti aplikacijo</button><button type="button" class="user-menu-item user-signout" data-signout>Odjava</button>
     </div>`;
   ar.hidden = false;
   prefetchScriptData();
+  setTimeout(updateInstallUI, 0);
   const who = person && state.allowed.has("ekipa")
     ? `<a href="#oseba-${esc(person.slug)}">${esc(u.name)}</a>` : esc(u.name);
   setTimeout(tokRender, 0);
@@ -393,6 +394,7 @@ function setTab(name) {
   if (name === "vprasanja") renderVprasanja();
   const zbm = /^zabava\/(wordle|stavnica)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
+  updateInstallUI();
   if (name === "zabava") {
     $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
     $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica";
@@ -403,12 +405,12 @@ function setTab(name) {
   closeNavMore();
   const hash = location.hash.replace(/^#/, "");
   logVisit(blocked ? "noaccess" : (/^(oseba|tema)-/.test(hash) ? hash.split("-")[0] : name));
-  if (name === "analitika") { renderVisits(); renderPvCharts(); }
+  if (name === "analitika") renderAnalitika(/^analitika\/(obiski|svod|teme)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "obiski");
   if (name === "preverbe") renderPreverbe(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "uu") renderUU(/^uu\/(.+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   currentTab = name;
-  if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("uu/") && !hash.startsWith("preverbe/") && !hash.startsWith("zabava/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
+  if (!blocked && !hash.startsWith("sid-") && !hash.startsWith("os/") && !hash.startsWith("uu/") && !hash.startsWith("preverbe/") && !hash.startsWith("analitika/") && !hash.startsWith("zabava/") && !hash.startsWith("day-") && !hash.startsWith("oseba-") && !hash.startsWith("tema-")) {
     history.replaceState(null, "", name === "casovnica" ? "#casovnica" : `#${name}`);
   }
 }
@@ -1662,6 +1664,7 @@ function applyHash() {
   }
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno|svod)$/.test(hash)) { setTab("preverbe"); return; }
+  if (/^analitika\/(obiski|svod|teme)$/.test(hash)) { setTab("analitika"); return; }
   if (/^zabava\/(wordle|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
@@ -1956,6 +1959,41 @@ async function wdPost(url, item, credential) {
   finally { clearTimeout(t); }
   try { return await r.json(); } catch { throw Object.assign(new Error(`HTTP ${r.status}`), { kind: "server" }); }
 }
+
+/* —— Install as an app (PWA): Chrome/Edge/Android get the browser's install dialog (beforeinstallprompt);
+   iPhone/iPad Safari has no such dialog, so the bar explains »Deli → Dodaj na začetni zaslon« —— */
+const INSTALL_SNOOZE = "uvodja.install.snooze";
+let installEvt = null;
+const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const canInstall = () => !isStandalone() && (!!installEvt || isIos());
+function updateInstallUI() {
+  const bar = $("#install-bar");
+  $$("[data-install]").forEach((b) => { b.hidden = !canInstall(); });
+  if (!bar) return;
+  let snoozed = false; try { snoozed = Number(localStorage.getItem(INSTALL_SNOOZE) || 0) > Date.now(); } catch {}
+  bar.hidden = !state.user || !canInstall() || snoozed || !!state.wordleActive;
+  if (!bar.hidden && !installEvt) {
+    $("#install-sub").textContent = "Tapni Deli ⬆︎ in nato »Dodaj na začetni zaslon«.";
+    $("#install-go").textContent = "V redu";
+  }
+}
+async function runInstall() {
+  if (installEvt) {
+    const evt = installEvt; installEvt = null;
+    evt.prompt();
+    try { await evt.userChoice; } catch {}
+  }
+  try { localStorage.setItem(INSTALL_SNOOZE, String(Date.now() + 14 * 864e5)); } catch {}
+  updateInstallUI();
+}
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; updateInstallUI(); });
+window.addEventListener("appinstalled", () => { installEvt = null; updateInstallUI(); });
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#install-go, [data-install]")) { setUserMenu(false); closeNavMore(); runInstall(); }
+  else if (e.target.closest("#install-x")) { try { localStorage.setItem(INSTALL_SNOOZE, String(Date.now() + 7 * 864e5)); } catch {} updateInstallUI(); }
+});
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 
 /* —— Apps Script data for the whole session: on load (any page) everything the signed-in user may see is requested at once
    and kept until reload/sign-out; a page awaits the request still in flight or, if it failed, retries it —— */
@@ -2962,9 +3000,15 @@ function pvcTrend(days) {
   return `<p class="muted-text pvt-key"><span><span class="pvt-key-line"></span> povprečje</span><span><span class="pvt-key-band"></span> srednja polovica odgovorov (Q1–Q3)</span><span>lestvica ${lo}–${hi}</span></p>
     <div class="pvt-grid">${series.map(panel).join("")}</div>${table}`;
 }
+/* Analitika: folder tabs Obiski / Preverbe SVODa / Preverbe tem (#analitika/<tab>) */
+function renderAnalitika(sub) {
+  $$("#tab-analitika [data-an-tab]").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.anTab === sub)));
+  ["obiski", "svod", "teme"].forEach((k) => { $(`#an-${k}`).hidden = k !== sub; });
+  if (sub === "obiski") renderVisits(); else renderPvCharts();
+}
 async function renderPvCharts(force = false) {
-  const box = $("#pvc-body");
-  if (!box || !canSee("analitika")) return;
+  const boxSvod = $("#pvc-svod"), boxTeme = $("#pvc-teme");
+  if (!boxSvod || !canSee("analitika")) return;
   if (!pvc.data || force) {
     if (pvc.loading) return;
     pvc.loading = true;
@@ -2978,7 +3022,7 @@ async function renderPvCharts(force = false) {
     const e = pvc.error, k = e?.kind;
     const msg = { auth: "Prijava je potekla – osveži prijavo v meniju.", denied: "Grafe vidi le admin.", offline: "Ni internetne povezave.", network: "Strežnik ni dosegljiv (slaba povezava?).", timeout: "Strežnik se ni odzval.", config: "Strežnik ni nastavljen." }[k]
       || (/bad_date|invalid|unknown/i.test(e?.message || "") ? "Strežnik še ne pozna teh grafov (Apps Script ni posodobljen)." : `Grafov ni bilo mogoče naložiti (${e?.message || "napaka"}).`);
-    box.innerHTML = `<p class="muted-text">${esc(msg)}</p><button type="button" class="btn ghost" data-pvc-reload>Poskusi znova</button>`;
+    boxSvod.innerHTML = boxTeme.innerHTML = `<p class="muted-text">${esc(msg)}</p><button type="button" class="btn ghost" data-pvc-reload>Poskusi znova</button>`;
     return;
   }
   const forms = pvc.data.forms || [];
@@ -2991,8 +3035,8 @@ async function renderPvCharts(force = false) {
     return { form: f, label: (pvData?.svodForms || []).find((x) => x.formId === f.id)?.title || f.title, short: m ? `${Number(m[2])}. ${Number(m[1])}.` : f.title };
   });
   const nResp = svod.reduce((a, f) => a + f.responses, 0);
-  box.innerHTML = `<h3 class="pv-sub-h">Preverbe SVODa skozi čas</h3>${svod.length ? `<section class="pvc-block"><h4>Odgovori po dnevih <span class="muted-text">· ${svod.length} ${svod.length === 1 ? "dan" : svod.length === 2 ? "dneva" : svod.length < 5 ? "dnevi" : "dni"} · ${nResp} odgovorov</span></h4>${pvcTrend(svodDays)}</section>` : `<p class="muted-text">Še ni odgovorov.</p>`}
-    <h3 class="pv-sub-h">Preverbe tem</h3>${teme.length ? `<section class="pvc-block"><h4>Ocena teme po temah <span class="muted-text">· ${teme.reduce((a, f) => a + f.responses, 0)} odgovorov</span></h4>${pvcChart({ title: "Ocene tem", questions: teme.map((f) => ({ title: temaName(f.title), values: (f.questions.find((q) => /ocen/i.test(q.title)) || f.questions[0] || { values: [] }).values })) }, { named: true })}</section>` : `<p class="muted-text">Še ni odgovorov.</p>`}`;
+  boxSvod.innerHTML = `${svod.length ? `<section class="pvc-block"><h4>Odgovori po dnevih <span class="muted-text">· ${svod.length} ${svod.length === 1 ? "dan" : svod.length === 2 ? "dneva" : svod.length < 5 ? "dnevi" : "dni"} · ${nResp} odgovorov</span></h4>${pvcTrend(svodDays)}</section>` : `<p class="muted-text">Še ni odgovorov.</p>`}`;
+  boxTeme.innerHTML = `${teme.length ? `<section class="pvc-block"><h4>Ocena teme po temah <span class="muted-text">· ${teme.reduce((a, f) => a + f.responses, 0)} odgovorov</span></h4>${pvcChart({ title: "Ocene tem", questions: teme.map((f) => ({ title: temaName(f.title), values: (f.questions.find((q) => /ocen/i.test(q.title)) || f.questions[0] || { values: [] }).values })) }, { named: true })}</section>` : `<p class="muted-text">Še ni odgovorov.</p>`}`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-pvc-reload]")) renderPvCharts(true); });
 // Hover / focus tooltip for candles

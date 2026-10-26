@@ -9,8 +9,13 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32.png" />
   <link rel="icon" type="image/png" href="assets/logos/favicon.png" />
   <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="U Vodja" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
-  <link rel="stylesheet" href="css/styles.css?v=83" />
+  <link rel="stylesheet" href="css/styles.css?v=84" />
   <script src="https://accounts.google.com/gsi/client" async></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -43,6 +48,15 @@
     </div>
   </header>
 
+  <div class="install-bar" id="install-bar" role="dialog" aria-labelledby="install-title" hidden>
+    <img src="assets/logos/icon-192.png" alt="" width="44" height="44" />
+    <div class="install-text">
+      <p class="install-title" id="install-title">Namesti U Vodja kot aplikacijo</p>
+      <p class="install-sub" id="install-sub">Odpre se z ikone na začetnem zaslonu, brez brskalnika.</p>
+    </div>
+    <button type="button" class="btn primary install-go" id="install-go">Namesti</button>
+    <button type="button" class="install-x" id="install-x" aria-label="Zapri">×</button>
+  </div>
   <section id="auth-gate" class="auth-gate" hidden>
     <div class="card auth-card">
       <img class="auth-art" src="assets/logos/signin-4c.webp" alt="Vodja 2026 – Na lovu za zakladom" width="440" height="440" />
@@ -263,15 +277,30 @@
       <div id="vq-body"><p class="muted-text">Nalagam …</p></div>
     </section>
     <section id="tab-analitika" class="tab-panel" hidden>
-      <section class="card visits" id="visits" aria-labelledby="visits-title">
-        <h2 id="visits-title">Analitika – obiski</h2>
-        <div id="visits-body"></div>
-      </section>
-      <section class="card pvc-card" id="pv-charts" aria-labelledby="pvc-title">
-        <h2 id="pvc-title">Preverbe – porazdelitev odgovorov</h2>
-        <p class="muted-text pvc-note">Vsaka sveča je eno vprašanje: črta od najnižjega do najvišjega odgovora, okvir srednjih 50 % odgovorov, vodoravna črta mediana, pika povprečje. Upoštevani so le številčni odgovori.</p>
-        <div id="pvc-body"><p class="muted-text">Nalagam …</p></div>
-      </section>
+      <div class="pv-folder">
+        <div class="pv-ftabs" role="tablist" aria-label="Analitika">
+          <a role="tab" class="pv-tab pv-ftab" href="#analitika/obiski" data-an-tab="obiski" aria-selected="true" aria-controls="an-obiski">Obiski</a>
+          <a role="tab" class="pv-tab pv-ftab" href="#analitika/svod" data-an-tab="svod" aria-selected="false" aria-controls="an-svod">Preverbe SVODa</a>
+          <a role="tab" class="pv-tab pv-ftab" href="#analitika/teme" data-an-tab="teme" aria-selected="false" aria-controls="an-teme">Preverbe tem</a>
+        </div>
+        <div class="pv-fpanel">
+          <div id="an-obiski" role="tabpanel">
+            <section class="visits" id="visits" aria-labelledby="visits-title">
+              <h2 id="visits-title" class="an-h">Obiski strani</h2>
+              <div id="visits-body"></div>
+            </section>
+          </div>
+          <div id="an-svod" role="tabpanel" hidden>
+            <h2 class="an-h">Preverbe SVODa skozi čas</h2>
+            <div id="pvc-svod"><p class="muted-text">Nalagam …</p></div>
+          </div>
+          <div id="an-teme" role="tabpanel" hidden>
+            <h2 class="an-h">Preverbe tem</h2>
+            <p class="muted-text pvc-note">Vsaka sveča je ena tema: črta od najnižje do najvišje ocene, okvir srednjih 50 % ocen, vodoravna črta mediana, pika povprečje.</p>
+            <div id="pvc-teme"><p class="muted-text">Nalagam …</p></div>
+          </div>
+        </div>
+      </div>
     </section>
     <section id="tab-preverbe" class="tab-panel" hidden>
       <div class="pv-folder">
@@ -319,6 +348,6 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=85" type="module"></script>
+  <script src="js/app.js?v=86" type="module"></script>
 </body>
 </html>
