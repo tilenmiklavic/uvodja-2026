@@ -302,6 +302,7 @@ function signOut() {
   try { localStorage.removeItem("uvodja.user"); } catch {}
   try { window.google?.accounts?.id?.disableAutoSelect(); } catch {}
   state.user = null;
+  scriptData = {};
   applyAuth();
 }
 function initGsi(tries = 0) {
@@ -362,6 +363,7 @@ function applyAuth() {
       ${own}<button type="button" class="user-menu-item user-signout" data-signout>Odjava</button>
     </div>`;
   ar.hidden = false;
+  prefetchScriptData();
   const who = person && state.allowed.has("ekipa")
     ? `<a href="#oseba-${esc(person.slug)}">${esc(u.name)}</a>` : esc(u.name);
   setTimeout(tokRender, 0);
@@ -1932,10 +1934,12 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* —— Wordle results → Apps Script (data/wordle_config.json scriptUrl) + scoreboard —— */
-async function wdConfig() {
-  if (wd.config !== undefined) return wd.config;
-  try { const r = await fetch("data/wordle_config.json", { cache: "no-store" }); wd.config = r.ok ? await r.json() : null; } catch { wd.config = null; }
-  return wd.config;
+let wdConfigP = null; // one fetch even when the prefetch asks for it several times at once
+function wdConfig() {
+  return (wdConfigP ||= (async () => {
+    try { const r = await fetch("data/wordle_config.json", { cache: "no-store" }); wd.config = r.ok ? await r.json() : null; } catch { wd.config = null; }
+    return wd.config;
+  })());
 }
 const WD_QUEUE = "uvodja.wordle.queue";
 function wdQueue() { try { return JSON.parse(localStorage.getItem(WD_QUEUE)) || []; } catch { return []; } }
@@ -1951,6 +1955,53 @@ async function wdPost(url, item, credential) {
   catch (err) { throw Object.assign(new Error(err.name === "AbortError" ? "timeout" : "network"), { kind: err.name === "AbortError" ? "timeout" : navigator.onLine === false ? "offline" : "network" }); }
   finally { clearTimeout(t); }
   try { return await r.json(); } catch { throw Object.assign(new Error(`HTTP ${r.status}`), { kind: "server" }); }
+}
+
+/* —— Apps Script data for the whole session: on load (any page) everything the signed-in user may see is requested at once
+   and kept until reload/sign-out; a page awaits the request still in flight or, if it failed, retries it —— */
+let scriptData = {}; // key → { data, error, p }
+function scriptLoad(key, force = false) {
+  const e = (scriptData[key] ||= {});
+  if (e.p) return e.p;
+  if ("data" in e && !force) return Promise.resolve(e.data);
+  const p = SCRIPT_FETCH[key]().then((d) => { e.data = d; e.error = null; return d; }, (err) => { e.error = err; throw err; })
+    .finally(() => { if (e.p === p) e.p = null; });
+  return (e.p = p);
+}
+const scriptHas = (key) => !!scriptData[key] && "data" in scriptData[key];
+const scriptSet = (key, data) => { (scriptData[key] ||= {}).data = data; };
+/* Signed-in POST of { type, … }; a reply without ok becomes an error with a kind (auth / denied / server) */
+async function scriptPost(item, token = wdFreshToken) {
+  const cfg = await wdConfig();
+  if (!cfg?.scriptUrl) throw Object.assign(new Error("config"), { kind: "config" });
+  const credential = await token();
+  if (!credential) throw Object.assign(new Error("auth"), { kind: "auth" });
+  const res = await wdPost(cfg.scriptUrl, item, credential);
+  if (!res?.ok) throw Object.assign(new Error(res?.error || "napaka"), { kind: /prijava/i.test(res?.error) ? "auth" : /dostop/i.test(res?.error) ? "denied" : "server" });
+  return res;
+}
+const SCRIPT_FETCH = {
+  scores: async () => {
+    const cfg = await wdConfig();
+    if (!cfg?.scriptUrl) throw new Error("config");
+    const j = await (await fetch(`${cfg.scriptUrl}${cfg.scriptUrl.includes("?") ? "&" : "?"}t=${Date.now()}`)).json();
+    return j.ok ? j.results || [] : [];
+  },
+  stavnica: () => svCall(),
+  ocene: () => scriptPost({ type: "ocene" }),
+  vprasanja: () => scriptPost({ type: "vprasanja" }),
+  analitika: () => scriptPost({ type: "analitika" }),
+  visitstats: () => scriptPost({ type: "visitstats" }, () => silentToken(8000)),
+};
+function prefetchScriptData() {
+  if (!state.user) return;
+  const want = [
+    ...(canSee("zabava") ? ["scores", "stavnica"] : []),
+    ...(canSeeOcene() ? ["ocene"] : []),
+    ...(canSee("vprasanja") ? ["vprasanja"] : []),
+    ...(canSee("analitika") ? ["analitika", "visitstats"] : []),
+  ];
+  want.forEach((k) => { if (!scriptHas(k)) scriptLoad(k).catch(() => {}); });
 }
 
 /* —— Google sign-in token status: navbar dot, menu line, background refresh —— */
@@ -2030,12 +2081,8 @@ async function loadScoreboard(force = false) {
   if (!cfg?.scriptUrl) { box.hidden = true; return; }
   box.hidden = false;
   if (!wd.scores || force) {
-    $("#wd-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
-    try {
-      const r = await fetch(`${cfg.scriptUrl}${cfg.scriptUrl.includes("?") ? "&" : "?"}t=${Date.now()}`);
-      const j = await r.json();
-      wd.scores = j.ok ? j.results || [] : [];
-    } catch { wd.scores = null; }
+    if (!scriptHas("scores") || force) $("#wd-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
+    try { wd.scores = await scriptLoad("scores", force); } catch { wd.scores = null; }
   }
   renderScoreboard();
 }
@@ -2176,7 +2223,6 @@ function logVisit(page) {
   } catch {}
 }
 const PAGE_LABEL = { domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", vprasanja: "Vprašanja", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
-let visitsLoadedAt = 0;
 /* Role for an Analitika row: by e-mail, else by matching the name to a listed person (access.json people), else the default role */
 function visitRole(p) {
   if (p.email) return roleOf(p.email);
@@ -2189,18 +2235,11 @@ async function renderVisits() {
   if (!box) return;
   const isAdmin = canSee("analitika");
   box.hidden = !isAdmin;
-  if (!isAdmin || Date.now() - visitsLoadedAt < 60000) return;
-  visitsLoadedAt = Date.now();
+  if (!isAdmin) return;
   const body = $("#visits-body");
-  body.innerHTML = `<p class="muted-text">Nalagam …</p>`;
+  if (!scriptHas("visitstats")) body.innerHTML = `<p class="muted-text">Nalagam …</p>`;
   try {
-    const cfg = await wdConfig();
-    if (!cfg?.scriptUrl) throw new Error("no url");
-    const credential = await silentToken(8000);
-    if (!credential) throw new Error("no token");
-    const r = await fetch(cfg.scriptUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ type: "visitstats", credential }) });
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.error || "err");
+    const d = await scriptLoad("visitstats");
     const days = [];
     const nowIso = ljNow().date;
     const base = new Date(nowIso + "T12:00:00Z");
@@ -2222,7 +2261,6 @@ async function renderVisits() {
       <h3 class="visits-h">Po straneh</h3><ul class="vrows">${pages.map(([p, n]) => row(esc(PAGE_LABEL[p] || p), n, pmax)).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>
       <h3 class="visits-h">Po osebah</h3><ul class="vrows">${people.map((p) => { const r = visitRole(p); return row(esc(displayName(p.name || p.email)), p.count, hmax, r ? ` <span class="role-badge role-${esc(r)}" title="Vloga: ${esc(r.toUpperCase())}">${esc(r.toUpperCase())}</span>` : ""); }).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>`;
   } catch {
-    visitsLoadedAt = 0;
     body.innerHTML = `<p class="muted-text">Statistike trenutno niso na voljo.</p>`;
   }
 }
@@ -2399,7 +2437,7 @@ async function renderStavnica(force = false) {
     const stage = (s) => { if (!sv.state) box.innerHTML = `<p class="muted-text sv-loading">${s === "auth" ? "Preverjam prijavo …" : "Nalagam stave …"}</p>`; };
     stage("load");
     if (sv.media === undefined) { try { const r = await fetch("data/stavnica.json", { cache: "no-store" }); sv.media = r.ok ? await r.json() : null; } catch { sv.media = null; } }
-    try { sv.state = await svCall({}, stage); sv.error = null; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err; }
+    try { sv.state = sv.state && !force ? await svCall({}, stage) : await scriptLoad("stavnica", force); sv.error = null; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err; }
     sv.loading = false;
   }
   if (!sv.state) { box.innerHTML = svErrorHtml(sv.error); return; }
@@ -2674,19 +2712,13 @@ const ocene = { data: null, at: 0, loading: false, error: null };
 /* Shared loader (leaderboard + Teme scores); one request in flight, reused for 10 min */
 let oceneP = null;
 function loadOcene(force = false) {
-  if (ocene.data && !force && Date.now() - ocene.at < 10 * 60000) return Promise.resolve(ocene.data);
+  if (ocene.data && !force) return Promise.resolve(ocene.data);
   if (oceneP) return oceneP;
   ocene.loading = true;
   oceneP = (async () => {
     try {
       if (pvData === undefined) { try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; } }
-      const cfg = await wdConfig();
-      if (!cfg?.scriptUrl) throw Object.assign(new Error("config"), { kind: "config" });
-      const credential = await wdFreshToken();
-      if (!credential) throw Object.assign(new Error("auth"), { kind: "auth" });
-      const res = await wdPost(cfg.scriptUrl, { type: "ocene" }, credential);
-      if (!res?.ok) throw Object.assign(new Error(res?.error || "napaka"), { kind: /prijava/i.test(res?.error) ? "auth" : /dostop/i.test(res?.error) ? "denied" : "server" });
-      ocene.data = res; ocene.at = Date.now(); ocene.error = null;
+      ocene.data = await scriptLoad("ocene", force); ocene.at = Date.now(); ocene.error = null;
     } catch (err) { ocene.error = err; }
     ocene.loading = false; oceneP = null;
     return ocene.data;
@@ -2758,18 +2790,12 @@ const vq = { data: null, at: 0, loading: false, error: null };
 async function renderVprasanja(force = false) {
   const box = $("#vq-body");
   if (!box || !canSee("vprasanja")) return;
-  if (!vq.data || force || Date.now() - vq.at > 10 * 60000) {
+  if (!vq.data || force) {
     if (vq.loading) return;
     vq.loading = true;
     try {
       if (pvData === undefined) { try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; } }
-      const cfg = await wdConfig();
-      if (!cfg?.scriptUrl) throw Object.assign(new Error("config"), { kind: "config" });
-      const credential = await wdFreshToken();
-      if (!credential) throw Object.assign(new Error("auth"), { kind: "auth" });
-      const res = await wdPost(cfg.scriptUrl, { type: "vprasanja" }, credential);
-      if (!res?.ok) throw Object.assign(new Error(res?.error || "napaka"), { kind: /prijava/i.test(res?.error) ? "auth" : /dostop/i.test(res?.error) ? "denied" : "server" });
-      vq.data = res; vq.at = Date.now(); vq.error = null;
+      vq.data = await scriptLoad("vprasanja", force); vq.at = Date.now(); vq.error = null;
     } catch (err) { vq.error = err; }
     vq.loading = false;
   }
@@ -2897,18 +2923,12 @@ function pvcChart(form, opts = {}) {
 async function renderPvCharts(force = false) {
   const box = $("#pvc-body");
   if (!box || !canSee("analitika")) return;
-  if (!pvc.data || force || Date.now() - pvc.at > 10 * 60000) {
+  if (!pvc.data || force) {
     if (pvc.loading) return;
     pvc.loading = true;
     try {
       if (pvData === undefined) { try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; } }
-      const cfg = await wdConfig();
-      if (!cfg?.scriptUrl) throw Object.assign(new Error("config"), { kind: "config" });
-      const credential = await wdFreshToken();
-      if (!credential) throw Object.assign(new Error("auth"), { kind: "auth" });
-      const res = await wdPost(cfg.scriptUrl, { type: "analitika" }, credential);
-      if (!res?.ok) throw Object.assign(new Error(res?.error || "napaka"), { kind: /prijava/i.test(res?.error) ? "auth" : /dostop/i.test(res?.error) ? "denied" : "server" });
-      pvc.data = res; pvc.at = Date.now(); pvc.error = null;
+      pvc.data = await scriptLoad("analitika", force); pvc.at = Date.now(); pvc.error = null;
     } catch (err) { pvc.error = err; }
     pvc.loading = false;
   }
