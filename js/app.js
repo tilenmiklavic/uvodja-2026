@@ -2920,6 +2920,48 @@ function pvcChart(form, opts = {}) {
   return `<div class="pvc-scroll"><svg class="pvc-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(form.title)}: porazdelitev odgovorov po vprašanjih">${ticks.join("")}${candles}</svg></div>
     <ol class="pvc-legend">${qs.map((q, i) => `<li>${named ? "" : `<span class="pvc-qn">V${i + 1}</span>`}${esc(q.title)} <span class="muted-text">· povp. ${pvcFmt(q.s.mean)} · n ${q.s.n}</span></li>`).join("")}</ol>${table}`;
 }
+/* Preverbe SVODa over time: one small panel per question (same 1–5 axis), x = days; line = daily mean, band = Q1–Q3 */
+function pvcTrend(days) {
+  const titles = [];
+  days.forEach((d) => d.form.questions.forEach((q) => { if (q.values.length && !titles.includes(q.title)) titles.push(q.title); }));
+  if (!titles.length) return `<p class="muted-text">Ni številčnih odgovorov.</p>`;
+  const series = titles.map((title) => ({ title, pts: days.map((d) => { const q = d.form.questions.find((x) => x.title === title); return q?.values.length ? pvcStats(q.values) : null; }) }));
+  const vmax = Math.max(...series.flatMap((x) => x.pts.filter(Boolean).map((s) => s.max)));
+  const hi = vmax <= 5 ? 5 : vmax <= 10 ? 10 : Math.ceil(vmax), lo = 1;
+  const W = 300, H = 156, L = 26, R = 14, T = 10, B = 32, n = days.length;
+  const x = (i) => n === 1 ? (L + W - R) / 2 : L + 8 + (i * (W - L - R - 16)) / (n - 1);
+  const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+  const step = hi - lo > 6 ? 2 : 1, colW = n === 1 ? W - L - R : (W - L - R - 16) / (n - 1);
+  const panel = (sr) => {
+    const idx = sr.pts.map((s, i) => (s ? i : -1)).filter((i) => i >= 0);
+    const last = sr.pts[idx[idx.length - 1]], prev = idx.length > 1 ? sr.pts[idx[idx.length - 2]] : null;
+    const delta = prev ? last.mean - prev.mean : null;
+    const trend = delta == null ? "" : Math.abs(delta) < 0.005 ? `<span class="pvt-delta">= 0</span>`
+      : `<span class="pvt-delta ${delta > 0 ? "up" : "down"}" title="glede na prejšnji dan">${delta > 0 ? "▲ +" : "▼ −"}${Math.abs(delta).toFixed(2).replace(".", ",")}</span>`;
+    let grid = "";
+    for (let v = lo; v <= hi; v += step) grid += `<line class="pvc-grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="pvc-tick" x="${L - 7}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+    const band = idx.length > 1 ? `<path class="pvt-band" d="M${idx.map((i) => `${x(i)},${y(sr.pts[i].q3)}`).join("L")}L${[...idx].reverse().map((i) => `${x(i)},${y(sr.pts[i].q1)}`).join("L")}Z"/>` : "";
+    const line = idx.length > 1 ? `<path class="pvt-line" d="M${idx.map((i) => `${x(i)},${y(sr.pts[i].mean)}`).join("L")}"/>` : "";
+    const cols = days.map((d, i) => {
+      const s = sr.pts[i];
+      const tip = s ? `${d.label} – ${sr.title}\npovprečje ${pvcFmt(s.mean)} · mediana ${pvcFmt(s.med)} · n = ${s.n}\nQ1–Q3 ${pvcFmt(s.q1)}–${pvcFmt(s.q3)} · min–max ${pvcFmt(s.min)}–${pvcFmt(s.max)}` : `${d.label} – ni odgovorov`;
+      return `<g class="pvc-candle pvt-col" tabindex="0" data-tip="${esc(tip)}">
+        <rect class="pvc-hit" x="${x(i) - colW / 2}" y="${T}" width="${colW}" height="${H - T - B}"/>
+        <line class="pvt-cross" x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H - B}"/>
+        ${s && idx.length === 1 ? `<rect class="pvt-band" x="${x(i) - 6}" y="${y(s.q3)}" width="12" height="${Math.max(2, y(s.q1) - y(s.q3))}" rx="4"/>` : ""}
+        ${s ? `<circle class="pvt-dot" cx="${x(i)}" cy="${y(s.mean)}" r="4.5"/>` : ""}
+        <text class="pvc-tick pvt-x" x="${x(i)}" y="${H - 7}" text-anchor="middle">${esc(d.short)}</text>
+      </g>`;
+    }).join("");
+    return `<figure class="pvt-panel">
+      <figcaption><span class="pvt-q">${esc(sr.title)}</span><span class="pvt-now"><strong>${pvcFmt(last.mean)}</strong>${trend}</span></figcaption>
+      <svg class="pvc-svg pvt-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(sr.title)}: povprečje po dnevih ${idx.map((i) => `${days[i].short} ${pvcFmt(sr.pts[i].mean)}`).join(", ")}">${grid}${band}${line}${cols}</svg>
+    </figure>`;
+  };
+  const table = `<details class="pvc-table"><summary>Tabela</summary><table><thead><tr><th>#</th><th>Vprašanje</th>${days.map((d) => `<th>${esc(d.short)}</th>`).join("")}</tr></thead><tbody>${series.map((sr, i) => `<tr><td>${i + 1}</td><td>${esc(sr.title)}</td>${sr.pts.map((s) => `<td>${s ? `${pvcFmt(s.mean)} <span class="muted-text">(n ${s.n})</span>` : "–"}</td>`).join("")}</tr>`).join("")}</tbody></table></details>`;
+  return `<p class="muted-text pvt-key"><span><span class="pvt-key-line"></span> povprečje</span><span><span class="pvt-key-band"></span> srednja polovica odgovorov (Q1–Q3)</span><span>lestvica ${lo}–${hi}</span></p>
+    <div class="pvt-grid">${series.map(panel).join("")}</div>${table}`;
+}
 async function renderPvCharts(force = false) {
   const box = $("#pvc-body");
   if (!box || !canSee("analitika")) return;
@@ -2944,8 +2986,12 @@ async function renderPvCharts(force = false) {
   const svod = forms.filter((f) => f.group === "svod" && f.responses).sort((a, b) => dateOf(a).localeCompare(dateOf(b)));
   const teme = forms.filter((f) => f.group === "teme" && f.responses).sort((a, b) => (parseInt(a.title, 10) || 99) - (parseInt(b.title, 10) || 99) || a.title.localeCompare(b.title));
   const temaName = (t) => t.replace(/^\d+\s*[_.-]?\s*/, "").replace(/^Preverba teme\s*/i, "");
-  const block = (f, name) => `<section class="pvc-block"><h4>${esc(name)} <span class="muted-text">· ${f.responses} ${f.responses === 1 ? "odgovor" : f.responses === 2 ? "odgovora" : f.responses < 5 ? "odgovori" : "odgovorov"}</span></h4>${pvcChart(f)}</section>`;
-  box.innerHTML = `<h3 class="pv-sub-h">Preverbe SVODa po dnevih</h3>${svod.length ? svod.map((f) => block(f, f.title)).join("") : `<p class="muted-text">Še ni odgovorov.</p>`}
+  const svodDays = svod.map((f) => {
+    const iso = dateOf(f), m = /^\d{4}-(\d{2})-(\d{2})$/.exec(iso);
+    return { form: f, label: (pvData?.svodForms || []).find((x) => x.formId === f.id)?.title || f.title, short: m ? `${Number(m[2])}. ${Number(m[1])}.` : f.title };
+  });
+  const nResp = svod.reduce((a, f) => a + f.responses, 0);
+  box.innerHTML = `<h3 class="pv-sub-h">Preverbe SVODa skozi čas</h3>${svod.length ? `<section class="pvc-block"><h4>Odgovori po dnevih <span class="muted-text">· ${svod.length} ${svod.length === 1 ? "dan" : svod.length === 2 ? "dneva" : svod.length < 5 ? "dnevi" : "dni"} · ${nResp} odgovorov</span></h4>${pvcTrend(svodDays)}</section>` : `<p class="muted-text">Še ni odgovorov.</p>`}
     <h3 class="pv-sub-h">Preverbe tem</h3>${teme.length ? `<section class="pvc-block"><h4>Ocena teme po temah <span class="muted-text">· ${teme.reduce((a, f) => a + f.responses, 0)} odgovorov</span></h4>${pvcChart({ title: "Ocene tem", questions: teme.map((f) => ({ title: temaName(f.title), values: (f.questions.find((q) => /ocen/i.test(q.title)) || f.questions[0] || { values: [] }).values })) }, { named: true })}</section>` : `<p class="muted-text">Še ni odgovorov.</p>`}`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-pvc-reload]")) renderPvCharts(true); });
