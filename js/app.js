@@ -1961,7 +1961,8 @@ async function wdPost(url, item, credential) {
 
 /* —— Install as an app (PWA): Chrome/Edge/Android get the browser's install dialog (beforeinstallprompt);
    iPhone/iPad Safari has no such dialog, so the bar explains »Deli → Dodaj na začetni zaslon« —— */
-const INSTALL_SNOOZE = "uvodja.install.snooze";
+const INSTALL_DISMISSED = "uvodja.install.dismissed"; // any tap on the bar hides it for good on this device (menu item stays)
+const installDismiss = () => { try { localStorage.setItem(INSTALL_DISMISSED, "1"); } catch {} };
 let installEvt = null;
 const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -1970,7 +1971,7 @@ function updateInstallUI() {
   const bar = $("#install-bar");
   $$("[data-install]").forEach((b) => { b.hidden = !canInstall(); });
   if (!bar) return;
-  let snoozed = false; try { snoozed = Number(localStorage.getItem(INSTALL_SNOOZE) || 0) > Date.now(); } catch {}
+  let snoozed = false; try { snoozed = !!localStorage.getItem(INSTALL_DISMISSED) || !!localStorage.getItem("uvodja.install.snooze"); } catch {} // old 7/14-day snooze counts as dismissed
   bar.hidden = !state.user || !canInstall() || snoozed || !!state.wordleActive;
   if (!bar.hidden && !installEvt) {
     $("#install-sub").textContent = "Tapni Deli ⬆︎ in nato »Dodaj na začetni zaslon«.";
@@ -1983,14 +1984,14 @@ async function runInstall() {
     evt.prompt();
     try { await evt.userChoice; } catch {}
   }
-  try { localStorage.setItem(INSTALL_SNOOZE, String(Date.now() + 14 * 864e5)); } catch {}
+  installDismiss();
   updateInstallUI();
 }
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; updateInstallUI(); });
 window.addEventListener("appinstalled", () => { installEvt = null; updateInstallUI(); });
 document.addEventListener("click", (e) => {
   if (e.target.closest("#install-go, [data-install]")) { setUserMenu(false); closeNavMore(); runInstall(); }
-  else if (e.target.closest("#install-x")) { try { localStorage.setItem(INSTALL_SNOOZE, String(Date.now() + 7 * 864e5)); } catch {} updateInstallUI(); }
+  else if (e.target.closest("#install-x")) { installDismiss(); updateInstallUI(); }
 });
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 
