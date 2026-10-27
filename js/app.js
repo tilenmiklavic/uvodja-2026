@@ -1907,8 +1907,7 @@ function wdInput(k) {
     wdTick();
     if (wd.done) {
       wdRecordResult();
-      wdSubmit({ date: wd.puzzle.date, guesses: wd.guesses.length, solved: wd.won, ms: wd.startTs ? wd.endTs - wd.startTs : null,
-        grid: wd.guesses.map((g) => wdScore(g, wd.answer).map((x) => (x === "correct" ? "G" : x === "present" ? "Y" : ".")).join("")).join("/") });
+      wdSubmit(wdResultItem(wd.puzzle.date, { guesses: wd.guesses, won: wd.won, startTs: wd.startTs, endTs: wd.endTs }, wd.answer));
     }
     wdMsg(wd.done ? (wd.won ? ["Genialno!", "Odlično!", "Super!", "Bravo!", "Dobro!", "Za las!"][wd.guesses.length - 1] + " 🎉" : `Beseda je bila: ${wd.answer.toUpperCase()}`) : "");
     drawWordle();
@@ -2082,6 +2081,27 @@ function tokMaintain() {
 }
 setInterval(tokMaintain, 30000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) tokMaintain(); });
+function wdResultItem(date, g, answer) {
+  return { date, guesses: g.guesses.length, solved: !!g.won, ms: g.startTs && g.endTs ? g.endTs - g.startTs : null,
+    grid: g.guesses.map((x) => wdScore(x, answer).map((c) => (c === "correct" ? "G" : c === "present" ? "Y" : ".")).join("")).join("/") };
+}
+/* Finished games saved on this device that are missing from the scoreboard (rejected or lost earlier) are sent again, once per page load */
+function wdResendMissing() {
+  const u = state.user;
+  if (!u || !wd.data || !Array.isArray(wd.scores)) return;
+  const mine = new Set(wd.scores.filter((r) => String(r.email || "").toLowerCase() === u.email.toLowerCase()).map((r) => r.date));
+  const today = ljNow().date, q = wdQueue();
+  wd.resent ||= new Set();
+  let added = false;
+  for (const p of wd.data.puzzles) {
+    if (p.date > today || mine.has(p.date) || wd.resent.has(p.date) || q.some((x) => x.date === p.date)) continue;
+    let g = null; try { g = JSON.parse(localStorage.getItem(wdKey(p.date))); } catch {}
+    if (!g?.done || !g.guesses?.length) continue;
+    q.push(wdResultItem(p.date, g, wdDeobf(p.w, wd.data.key)));
+    wd.resent.add(p.date); added = true;
+  }
+  if (added) { wdSetQueue(q); wdFlushQueue(); }
+}
 async function wdSubmit(item) {
   const cfg = await wdConfig();
   if (!cfg?.scriptUrl || !state.user) return;
@@ -2103,8 +2123,8 @@ async function wdFlushQueue(interactive = false) {
         const res = await wdPost(cfg.scriptUrl, item, cred);
         if (res.ok || ["bad_date", "future_date", "not_a_puzzle_date", "bad_guesses", "not_allowed"].includes(res.error)) {
           q = q.filter((x) => x.date !== item.date);
-          if (!res.ok && res.error === "not_allowed") wdMsg("Rezultat ni shranjen (račun ni na seznamu).");
         }
+        if (!res.ok && interactive) wdMsg(res.error === "not_allowed" ? "Rezultat ni shranjen (račun ni na seznamu)." : `Rezultat ni shranjen (strežnik: ${res.error || "napaka"}).`);
       } catch { /* network: keep queued */ }
     }
     wdSetQueue(q);
@@ -2122,6 +2142,7 @@ async function loadScoreboard(force = false) {
     if (!scriptHas("scores") || force) $("#wd-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
     try { wd.scores = await scriptLoad("scores", force); } catch { wd.scores = null; }
   }
+  wdResendMissing();
   renderScoreboard();
 }
 function wdWho(email, name) {
