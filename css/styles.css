@@ -1678,6 +1678,18 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .pvt-col:hover .pvt-cross, .pvt-col:focus .pvt-cross { opacity: .8; }
 .pvt-col:hover .pvt-dot, .pvt-col:focus .pvt-dot { r: 6; }
 .pvt-x { font-weight: 700; }
+.wda-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: .6rem; margin-bottom: 1.1rem; }
+.wda-tile { display: flex; flex-direction: column; gap: .15rem; padding: .6rem .75rem; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.03); font-size: .8rem; }
+.wda-tile-n { font-size: 1.45rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.wda-tile-n small { font-size: .9rem; font-weight: 700; color: var(--ink-muted); }
+.wda-svg { max-width: none; }
+.wda-solved { fill: var(--gold); }
+.wda-failed { fill: rgba(195,204,211,.4); }
+.wda-val { fill: var(--ink); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wda-key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.wda-key.solved { background: var(--gold); }
+.wda-key.failed { background: rgba(195,204,211,.4); }
+.pvt-col:hover .wda-solved, .pvt-col:focus .wda-solved { fill: var(--gold-soft); }
 .pvc-tip { position: fixed; z-index: 200; max-width: min(320px, calc(100vw - 16px)); padding: .45rem .6rem; border-radius: 8px; background: var(--card-solid); border: 1px solid var(--line); box-shadow: var(--shadow); color: var(--ink); font-size: .78rem; white-space: pre-line; pointer-events: none; }
 .pvc-tip[hidden] { display: none; }
 
@@ -1837,3 +1849,6 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .install-go { flex: none; min-height: 40px; padding: 0 .9rem; }
 .install-x { flex: none; width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-muted); font-size: 1.4rem; line-height: 1; cursor: pointer; }
 .install-x:hover { color: var(--ink); background: rgba(255,255,255,0.06); }
+@media (max-width: 480px) {
+  #tab-analitika .pv-ftab.pv-tab { padding: 0 .45rem; font-size: .82rem; white-space: normal; text-align: center; line-height: 1.15; }
+}

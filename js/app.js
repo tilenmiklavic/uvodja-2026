@@ -405,7 +405,7 @@ function setTab(name) {
   closeNavMore();
   const hash = location.hash.replace(/^#/, "");
   logVisit(blocked ? "noaccess" : (/^(oseba|tema)-/.test(hash) ? hash.split("-")[0] : name));
-  if (name === "analitika") renderAnalitika(/^analitika\/(obiski|svod|teme)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "obiski");
+  if (name === "analitika") renderAnalitika(/^analitika\/(obiski|svod|teme|wordle)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "obiski");
   if (name === "preverbe") renderPreverbe(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "uu") renderUU(/^uu\/(.+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
@@ -1664,7 +1664,7 @@ function applyHash() {
   }
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno|svod)$/.test(hash)) { setTab("preverbe"); return; }
-  if (/^analitika\/(obiski|svod|teme)$/.test(hash)) { setTab("analitika"); return; }
+  if (/^analitika\/(obiski|svod|teme|wordle)$/.test(hash)) { setTab("analitika"); return; }
   if (/^zabava\/(wordle|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
@@ -3024,9 +3024,73 @@ function pvcTrend(days) {
 /* Analitika: folder tabs Obiski / Preverbe SVODa / Preverbe tem (#analitika/<tab>) */
 function renderAnalitika(sub) {
   $$("#tab-analitika [data-an-tab]").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.anTab === sub)));
-  ["obiski", "svod", "teme"].forEach((k) => { $(`#an-${k}`).hidden = k !== sub; });
-  if (sub === "obiski") renderVisits(); else renderPvCharts();
+  ["obiski", "svod", "teme", "wordle"].forEach((k) => { $(`#an-${k}`).hidden = k !== sub; });
+  if (sub === "obiski") renderVisits(); else if (sub === "wordle") renderWdAnalitika(); else renderPvCharts();
 }
+/* Analitika → Wordle: per puzzle day (up to today) players split into solved / not solved, and mean guesses of the solvers.
+   Two charts on one shared day axis (two measures, two scales – never a dual axis) */
+async function renderWdAnalitika(force = false) {
+  const box = $("#wda-body");
+  if (!box) return;
+  if (!wd.data) { try { const r = await fetch("data/wordle.json", { cache: "no-store" }); wd.data = r.ok ? await r.json() : null; } catch { wd.data = null; } }
+  let scores;
+  try { scores = await scriptLoad("scores", force); } catch { scores = null; }
+  if (!wd.data || !Array.isArray(scores)) { box.innerHTML = `<p class="muted-text">Rezultatov ni bilo mogoče naložiti.</p><button type="button" class="btn ghost" data-wda-reload>Poskusi znova</button>`; return; }
+  const today = ljNow().date;
+  const days = wd.data.puzzles.filter((p) => p.date <= today).map((p) => {
+    const rows = scores.filter((r) => r.date === p.date), won = rows.filter((r) => r.solved);
+    const mean = won.length ? won.reduce((a, r) => a + r.guesses, 0) / won.length : null;
+    const dist = [1, 2, 3, 4, 5, 6].map((g) => won.filter((r) => r.guesses === g).length);
+    return { date: p.date, n: p.n, short: `${Number(p.date.slice(8))}. ${Number(p.date.slice(5, 7))}.`, played: rows.length, solved: won.length, failed: rows.length - won.length, mean, dist };
+  });
+  if (!days.length) { box.innerHTML = `<p class="muted-text">Še ni bilo nobene uganke.</p>`; return; }
+  const players = new Set(scores.filter((r) => days.some((d) => d.date === r.date)).map((r) => r.email)).size;
+  const allWon = days.reduce((a, d) => a + d.solved, 0), allPlayed = days.reduce((a, d) => a + d.played, 0);
+  const allMean = allWon ? days.reduce((a, d) => a + (d.mean || 0) * d.solved, 0) / allWon : null;
+  const last = days[days.length - 1];
+  const fmt = (x) => x == null ? "–" : x.toFixed(2).replace(".", ",");
+  const L = 34, R = 12, T = 18, n = days.length, bw = Math.max(36, Math.min(64, ((box.clientWidth || 640) - L - R) / n)), W = L + R + bw * n;
+  const cx = (i) => L + bw * i + bw / 2;
+  const xLabels = (H, B) => days.map((d, i) => `<text class="pvc-tick pvt-x" x="${cx(i)}" y="${H - B + 16}" text-anchor="middle">${esc(d.short)}</text>`).join("");
+  const col = (i, H, B, tip, inner) => `<g class="pvc-candle pvt-col" tabindex="0" data-tip="${esc(tip)}"><rect class="pvc-hit" x="${cx(i) - bw / 2}" y="${T}" width="${bw}" height="${H - T - B}"/>${inner}</g>`;
+  const dayTip = (d) => `${wdFmtDate(d.date)} (#${d.n})\nigralcev ${d.played} · rešilo ${d.solved} · ni rešilo ${d.failed}\npovprečno poskusov ${fmt(d.mean)}${d.solved ? `\npo poskusih 1–6: ${d.dist.join(" · ")}` : ""}`;
+  // 1) players per day: solved (gold) + not solved (muted) stacked, 2px gap, rounded top
+  const H1 = 190, B1 = 26, ymax = Math.max(1, ...days.map((d) => d.played)), stepY = ymax > 12 ? 5 : ymax > 6 ? 2 : 1, top = Math.ceil(ymax / stepY) * stepY;
+  const y1 = (v) => T + (1 - v / top) * (H1 - T - B1);
+  let grid1 = ""; for (let v = 0; v <= top; v += stepY) grid1 += `<line class="pvc-grid" x1="${L}" x2="${W - R}" y1="${y1(v)}" y2="${y1(v)}"/><text class="pvc-tick" x="${L - 7}" y="${y1(v) + 4}" text-anchor="end">${v}</text>`;
+  const bar = (x, yTop, yBot, w, cls) => { const h = yBot - yTop; if (h <= 0) return ""; const r = Math.min(4, h, w / 2);
+    return `<path class="${cls}" d="M${x},${yBot}V${yTop + r}Q${x},${yTop} ${x + r},${yTop}H${x + w - r}Q${x + w},${yTop} ${x + w},${yTop + r}V${yBot}Z"/>`; };
+  const bars = days.map((d, i) => {
+    const w = Math.min(26, bw * 0.55), x = cx(i) - w / 2, base = y1(0), ySolved = y1(d.solved), yAll = y1(d.played);
+    const inner = bar(x, ySolved, base, w, "wda-solved") + (d.failed ? bar(x, yAll, ySolved - (d.solved ? 2 : 0), w, "wda-failed") : "")
+      + (d.played ? `<text class="wda-val" x="${cx(i)}" y="${yAll - 5}" text-anchor="middle">${d.solved}</text>` : "");
+    return col(i, H1, B1, dayTip(d), inner);
+  }).join("");
+  // 2) mean guesses of the solvers (1–6, fewer = easier), line broken on days nobody solved
+  const H2 = 170, B2 = 26, y2 = (v) => T + (1 - (v - 1) / 5) * (H2 - T - B2);
+  let grid2 = ""; for (let v = 1; v <= 6; v++) grid2 += `<line class="pvc-grid" x1="${L}" x2="${W - R}" y1="${y2(v)}" y2="${y2(v)}"/><text class="pvc-tick" x="${L - 7}" y="${y2(v) + 4}" text-anchor="end">${v}</text>`;
+  const segs = []; let cur = [];
+  days.forEach((d, i) => { if (d.mean != null) cur.push(`${cx(i)},${y2(d.mean)}`); else if (cur.length) { segs.push(cur); cur = []; } });
+  if (cur.length) segs.push(cur);
+  const line = segs.filter((sg) => sg.length > 1).map((sg) => `<path class="pvt-line" d="M${sg.join("L")}"/>`).join("");
+  const dots = days.map((d, i) => col(i, H2, B2, dayTip(d), d.mean != null ? `<line class="pvt-cross" x1="${cx(i)}" x2="${cx(i)}" y1="${T}" y2="${H2 - B2}"/><circle class="pvt-dot" cx="${cx(i)}" cy="${y2(d.mean)}" r="4.5"/>` : "")).join("");
+  const svg = (H, label, body) => `<div class="pvc-scroll"><svg class="pvc-svg wda-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(label)}">${body}</svg></div>`;
+  box.innerHTML = `<div class="wda-tiles">
+      <div class="wda-tile"><span class="wda-tile-n">${last.solved}<small> / ${last.played}</small></span><span class="muted-text">rešilo danes (${esc(last.short)})</span></div>
+      <div class="wda-tile"><span class="wda-tile-n">${players}</span><span class="muted-text">različnih igralcev</span></div>
+      <div class="wda-tile"><span class="wda-tile-n">${allPlayed ? Math.round((allWon / allPlayed) * 100) : 0} %</span><span class="muted-text">iger rešenih</span></div>
+      <div class="wda-tile"><span class="wda-tile-n">${fmt(allMean)}</span><span class="muted-text">povprečno poskusov</span></div>
+    </div>
+    <section class="pvc-block"><h4>Igralci po dnevih</h4>
+      <p class="muted-text pvt-key"><span><span class="wda-key solved"></span> rešilo</span><span><span class="wda-key failed"></span> ni rešilo</span></p>
+      ${svg(H1, `Igralci po dnevih: ${days.map((d) => `${d.short} rešilo ${d.solved} od ${d.played}`).join(", ")}`, grid1 + bars + xLabels(H1, B1))}</section>
+    <section class="pvc-block"><h4>Povprečno število poskusov <span class="muted-text">· le rešene igre, višje = težja uganka</span></h4>
+      ${svg(H2, `Povprečno število poskusov po dnevih: ${days.map((d) => `${d.short} ${fmt(d.mean)}`).join(", ")}`, grid2 + line + dots + xLabels(H2, B2))}</section>
+    <details class="pvc-table"><summary>Tabela</summary><table><thead><tr><th>#</th><th>Dan</th><th>igralcev</th><th>rešilo</th><th>ni rešilo</th><th>povp. poskusov</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
+      <tbody>${days.map((d) => `<tr><td>${d.n}</td><td>${esc(wdFmtDate(d.date))}</td><td>${d.played}</td><td>${d.solved}</td><td>${d.failed}</td><td>${fmt(d.mean)}</td>${d.dist.map((x) => `<td>${x}</td>`).join("")}</tr>`).join("")}</tbody></table></details>
+    <p class="muted-text pvc-note"><button type="button" class="link-btn" data-wda-reload>Osveži</button></p>`;
+}
+document.addEventListener("click", (e) => { if (e.target.closest("[data-wda-reload]")) renderWdAnalitika(true); });
 async function renderPvCharts(force = false) {
   const boxSvod = $("#pvc-svod"), boxTeme = $("#pvc-teme");
   if (!boxSvod || !canSee("analitika")) return;

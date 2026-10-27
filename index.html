@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="U Vodja" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
-  <link rel="stylesheet" href="css/styles.css?v=84" />
+  <link rel="stylesheet" href="css/styles.css?v=85" />
   <script src="https://accounts.google.com/gsi/client" async></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -282,6 +282,7 @@
           <a role="tab" class="pv-tab pv-ftab" href="#analitika/obiski" data-an-tab="obiski" aria-selected="true" aria-controls="an-obiski">Obiski</a>
           <a role="tab" class="pv-tab pv-ftab" href="#analitika/svod" data-an-tab="svod" aria-selected="false" aria-controls="an-svod">Preverbe SVODa</a>
           <a role="tab" class="pv-tab pv-ftab" href="#analitika/teme" data-an-tab="teme" aria-selected="false" aria-controls="an-teme">Preverbe tem</a>
+          <a role="tab" class="pv-tab pv-ftab" href="#analitika/wordle" data-an-tab="wordle" aria-selected="false" aria-controls="an-wordle">Wordle</a>
         </div>
         <div class="pv-fpanel">
           <div id="an-obiski" role="tabpanel">
@@ -298,6 +299,10 @@
             <h2 class="an-h">Preverbe tem</h2>
             <p class="muted-text pvc-note">Vsaka sveča je ena tema: črta od najnižje do najvišje ocene, okvir srednjih 50 % ocen, vodoravna črta mediana, pika povprečje.</p>
             <div id="pvc-teme"><p class="muted-text">Nalagam …</p></div>
+          </div>
+          <div id="an-wordle" role="tabpanel" hidden>
+            <h2 class="an-h">Wordle</h2>
+            <div id="wda-body"><p class="muted-text">Nalagam …</p></div>
           </div>
         </div>
       </div>
@@ -348,6 +353,6 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=87" type="module"></script>
+  <script src="js/app.js?v=88" type="module"></script>
 </body>
 </html>
