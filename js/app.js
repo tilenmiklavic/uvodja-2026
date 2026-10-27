@@ -331,15 +331,19 @@ function applyAuth() {
   document.body.classList.toggle("auth-locked", !u);
   $("#auth-gate").hidden = !!u;
   $$(".tab[data-tab]").forEach((b) => { b.hidden = !!u && !state.allowed.has(b.dataset.tab); });
-  // Mobile bar shows Časovnica + UU; roles that can see neither (UU participants) get Preverbe + Zabava there instead of in ≡
+  // Mobile bar next to Časovnica: SVOD/admin get Zabava, everyone else UU; roles that can see neither Časovnica nor UU
+  // (UU participants) get Preverbe + Zabava. The rest sit in ≡ in their usual order.
   const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
-  const promote = u && !["casovnica", "uu"].some((x) => state.allowed.has(x));
-  ["zabava", "preverbe"].forEach((x) => {
+  const barTabs = u && !["casovnica", "uu"].some((x) => state.allowed.has(x)) ? ["preverbe", "zabava"]
+    : u && ["svod", "admin"].includes(effectiveRole(u.email)) ? ["zabava"] : ["uu"];
+  const MORE_ORDER = ["domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "vprasanja", "analitika"];
+  ["uu", "preverbe", "zabava"].forEach((x) => {
     const b = $(`.tab[data-tab="${x}"]`, nav);
-    if (!b) return;
-    if (promote) { if (b.parentElement !== nav) nav.insertBefore(b, x === "zabava" ? toggle : $('.tab[data-tab="zabava"]', nav) || toggle); }
-    else if (b.parentElement !== more) more.insertBefore(b, x === "zabava" ? $('.tab[data-tab="analitika"]', more) : $('.tab[data-tab="zabava"]', more));
+    if (!b || barTabs.includes(x)) return;
+    const next = MORE_ORDER.slice(MORE_ORDER.indexOf(x) + 1).map((y) => $(`.tab[data-tab="${y}"]`, more)).find(Boolean);
+    more.insertBefore(b, next || $("#nav-user"));
   });
+  barTabs.forEach((x) => { const b = $(`.tab[data-tab="${x}"]`, nav); if (b) nav.insertBefore(b, toggle); });
   $$("[data-tab-link]").forEach((a) => { if (a.dataset.tabLink !== "domov") a.hidden = !!u && !state.allowed.has(a.dataset.tabLink); });
   const nu = $("#nav-user"), ar = $("#account-row");
   const nw = $("#noaccess-who");
