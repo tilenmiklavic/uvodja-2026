@@ -9,7 +9,8 @@
    "members": [
     {
      "name": "David Demšar",
-     "steg": "Ljubljana 6"
+     "steg": "Ljubljana 6",
+     "photo": "assets/os/david-demsar.webp"
     },
     {
      "name": "Eva Gašparič",
@@ -60,7 +61,8 @@
     },
     {
      "name": "Neža Govekar",
-     "steg": "Ljubljana 5"
+     "steg": "Ljubljana 5",
+     "photo": "assets/os/neza-govekar.webp"
     }
    ]
   },
@@ -166,7 +168,8 @@
    "members": [
     {
      "name": "Frančišek Fekonja",
-     "steg": "Gornja Radgona 1"
+     "steg": "Gornja Radgona 1",
+     "photo": "assets/os/francisek-fekonja.webp"
     },
     {
      "name": "Jaka Grabner",
