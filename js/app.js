@@ -2143,6 +2143,7 @@ async function loadScoreboard(force = false) {
   if (!box) return;
   if (!cfg?.scriptUrl) { box.hidden = true; return; }
   box.hidden = false;
+  if (osData === undefined) { try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; } }
   if (!wd.scores || force) {
     if (!scriptHas("scores") || force) $("#wd-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
     try { wd.scores = await scriptLoad("scores", force); } catch { wd.scores = null; }
@@ -2150,10 +2151,20 @@ async function loadScoreboard(force = false) {
   wdResendMissing();
   renderScoreboard();
 }
+/* OS participant photo for a scoreboard account without one: unique match on the full name, else on the e-mail name (ime.priimek) */
+function osPhotoFor(email, name) {
+  const norm = (x) => String(x || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim();
+  if (!osData?.groups) return null;
+  const byName = (wd.osPhotos ||= osData.groups.flatMap((g) => g.members).filter((m) => m.photo)
+    .reduce((m, x) => { const k = norm(x.name); m[k] = m[k] === undefined ? x.photo : null; return m; }, {})); // null = ambiguous
+  return byName[norm(name)] || byName[norm(String(email || "").split("@")[0])] || null;
+}
 function wdWho(email, name) {
   const person = personForUser({ email, name });
   const label = person ? displayName(person) : (name || email).split(/\s+/)[0];
-  const av = person?.photo ? `<img class="avatar avatar-sm" src="${esc(person.photo)}" alt="" loading="lazy" />`
+  const own = state.user && String(email || "").toLowerCase() === state.user.email.toLowerCase() ? state.user.picture : "";
+  const photo = person?.photo || own || osPhotoFor(email, name);
+  const av = photo ? `<img class="avatar avatar-sm" src="${esc(photo)}" alt="" loading="lazy" referrerpolicy="no-referrer" />`
     : `<span class="avatar avatar-sm avatar-initials" aria-hidden="true">${esc(initials(person?.name || name || email))}</span>`;
   return { label, av, title: person?.name || name || email };
 }
