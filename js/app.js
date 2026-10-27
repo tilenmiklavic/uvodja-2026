@@ -274,6 +274,8 @@ function onCredential(resp) {
     const c = decodeJwt(resp.credential);
     // credential (raw ID token, ~1h) kept for Wordle result submission; credExp in ms
     const u = { email: c.email, name: c.name || c.email, picture: c.picture || "", sub: c.sub, credential: resp.credential, credExp: (c.exp || 0) * 1000 };
+    const prev = state.user && state.user.email.toLowerCase() === String(c.email || "").toLowerCase() ? state.user : null;
+    if (prev?.session) { u.session = prev.session; u.sessionExp = prev.sessionExp; }
     localStorage.setItem("uvodja.user", JSON.stringify(u));
     const wasSignedIn = !!state.user;
     if (wasSignedIn && state.user.email.toLowerCase() !== String(c.email || '').toLowerCase()) { (state.tokenWaiters || []).splice(0).forEach((f) => f(null)); return; }
@@ -282,6 +284,7 @@ function onCredential(resp) {
     applyAuth();
     if (!wasSignedIn) applyHash();
     wdFlushQueue();
+    ensureSession();
   } catch (err) {
     console.error("Sign-in failed", err);
     const n = $("#auth-note"); if (n) n.textContent = `Prijava ni uspela (${err?.message || err}). Poskusi znova.`;
@@ -1960,7 +1963,15 @@ async function wdPost(url, item, credential) {
   try { r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...item, credential }), signal: ctl.signal }); }
   catch (err) { throw Object.assign(new Error(err.name === "AbortError" ? "timeout" : "network"), { kind: err.name === "AbortError" ? "timeout" : navigator.onLine === false ? "offline" : "network" }); }
   finally { clearTimeout(t); }
-  try { return await r.json(); } catch { throw Object.assign(new Error(`HTTP ${r.status}`), { kind: "server" }); }
+  let res;
+  try { res = await r.json(); } catch { throw Object.assign(new Error(`HTTP ${r.status}`), { kind: "server" }); }
+  // A rejected site session (expired, or all signed out on the server): forget it, so the next request falls back to Google sign-in
+  if (res && res.ok === false && String(credential || "").startsWith("s1.") && /invalid_token|prijava ni veljavna/i.test(res.error || "") && state.user?.session === credential) {
+    delete state.user.session; delete state.user.sessionExp;
+    try { localStorage.setItem("uvodja.user", JSON.stringify(state.user)); } catch {}
+    tokRender();
+  }
+  return res;
 }
 
 /* —— Install as an app (PWA): Chrome/Edge/Android get the browser's install dialog (beforeinstallprompt);
@@ -2050,6 +2061,7 @@ function prefetchScriptData() {
 function tokState() {
   const u = state.user;
   if (!u) return "none";
+  if (sessionOk(u, 60000)) return "ok";
   if (tokenRefreshP && !state.tokenFailed && !(u.credExp > Date.now() + 120000)) return "busy";
   return u.credential && u.credExp > Date.now() + 60000 ? "ok" : "bad";
 }
@@ -2061,7 +2073,8 @@ function tokRender() {
   if (line) {
     const min = u?.credExp ? Math.max(0, Math.round((u.credExp - Date.now()) / 60000)) : 0;
     line.className = `tok-line is-${st}`;
-    line.innerHTML = `<i class="tok-dot is-${st}"></i>${st === "ok" ? `Prijava velja še ${min} min` : esc(label)}${state.tokenFailed && st === "bad" ? `<span class="muted-text"> – samodejna osvežitev ni uspela</span>` : ""}`;
+    const until = sessionOk(u, 60000) ? new Date(u.sessionExp) : null;
+    line.innerHTML = `<i class="tok-dot is-${st}"></i>${until ? `Prijavljen/a do ${until.getDate()}. ${until.getMonth() + 1}.` : st === "ok" ? `Prijava velja še ${min} min` : esc(label)}${state.tokenFailed && st === "bad" ? `<span class="muted-text"> – samodejna osvežitev ni uspela</span>` : ""}`;
   }
   const g = $("#tok-gsi");
   if (g && st === "bad" && state.tokenFailed && !g.childElementCount && window.google?.accounts?.id) {
@@ -2079,9 +2092,39 @@ async function tokRefreshNow() {
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-tok-refresh]")) { e.preventDefault(); tokRefreshNow().then((c) => { if (c && !$("#stavnica")?.hidden) renderStavnica(true); }); } });
 // Renew in the background ~5 min before expiry (and when the tab becomes visible); repaint the dot every 30 s
+/* —— Site session (apps-script/common.gs): after one Google sign-in the server issues its own signed token, valid
+   60 days and renewed when it has under 30 days left, so the hourly Google refresh (One Tap) is only a fallback —— */
+const sessionOk = (u, ms = 0) => !!(u?.session && u.sessionExp > Date.now() + ms);
+/* Best credential right now without any prompt: the site session, else a still-valid Google ID token */
+function currentCred(ms = 120000) {
+  const u = state.user;
+  if (!u) return null;
+  if (sessionOk(u, ms)) return u.session;
+  return u.credential && u.credExp > Date.now() + ms ? u.credential : null;
+}
+let sessionP = null;
+function ensureSession() {
+  const u = state.user;
+  if (!u || sessionP || sessionOk(u, 30 * 864e5)) return sessionP || Promise.resolve();
+  const cred = currentCred(60000);
+  if (!cred) return Promise.resolve();
+  sessionP = (async () => {
+    try {
+      const cfg = await wdConfig();
+      if (!cfg?.scriptUrl) return;
+      const res = await wdPost(cfg.scriptUrl, { type: "session" }, cred);
+      const cur = state.user;
+      if (!res?.ok || !String(res.session || "").startsWith("s1.") || !cur || cur.email.toLowerCase() !== u.email.toLowerCase()) return; // older script: keep using Google tokens
+      cur.session = res.session; cur.sessionExp = Number(res.exp) || Date.now() + 60 * 864e5;
+      try { localStorage.setItem("uvodja.user", JSON.stringify(cur)); } catch {}
+      state.tokenFailed = false; tokRender();
+    } catch { /* offline / server error: try again on the next page load */ }
+  })();
+  return sessionP;
+}
 function tokMaintain() {
   const u = state.user;
-  if (u && !document.hidden && !(u.credExp > Date.now() + 5 * 60000)) silentToken(10000);
+  if (u && !document.hidden && !sessionOk(u, 5 * 60000) && !(u.credExp > Date.now() + 5 * 60000)) silentToken(10000);
   tokRender();
 }
 setInterval(tokMaintain, 30000);
@@ -2121,7 +2164,7 @@ async function wdFlushQueue(interactive = false) {
   if (!q.length) return;
   wd.flushing = true;
   try {
-    const cred = interactive ? await wdFreshToken() : (state.user.credExp > Date.now() + 120000 ? state.user.credential : null);
+    const cred = interactive ? await wdFreshToken() : currentCred();
     if (!cred) { if (interactive) wdMsg("Rezultat bo poslan ob naslednji prijavi."); return; }
     for (const item of [...q]) {
       try {
@@ -2225,6 +2268,7 @@ async function init() {
   applyAuth();
   applyHash();
   tokMaintain(); // renew an expired/expiring sign-in right away, on whatever page the user lands
+  ensureSession(); // swap the Google sign-in for a 60-day site session (or renew one that is getting old)
   wdFlushQueue();
 }
 
@@ -2258,6 +2302,7 @@ let tokenRefreshP = null;
 function silentToken(ms = 5000, force = false) {
   const u = state.user;
   if (!u) return Promise.resolve(null);
+  if (!force && sessionOk(u, 120000)) return Promise.resolve(u.session);
   if (!force && u.credential && u.credExp > Date.now() + 120000) return Promise.resolve(u.credential);
   if (tokenRefreshP && !force) return tokenRefreshP;
   state.tokenFailed = false; tokRender();
@@ -2291,7 +2336,7 @@ function logVisit(page) {
       if (!cfg?.scriptUrl) return;
       const device = window.matchMedia("(max-width: 860px)").matches ? "mobile" : "desktop";
       const cur = state.user || u;
-      const credential = tok || (cur.credExp > Date.now() + 30000 ? cur.credential : "");
+      const credential = tok || currentCred(30000) || "";
       fetch(cfg.scriptUrl, { method: "POST", keepalive: true, headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ type: "visit", credential, email: cur.email, name: cur.name, page, device, ts: now }) }).catch(() => {});
     }).catch(() => {});

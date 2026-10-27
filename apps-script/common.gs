@@ -1,6 +1,6 @@
 /**
  * Shared helpers for the site handlers (preverbe, stavnica, ocene, analitika): cached sign-in checks,
- * cached roles and cached/pre-computed results, so most requests skip the slow Google calls.
+ * long-lived site sessions, cached roles and cached/pre-computed results, so most requests skip the slow Google calls.
  *
  * Add a time-driven trigger for refreshSiteCaches (Triggers → Add trigger → refreshSiteCaches →
  * Time-driven → Minutes timer → Every 10 minutes) so the leaderboard and Analitika are always pre-computed.
@@ -14,9 +14,11 @@ const SITE_RESULT_FALLBACK = 600; // s – when computed on demand (no trigger y
 function siteJson_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function siteHash_(s) { return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s))); }
 
-/** Verified Google ID token payload ({email, name, …}) or null. Verified tokens are remembered until they expire (max 1 h). */
+/** Verified sign-in ({email, name, …}) or null: a site session (see below) or a Google ID token.
+ *  Verified Google tokens are remembered until they expire (max 1 h). */
 function siteVerify_(credential) {
   if (!credential) return null;
+  if (String(credential).indexOf(SITE_SESSION_PREFIX) === 0) return siteSessionVerify_(credential);
   const cache = CacheService.getScriptCache(), key = "tok:" + siteHash_(credential);
   const hit = cache.get(key);
   if (hit) return JSON.parse(hit);
@@ -71,4 +73,46 @@ function refreshSiteCaches() {
   siteCachePut_("ocene", oceneCompute_(), SITE_RESULT_TTL);
   siteCachePut_("analitika", analitikaCompute_(), SITE_RESULT_TTL);
   if (typeof vprasanjaCompute_ === "function") siteCachePut_("vprasanja", vprasanjaCompute_(), SITE_RESULT_TTL);
+}
+
+/* —— Site sessions: after one Google sign-in the site gets its own signed token, so it does not need a fresh
+   Google ID token (valid 1 h) for every request. Format: "s1." + base64url(JSON {e, n, x}) + "." + HMAC-SHA256.
+   The secret is created on first use in Script properties (SITE_SESSION_SECRET); run rotateSiteSessions()
+   to sign everybody out. Doc: doPost { type: "session", credential } → { ok, session, exp } (exp in ms). —— */
+const SITE_SESSION_PREFIX = "s1.";
+const SITE_SESSION_DAYS = 60;
+
+function siteSessionSecret_() {
+  const props = PropertiesService.getScriptProperties();
+  let secret = props.getProperty("SITE_SESSION_SECRET");
+  if (!secret) { secret = Utilities.getUuid() + Utilities.getUuid(); props.setProperty("SITE_SESSION_SECRET", secret); }
+  return secret;
+}
+function siteSessionSign_(payload) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payload, siteSessionSecret_()));
+}
+/** {email, name, exp} for a valid, unexpired session token, else null. */
+function siteSessionVerify_(token) {
+  const parts = String(token).slice(SITE_SESSION_PREFIX.length).split(".");
+  if (parts.length !== 2 || siteSessionSign_(parts[0]) !== parts[1]) return null;
+  let p;
+  try { p = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString("UTF-8")); } catch (e) { return null; }
+  if (!p || !p.e || !(Number(p.x) * 1000 > Date.now())) return null;
+  return { email: String(p.e).toLowerCase(), name: p.n || "", exp: Number(p.x), session: true };
+}
+/** New session for a valid Google ID token or a still-valid session (renewal). */
+function siteSessionIssue_(body) {
+  try {
+    const who = siteVerify_(body.credential);
+    if (!who) return siteJson_({ ok: false, error: "invalid_token" });
+    const exp = Math.floor(Date.now() / 1000) + SITE_SESSION_DAYS * 86400;
+    const payload = Utilities.base64EncodeWebSafe(JSON.stringify({ e: who.email, n: who.name || "", x: exp }), Utilities.Charset.UTF_8);
+    return siteJson_({ ok: true, session: SITE_SESSION_PREFIX + payload + "." + siteSessionSign_(payload), exp: exp * 1000 });
+  } catch (err) {
+    return siteJson_({ ok: false, error: String(err && err.message || err) });
+  }
+}
+/** Run by hand to invalidate every session (everybody signs in with Google once more). */
+function rotateSiteSessions() {
+  PropertiesService.getScriptProperties().deleteProperty("SITE_SESSION_SECRET");
 }
