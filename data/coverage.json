@@ -635,37 +635,52 @@
     "drzavna-raven-skavti-na-mednarodni-ravni": {
       "title": "Državna raven",
       "programKey": "državna raven",
-      "status": "ni_mikronacrta",
+      "status": "pripravljeno",
       "counts": {
-        "vkljuceno": 0,
+        "vkljuceno": 6,
         "delno": 0,
-        "manjka": 3,
-        "total": 3
+        "manjka": 0,
+        "total": 6
       },
       "items": [
         {
-          "text": "zgodovina svetovnega skavtstva",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "text": "namen DV in razlog, čemu obstajajo",
+          "status": "vkljuceno",
+          "evidence": "Opisano v Vsebini in Poteku mikronačrta (delo po skupinah, debata DV / ostali tropi)."
         },
         {
-          "text": "WAGGGS, WOSM, ICCG, ICCS",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "text": "ključne kompetence za vodenje na državni ravni",
+          "status": "vkljuceno",
+          "evidence": "Opisano v Vsebini in Poteku mikronačrta (delo po skupinah, debata DV / ostali tropi)."
         },
         {
-          "text": "medkulturni dialog",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "text": "odnos do voditeljev na lokalni ravni",
+          "status": "vkljuceno",
+          "evidence": "Opisano v Vsebini in Poteku mikronačrta (delo po skupinah, debata DV / ostali tropi)."
+        },
+        {
+          "text": "načela priprave usposabljanj",
+          "status": "vkljuceno",
+          "evidence": "Opisano v Vsebini in Poteku mikronačrta (delo po skupinah, debata DV / ostali tropi)."
+        },
+        {
+          "text": "načela priprave DSV-jev",
+          "status": "vkljuceno",
+          "evidence": "Opisano v Vsebini in Poteku mikronačrta (delo po skupinah, debata DV / ostali tropi)."
+        },
+        {
+          "text": "odgovornosti DV do Združenja",
+          "status": "vkljuceno",
+          "evidence": "Opisano v Vsebini in Poteku mikronačrta (delo po skupinah, debata DV / ostali tropi)."
         }
       ],
-      "contentsHash": "360e61aa0c10aa2a",
+      "contentsHash": "7738ddabde84992c",
       "mikronacrt": {
-        "status": "missing",
-        "fileId": null,
-        "modifiedTime": null,
-        "textHash": null,
-        "cacheFile": null
+        "status": "exists",
+        "fileId": "1yQvysHq33K46jQVJUigtv5CXLdfUdTus1tXjeR2xgVg",
+        "modifiedTime": "2026-10-27T10:28:52.696Z",
+        "textHash": "232a7d87c980a9e4",
+        "cacheFile": "drzavna-raven.txt"
       },
       "judgedAt": null
     },
