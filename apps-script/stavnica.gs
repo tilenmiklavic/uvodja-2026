@@ -15,6 +15,8 @@
  * then Deploy → Manage deployments → edit → New version (same /exec URL).
  *
  * Admins can add or take away zlatniki (action "adjust", sheet "popravki"); players see these in "Moje stave".
+ * Admins can also add a question (action "create": question, options[], expires?) and resolve or reopen one
+ * (action "resolve": question, result = one of its options, or "" to reopen) without editing the sheet.
  * Rules: everyone starts with STAVNICA_BUDGET zlatnikov. Fixed odds = number of options: a winning bet on a
  * yes/no question pays 2× the stake, on a 3-option question 3×, … Other people's bets don't change the odds.
  * When the "resolved" column of a question is filled in, betting on it closes and winners get their payout.
@@ -64,6 +66,16 @@ function handleStavnica(body) {
         let sh = ss.getSheetByName(STAVNICA_ADJ_SHEET);
         if (!sh) { sh = ss.insertSheet(STAVNICA_ADJ_SHEET); sh.appendRow(STAVNICA_ADJ_HEADER); }
         sh.appendRow([new Date(), email, String(body.name || "").slice(0, 100), amount, /^[=+\-@]/.test(reason) ? "'" + reason : reason, me]);
+        SpreadsheetApp.flush();
+      } finally { lock.releaseLock(); }
+    }
+    if (body.action === "create" || body.action === "resolve") {
+      if (siteRole_(me) !== "admin") return out({ ok: false, error: "ni dostopa" });
+      const lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        const err = body.action === "create" ? stavnicaCreate_(ss, body) : stavnicaResolve_(ss, body);
+        if (err) return out({ ok: false, error: err });
         SpreadsheetApp.flush();
       } finally { lock.releaseLock(); }
     }
@@ -199,4 +211,56 @@ function stavnicaState_(ss, me, withPeople) {
     });
   }
   return state;
+}
+
+/* —— Admin: new questions and results from the site (sheet "questions": question | answer | options | expires | image | resolved) —— */
+const stavnicaText_ = (v) => (/^[=+\-@]/.test(v) ? "'" + v : v); // keep Sheets from reading text as a formula
+function stavnicaHead_(sh) {
+  return sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map((h) => String(h).trim().toLowerCase());
+}
+/** Error text, or "" when the question was added. */
+function stavnicaCreate_(ss, body) {
+  const sh = ss.getSheetByName("questions"), head = stavnicaHead_(sh);
+  const question = String(body.question || "").replace(/\s+/g, " ").trim();
+  if (question.length < 3 || question.length > 300) return "vprašanje mora imeti 3–300 znakov";
+  let options = (Array.isArray(body.options) ? body.options : String(body.options || "").split(/[,\/;]/)).map((o) => String(o).trim()).filter(String);
+  if (options.some((o) => /[,\/;]/.test(o) || o.length > 60)) return "možnost ne sme vsebovati , / ; in ima največ 60 znakov";
+  if (options.length < 2 || options.length > 8) return "potrebni sta 2–8 možnosti";
+  if (new Set(options.map((o) => o.toLowerCase())).size !== options.length) return "možnosti se ponavljajo";
+  const existing = sh.getLastRow() > 1 ? sh.getRange(2, head.indexOf("question") + 1, sh.getLastRow() - 1, 1).getDisplayValues() : [];
+  if (existing.some((r) => String(r[0]).trim().toLowerCase() === question.toLowerCase())) return "to vprašanje že obstaja";
+  const low = options.map((o) => o.toLowerCase());
+  const isBool = low.length === 2 && ["yes", "da"].indexOf(low[0]) >= 0 && ["no", "ne"].indexOf(low[1]) >= 0;
+  if (isBool) options = ["yes", "no"];
+  const type = isBool ? "boolean" : options.every((o) => /^-?\d+([.,]\d+)?$/.test(o)) ? "number" : "choice";
+  const row = head.map(() => "");
+  const set = (name, v) => { const c = head.indexOf(name); if (c >= 0) row[c] = v; };
+  set("question", stavnicaText_(question));
+  set("answer", type);
+  set("options", stavnicaText_(options.join("/")));
+  set("expires", stavnicaText_(String(body.expires || "").trim().slice(0, 20)));
+  sh.appendRow(row);
+  return "";
+}
+/** Error text, or "" when the result was written (empty result = reopened). */
+function stavnicaResolve_(ss, body) {
+  const sh = ss.getSheetByName("questions"), head = stavnicaHead_(sh);
+  const qCol = head.indexOf("question"), oCol = head.indexOf("options"), aCol = head.indexOf("answer");
+  const rCol = head.indexOf("resolved") >= 0 ? head.indexOf("resolved") : head.indexOf("result");
+  if (qCol < 0 || rCol < 0) return "v listu manjka stolpec question ali resolved";
+  const rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, head.length).getDisplayValues() : [];
+  const id = String(body.question || "").trim();
+  const i = rows.findIndex((r) => String(r[qCol]).trim() === id);
+  if (i < 0) return "vprašanje ne obstaja";
+  const result = String(body.result || "").trim();
+  if (result) {
+    let options = String(rows[i][oCol] || "").split(/[,\/;]/).map((o) => o.trim()).filter(String);
+    if (String(rows[i][aCol] || "").trim().toLowerCase() === "boolean" && !options.length) options = ["yes", "no"];
+    const win = options.find((o) => o.toLowerCase() === result.toLowerCase());
+    if (!win) return "rezultat mora biti ena od možnosti";
+    sh.getRange(i + 2, rCol + 1).setValue(stavnicaText_(win));
+  } else {
+    sh.getRange(i + 2, rCol + 1).setValue("");
+  }
+  return "";
 }

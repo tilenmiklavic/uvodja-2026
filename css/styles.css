@@ -1852,3 +1852,16 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 @media (max-width: 480px) {
   #tab-analitika .pv-ftab.pv-tab { padding: 0 .45rem; font-size: .82rem; white-space: normal; text-align: center; line-height: 1.15; }
 }
+
+/* —— Stavnica admin: new question + resolve —— */
+.sv-create-form { display: grid; gap: .6rem; margin-top: .6rem; }
+.sv-create-form label { display: grid; gap: .3rem; font-weight: 700; font-size: .88rem; }
+.sv-create-form label .muted-text { font-weight: 400; }
+.sv-create-form textarea, .sv-create-form input { box-sizing: border-box; width: 100%; min-height: 40px; padding: .5rem .6rem; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,0.06); color: var(--ink); font: inherit; font-weight: 400; resize: vertical; }
+.sv-create-opts { display: flex; gap: .4rem; }
+.sv-create-opts input { flex: 1; min-width: 0; }
+.sv-create-opts .btn { flex: none; min-height: 40px; padding: 0 .8rem; }
+.sv-resolve { margin: 1rem 0; border-color: rgba(248,164,24,.45); }
+.sv-resolve h3 { margin: 0 0 .3rem; font-size: 1rem; }
+.sv-resolve-btns { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.sv-resolve-btns .btn { min-height: 40px; }

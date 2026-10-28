@@ -2620,8 +2620,71 @@ function svDetail(st, me, i) {
         <p class="sv-status" role="status" aria-live="polite"></p>
       </form>` : ""}
     </article>
+    ${st.people && effectiveRole(state.user?.email) === "admin" && q.options.length ? svResolveBox(q, i) : ""}
     <section class="sv-list"><h3>Zadnje stave na to vprašanje</h3>${svRecent(st.recent.filter((b) => b.question === q.id), false)}</section>`;
 }
+/* Admin: new question (written to the sheet "questions" by Apps Script) */
+function svCreateForm() {
+  return `<details class="card sv-adj-new sv-create"${sv.createOpen ? " open" : ""}><summary>➕ Nova stava</summary>
+    <form class="sv-create-form" data-sv-create>
+      <label><span>Vprašanje</span><textarea name="question" rows="2" maxlength="300" required placeholder="npr. Ali bo v soboto deževalo?"></textarea></label>
+      <label><span>Možnosti <span class="muted-text">· ločene z vejico, 2–8</span></span>
+        <span class="sv-create-opts"><input type="text" name="options" required placeholder="Da, Ne" autocomplete="off" />
+        <button type="button" class="btn ghost" data-sv-preset="Da, Ne">Da / Ne</button></span></label>
+      <label><span>Rok <span class="muted-text">· neobvezno, npr. 31.10.</span></span><input type="text" name="expires" maxlength="20" autocomplete="off" /></label>
+      <p class="muted-text sv-help">Kvota = število možnosti (×2 pri Da/Ne). Sliko lahko dodaš kasneje v listu.</p>
+      <div class="sv-adj-btns"><button type="submit" class="btn primary">Dodaj stavo</button></div>
+      <p class="sv-status" role="status" aria-live="polite"></p>
+    </form></details>`;
+}
+/* Admin: pick the winning option (pays out right away) or reopen a resolved question */
+function svResolveBox(q, i) {
+  return `<section class="card sv-resolve" aria-label="Razreši stavo">
+    <h3>Razreši stavo <span class="muted-text">· samo admin</span></h3>
+    <p class="muted-text sv-help">${q.result ? `Rezultat je <strong>${esc(svLabel(q, q.result))}</strong>. Lahko ga spremeniš ali stavo znova odpreš.` : "Izberi pravilno možnost – zmagovalci takoj dobijo izplačilo, stave se zaprejo."}</p>
+    <div class="sv-resolve-btns">${q.options.map((o) => `<button type="button" class="btn ${q.result === o ? "primary" : "ghost"}" data-sv-resolve="${i}" data-result="${esc(o)}"${q.result === o ? " disabled" : ""}>${esc(svLabel(q, o))}</button>`).join("")}
+      ${q.result ? `<button type="button" class="btn ghost" data-sv-resolve="${i}" data-result="">↺ Znova odpri</button>` : ""}</div>
+    <p class="sv-status" role="status" aria-live="polite"></p>
+  </section>`;
+}
+const svErrText = (err) => ({ auth: "prijava je potekla", offline: "ni povezave", network: "strežnik ni dosegljiv", timeout: "strežnik se ni odzval" }[err.kind] || err.message);
+document.addEventListener("click", (e) => {
+  const pre = e.target.closest("[data-sv-preset]");
+  if (pre) { const f = pre.closest("form"); f.options.value = pre.dataset.svPreset; f.options.focus(); }
+});
+document.addEventListener("toggle", (e) => { if (e.target.matches?.("#stavnica .sv-create")) sv.createOpen = e.target.open; }, true);
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest("#stavnica form[data-sv-create]");
+  if (!f) return;
+  e.preventDefault();
+  const question = f.question.value.replace(/\s+/g, " ").trim(), expires = f.expires.value.trim();
+  const options = f.options.value.split(/[,;/]/).map((o) => o.trim()).filter(Boolean);
+  const status = $(".sv-status", f), btn = $("button[type=submit]", f);
+  if (options.length < 2 || options.length > 8) { status.className = "sv-status is-err"; status.textContent = "Vpiši 2–8 možnosti, ločenih z vejico."; return; }
+  btn.disabled = true; status.className = "sv-status"; status.textContent = "Dodajam …";
+  try {
+    sv.state = await svCall({ action: "create", question, options, expires });
+    sv.fetchedAt = Date.now(); scriptSet("stavnica", sv.state); sv.createOpen = false;
+    const q = sv.state.questions.find((x) => x.id.toLowerCase() === question.toLowerCase());
+    if (q) location.hash = `#zabava/stavnica/${svSlug(q)}`; else renderStavnica();
+  } catch (err) {
+    status.className = "sv-status is-err"; status.textContent = `Ni uspelo (${svErrText(err)}).`; btn.disabled = false;
+  }
+});
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("#stavnica [data-sv-resolve]");
+  if (!b) return;
+  const q = sv.state.questions[Number(b.dataset.svResolve)], result = b.dataset.result, box = b.closest(".sv-resolve"), status = $(".sv-status", box);
+  if (!q || !confirm(result ? `Razrešim stavo »${q.question}«?\nRezultat: ${svLabel(q, result)} – zmagovalci dobijo izplačilo.` : `Znova odprem stavo »${q.question}«?\nIzplačila se umaknejo, dokler je ne razrešiš.`)) return;
+  $$("button", box).forEach((x) => (x.disabled = true)); status.className = "sv-status"; status.textContent = "Shranjujem …";
+  try {
+    sv.state = await svCall({ action: "resolve", question: q.id, result });
+    sv.fetchedAt = Date.now(); scriptSet("stavnica", sv.state); renderStavnica();
+  } catch (err) {
+    status.className = "sv-status is-err"; status.textContent = `Ni uspelo (${svErrText(err)}).`;
+    $$("button", box).forEach((x) => (x.disabled = false));
+  }
+});
 /* Admin: all players with balances; each links to their detail page */
 const svPlayerSlug = (email) => uuSlug(email);
 function svAdjForm(p) {
@@ -2651,6 +2714,7 @@ function svOverview(st) {
       <div class="card"><span class="muted-text">Izplačano</span><strong>${sum("won")}</strong></div>
     </div>
     <p class="muted-text sv-help">Samo za admina. Stanje = ${st.budget} − vloženo + priigrano + popravki. Klikni igralca za podrobnosti, graf in popravek stanja.</p>
+    ${svCreateForm()}
     <details class="card sv-adj-new"><summary>Popravek za drugega igralca (po e-naslovu)</summary>${svAdjForm(null)}
       <datalist id="sv-emails">${people.map((p) => `<option value="${esc(p.email)}">${esc(p.name)}</option>`).join("")}</datalist></details>
     <section class="sv-list"><h3>Igralci</h3>${people.length ? `<div class="sv-people">${people.map(row).join("")}</div>` : `<p class="muted-text">Še nihče ni stavil.</p>`}</section>`;
