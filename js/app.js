@@ -2023,7 +2023,7 @@ function scriptLoad(key, force = false) {
   const e = (scriptData[key] ||= {});
   if (e.p) return e.p;
   if ("data" in e && !force) return Promise.resolve(e.data);
-  const p = SCRIPT_FETCH[key]().then((d) => { e.data = d; e.error = null; return d; }, (err) => { e.error = err; throw err; })
+  const p = SCRIPT_FETCH[key]().then((d) => { e.data = d; e.at = Date.now(); e.error = null; return d; }, (err) => { e.error = err; throw err; })
     .finally(() => { if (e.p === p) e.p = null; });
   return (e.p = p);
 }
@@ -2186,6 +2186,9 @@ async function wdFlushQueue(interactive = false) {
   } finally { wd.flushing = false; }
 }
 
+/* Scoreboard: what is already loaded shows at once; it is fetched again in the background when older than
+   WD_SCORES_FRESH (opening Wordle, back from the background, a timer while Wordle is on screen) or on »Osveži« */
+const WD_SCORES_FRESH = 90 * 1000;
 async function loadScoreboard(force = false) {
   const cfg = await wdConfig();
   const box = $("#wd-score");
@@ -2193,13 +2196,32 @@ async function loadScoreboard(force = false) {
   if (!cfg?.scriptUrl) { box.hidden = true; return; }
   box.hidden = false;
   if (osData === undefined) { try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; } }
-  if (!wd.scores || force) {
-    if (!scriptHas("scores") || force) $("#wd-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
-    try { wd.scores = await scriptLoad("scores", force); } catch { wd.scores = null; }
-  }
+  if (!wd.scores && scriptHas("scores")) wd.scores = scriptData.scores.data;
+  const stale = !wd.scores || Date.now() - (scriptData.scores?.at || 0) > WD_SCORES_FRESH;
+  if (wd.scores) { wdResendMissing(); renderScoreboard(); } else $("#wd-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
+  if (!force && !stale) return;
+  wd.scoresLoading = true; renderScoreMeta();
+  try { wd.scores = await scriptLoad("scores", true); } catch { wd.scores ||= null; } // keep showing the old results if the refresh fails
+  wd.scoresLoading = false;
   wdResendMissing();
   renderScoreboard();
 }
+function renderScoreMeta() {
+  const el = $("#wd-score-meta");
+  if (!el) return;
+  const at = scriptData.scores?.at;
+  const t = at ? new Date(at).toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" }) : "";
+  el.innerHTML = wd.scoresLoading ? `Osvežujem …` : `${t ? `Posodobljeno ob ${t} · ` : ""}<button type="button" class="link-btn" data-wd-refresh>Osveži</button>`;
+}
+document.addEventListener("click", (e) => { if (e.target.closest("[data-wd-refresh]")) loadScoreboard(true); });
+/* While Wordle is on screen: new puzzle after midnight, fresh results every ~1.5 min and when the app comes back */
+function wdKeepFresh() {
+  if (!state.wordleActive || document.hidden || !wd.data) return;
+  if (wd.puzzle && wd.puzzle.date !== ljNow().date) { renderWordle(); return; } // renderWordle also loads the scoreboard
+  loadScoreboard();
+}
+setInterval(wdKeepFresh, 30 * 1000);
+document.addEventListener("visibilitychange", wdKeepFresh);
 /* OS participant photo for a scoreboard account without one: unique match on the full name, else on the e-mail name (ime.priimek) */
 function osPhotoFor(email, name) {
   const norm = (x) => String(x || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim();
@@ -2220,6 +2242,7 @@ function wdWho(email, name) {
 function renderScoreboard() {
   const body = $("#wd-score-body");
   if (!body) return;
+  renderScoreMeta();
   if (wd.scores === null) { body.innerHTML = `<p class="muted-text">Lestvice ni bilo mogoče naložiti.</p>`; return; }
   const tab = wd.scoreTab || "danes";
   $$(".wd-stab").forEach((b) => b.setAttribute("aria-selected", b.dataset.stab === tab ? "true" : "false"));
