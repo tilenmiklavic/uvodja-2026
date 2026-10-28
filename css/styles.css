@@ -1888,3 +1888,16 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .sv-log-won { padding: .05rem .45rem; border-radius: 999px; background: rgba(107,142,35,.25); color: #a8d47a; font-weight: 800; font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .wd-score-meta { margin: .6rem 0 0; font-size: .78rem; text-align: right; }
 .sv-updated { margin: 1rem 0 0; font-size: .78rem; text-align: right; }
+
+/* —— Analitika → Obiski: day filter —— */
+.vday-chips { display: flex; gap: .4rem; overflow-x: auto; scroll-snap-type: x proximity; margin: 0 -1rem .7rem; padding: .1rem 1rem .4rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.vday-chips::-webkit-scrollbar { display: none; }
+.vday-chip { flex: none; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 64px; min-height: 48px; padding: .3rem .6rem; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,0.06); color: var(--ink); font: inherit; cursor: pointer; }
+.vday-chip strong { font-size: .82rem; }
+.vday-chip small { font-size: .7rem; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vday-chip.is-sel { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
+.vday-chip.is-sel small { color: var(--navy-deep); }
+button.vbar { border: 0; padding: 0; background: none; color: inherit; font: inherit; cursor: pointer; border-radius: 4px; }
+button.vbar.is-dim .vbar-fill { opacity: .35; }
+button.vbar.is-sel .vbar-fill { background: var(--gold-soft); box-shadow: 0 0 0 2px var(--gold); }
+button.vbar.is-sel .vbar-n, button.vbar.is-sel .vbar-d { color: var(--ink); font-weight: 800; }

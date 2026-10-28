@@ -2379,6 +2379,8 @@ function visitRole(p) {
   const hit = Object.entries(state.access?.people || {}).find(([, slug]) => norm(state.data?.people?.[slug]?.name) === norm(p.name));
   return hit ? roleOf(hit[0]) : (p.name ? state.access?.defaultRole || "uu" : "");
 }
+/* Analitika → Obiski: optional day filter (chips + tapping a day bar) when the server sends byDay (last 14 days) */
+let visitDay = null; // null = all time
 async function renderVisits() {
   const box = $("#visits");
   if (!box) return;
@@ -2396,23 +2398,44 @@ async function renderVisits() {
       const iso = new Date(base.getTime() - i * 864e5).toISOString().slice(0, 10);
       days.push([iso, (d.perDay || {})[iso] || 0]);
     }
+    const canFilter = !!d.byDay;
+    if (!canFilter || (visitDay && !days.some(([iso]) => iso === visitDay))) visitDay = null;
+    const dayName = (iso) => iso === nowIso ? "Danes" : iso === days[12][0] ? "Včeraj" : ["Ned", "Pon", "Tor", "Sre", "Čet", "Pet", "Sob"][new Date(iso + "T12:00:00Z").getUTCDay()];
+    const dShort = (iso) => `${Number(iso.slice(8))}. ${Number(iso.slice(5, 7))}.`;
+    const src = visitDay ? d.byDay[visitDay] || { total: 0, perPage: {}, perPerson: [] } : d;
     const max = Math.max(1, ...days.map((x) => x[1]));
-    const bars = days.map(([iso, n]) => `<div class="vbar" title="${Number(iso.slice(8))}. ${Number(iso.slice(5, 7))}.: ${n}">
-      <span class="vbar-n">${n || ""}</span><span class="vbar-fill" style="height:${(n / max) * 100}%"></span>
-      <span class="vbar-d">${Number(iso.slice(8))}.</span></div>`).join("");
-    const pages = Object.entries(d.perPage || {}).sort((a, b) => b[1] - a[1]);
+    const bars = days.map(([iso, n]) => {
+      const inner = `<span class="vbar-n">${n || ""}</span><span class="vbar-fill" style="height:${(n / max) * 100}%"></span><span class="vbar-d">${Number(iso.slice(8))}.</span>`;
+      return canFilter ? `<button type="button" class="vbar${visitDay === iso ? " is-sel" : ""}${visitDay && visitDay !== iso ? " is-dim" : ""}" data-visit-day="${iso}" aria-pressed="${visitDay === iso}" title="${dShort(iso)}: ${n}">${inner}</button>`
+        : `<div class="vbar" title="${dShort(iso)}: ${n}">${inner}</div>`;
+    }).join("");
+    const chips = canFilter ? `<div class="vday-chips" role="group" aria-label="Dan">
+        <button type="button" class="vday-chip${visitDay ? "" : " is-sel"}" data-visit-day="" aria-pressed="${!visitDay}"><strong>Vse</strong><small>${d.total || 0}</small></button>
+        ${[...days].reverse().map(([iso, n]) => `<button type="button" class="vday-chip${visitDay === iso ? " is-sel" : ""}" data-visit-day="${iso}" aria-pressed="${visitDay === iso}"><strong>${dayName(iso)}</strong><small>${dShort(iso)} · ${n}</small></button>`).join("")}
+      </div>` : "";
+    const pages = Object.entries(src.perPage || {}).sort((a, b) => b[1] - a[1]);
     const pmax = Math.max(1, ...pages.map((x) => x[1]));
     const row = (label, n, m, extra = "") => `<li class="vrow"><span class="vrow-l">${label}${extra}</span><span class="vrow-bar"><span style="width:${(n / m) * 100}%"></span></span><span class="vrow-n">${n}</span></li>`;
-    const people = d.perPerson || [];
+    const people = src.perPerson || [];
     const hmax = Math.max(1, ...people.map((p) => p.count));
-    body.innerHTML = `<p class="muted-text">Skupaj ${d.total || 0} ogledov</p>
-      <h3 class="visits-h">Zadnjih 14 dni</h3><div class="vbars">${bars}</div>
-      <h3 class="visits-h">Po straneh</h3><ul class="vrows">${pages.map(([p, n]) => row(esc(PAGE_LABEL[p] || p), n, pmax)).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>
-      <h3 class="visits-h">Po osebah</h3><ul class="vrows">${people.map((p) => { const r = visitRole(p); return row(esc(displayName(p.name || p.email)), p.count, hmax, r ? ` <span class="role-badge role-${esc(r)}" title="Vloga: ${esc(r.toUpperCase())}">${esc(r.toUpperCase())}</span>` : ""); }).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>`;
+    const scrollX = $(".vday-chips", body)?.scrollLeft || 0;
+    body.innerHTML = `${chips}<p class="muted-text">${visitDay ? `${dayName(visitDay)}, ${dShort(visitDay)}: ${src.total || 0} ogledov` : `Skupaj ${d.total || 0} ogledov`}</p>
+      <h3 class="visits-h">Zadnjih 14 dni${canFilter ? ` <span class="muted-text">· tapni dan</span>` : ""}</h3><div class="vbars">${bars}</div>
+      <h3 class="visits-h">Po straneh${visitDay ? ` · ${dShort(visitDay)}` : ""}</h3><ul class="vrows">${pages.map(([p, n]) => row(esc(PAGE_LABEL[p] || p), n, pmax)).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>
+      <h3 class="visits-h">Po osebah${visitDay ? ` · ${dShort(visitDay)}` : ""}</h3><ul class="vrows">${people.map((p) => { const r = visitRole(p); return row(esc(displayName(p.name || p.email)), p.count, hmax, r ? ` <span class="role-badge role-${esc(r)}" title="Vloga: ${esc(r.toUpperCase())}">${esc(r.toUpperCase())}</span>` : ""); }).join("") || "<li class='muted-text'>Ni podatkov</li>"}</ul>`;
+    const strip = $(".vday-chips", body);
+    if (strip) strip.scrollLeft = scrollX;
   } catch {
     body.innerHTML = `<p class="muted-text">Statistike trenutno niso na voljo.</p>`;
   }
 }
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("#visits [data-visit-day]");
+  if (!b) return;
+  const day = b.dataset.visitDay || null;
+  visitDay = visitDay === day && day ? null : day; // tapping the selected day again goes back to all
+  renderVisits();
+});
 
 /* —— OS: participant groups per spremljevalec (data/os.json ← Drive 02_Program/OS/skupine) —— */
 let osData, osDays;

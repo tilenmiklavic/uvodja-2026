@@ -1,4 +1,4 @@
-// SCRIPT_VERSION: v5 (2026-10-27) - site sessions (stay signed in), puzzle dates 26.10.–4.11.
+// SCRIPT_VERSION: v6 (2026-10-28) - visit stats per day (Analitika day filter)
 /**
  * U Vodja 2026 – Wordle rezultati (Google Apps Script, bound to the results Sheet).
  * Sheet tab "rezultati", header row: Timestamp | Email | Name | Date | Guesses | Solved | Ms
@@ -11,7 +11,7 @@
  * Visits: doPost {type:'visit', credential, email?, name?, page, device, ts?} → tab "obiski"
  *         (Timestamp|Email|Name|Page|Device|Verified); invalid/expired token → accepted, Verified=false.
  * Stats: doPost {type:'visitstats', credential} → aggregates only, ONLY for a valid token in STATS_ADMINS
- *        (else {ok:false}). doGet?type=visits is disabled.
+ *        (else {ok:false}); byDay = the same per day for the last 14 days. doGet?type=visits is disabled.
  *
  * Needs common.gs (and the other handler files) in the same project.
  * Deploy: Deploy → New deployment → Web app, Execute as: Me, Who has access: Anyone.
@@ -118,7 +118,7 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v5' });
+  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v6' });
   var cb = e && e.parameter && e.parameter.callback;
   if (e && e.parameter && e.parameter.type === 'visits') return json_({ ok: false, error: 'use_post' }, cb);
   try {
@@ -169,7 +169,8 @@ function logVisit_(body) {
 function visitStats_(cb) {
   try {
     var rows = visitSheet_().getDataRange().getValues();
-    var perDay = {}, perPage = {}, perPerson = {}, total = 0;
+    var perDay = {}, perPage = {}, perPerson = {}, total = 0, byDay = {};
+    var since = Utilities.formatDate(new Date(Date.now() - 13 * 86400000), TZ, 'yyyy-MM-dd'); // byDay: last 14 days
     for (var i = 1; i < rows.length; i++) {
       var r = rows[i];
       if (!r[0]) continue;
@@ -182,9 +183,20 @@ function visitStats_(cb) {
       p.count++;
       if (!(r[5] === true || String(r[5]).toUpperCase() === 'TRUE')) p.unverified++;
       if (r[4] === 'mobile') p.mobile++;
+      if (d >= since) {
+        var day = byDay[d] || (byDay[d] = { total: 0, perPage: {}, perPerson: {} });
+        day.total++;
+        day.perPage[pg] = (day.perPage[pg] || 0) + 1;
+        var dp = day.perPerson[em] || (day.perPerson[em] = { email: em, name: String(r[2]), count: 0 });
+        dp.count++;
+      }
     }
+    Object.keys(byDay).forEach(function (k) {
+      var pp = byDay[k].perPerson;
+      byDay[k].perPerson = Object.keys(pp).map(function (e) { return pp[e]; }).sort(function (a, b) { return b.count - a.count; });
+    });
     var people = Object.keys(perPerson).map(function (k) { return perPerson[k]; }).sort(function (a, b) { return b.count - a.count; });
-    return json_({ ok: true, total: total, perDay: perDay, perPage: perPage, perPerson: people }, cb);
+    return json_({ ok: true, total: total, perDay: perDay, perPage: perPage, perPerson: people, byDay: byDay }, cb);
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) }, cb);
   }
