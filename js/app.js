@@ -2603,16 +2603,19 @@ function svRecent(list, withQuestion) {
 async function renderStavnica(force = false) {
   const box = $("#stavnica");
   if (!box) return;
-  if (!sv.state || force || Date.now() - (sv.fetchedAt || 0) > SV_REFRESH_MS) {
-    if (sv.loading) return;
-    sv.loading = true;
-    const stage = (s) => { if (!sv.state) box.innerHTML = `<p class="muted-text sv-loading">${s === "auth" ? "Preverjam prijavo …" : "Nalagam stave …"}</p>`; };
-    stage("load");
+  if (!sv.state && scriptHas("stavnica")) { sv.state = scriptData.stavnica.data; sv.fetchedAt = scriptData.stavnica.at; }
+  if (sv.media === undefined || osData === undefined) {
+    if (!sv.state) box.innerHTML = `<p class="muted-text sv-loading">Nalagam stave …</p>`;
     if (sv.media === undefined) { try { const r = await fetch("data/stavnica.json", { cache: "no-store" }); sv.media = r.ok ? await r.json() : null; } catch { sv.media = null; } }
     if (osData === undefined) { try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; } } // OS photos for players' avatars
-    try { sv.state = sv.state && !force ? await svCall({}, stage) : await scriptLoad("stavnica", force); sv.error = null; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err; }
-    sv.loading = false;
   }
+  if (!sv.state) {
+    if (sv.loading) return;
+    sv.loading = true;
+    box.innerHTML = `<p class="muted-text sv-loading">Nalagam stave …</p>`;
+    try { sv.state = await scriptLoad("stavnica", force); sv.error = null; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err; }
+    sv.loading = false;
+  } else if (force || Date.now() - (sv.fetchedAt || 0) > SV_FRESH) svRefresh(force); // show what we have, refresh in the background
   if (!sv.state) { box.innerHTML = svErrorHtml(sv.error); return; }
   const st = sv.state, me = st.me || { balance: st.budget, bets: [] };
   const qi = st.questions.findIndex((q) => svSlug(q) === sv.view);
@@ -2631,7 +2634,8 @@ async function renderStavnica(force = false) {
   else if (tab === "pregled") body = svOverview(st);
   else if (qi >= 0) body = svDetail(st, me, qi);
   else body = svList(st, tab === "pretekle");
-  box.innerHTML = `<div class="pv-folder">${tabs}<div class="pv-fpanel sv-panel">${body}</div></div>`;
+  box.innerHTML = `<div class="pv-folder">${tabs}<div class="pv-fpanel sv-panel">${body}<p class="sv-updated muted-text" id="sv-updated"></p></div></div>`;
+  svMeta();
   svUpdatePayout();
 }
 /* past = resolved bets ("Pretekle stave"); otherwise open ones. Zadnje stave only on the open list */
@@ -2879,19 +2883,42 @@ function svProfile(st, me) {
     <section class="sv-list"><h3>Moje stave</h3>${me.bets.length || me.adjustments?.length ? svSections(me.bets, me.adjustments) : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
 }
 /* Hourly background check (and on return to the tab after >1 h): re-render only if bets changed and no bet slip is open */
-const SV_REFRESH_MS = 60 * 60 * 1000;
-async function svBackgroundRefresh() {
-  if (!sv.state || sv.loading || Date.now() - (sv.fetchedAt || 0) < SV_REFRESH_MS - 5000) return;
-  if (currentTab !== "zabava" || $("#stavnica")?.hidden || document.hidden) return;
-  let next;
-  try { next = await svCall(); } catch { return; }
-  const sig = (x) => JSON.stringify([x.questions, x.recent, x.me]);
-  const changed = sig(next) !== sig(sv.state);
-  sv.state = next; sv.fetchedAt = Date.now();
-  if (changed && !$("#stavnica form.sv-bet")) renderStavnica();
+/* Fresh data while Stavnica is open: what is loaded shows at once and is re-fetched in the background when older than
+   SV_FRESH (opening the page, back from the background, a 30 s check, »Osveži«). The page is not redrawn while the
+   user is betting or typing in a form; the new data waits until then. */
+const SV_FRESH = 90 * 1000;
+const svSig = (x) => JSON.stringify([x.questions, x.recent, x.me, x.people]);
+function svBusy() {
+  const a = document.activeElement;
+  return !!($("#stavnica form.sv-bet") || (a && a.closest?.("#stavnica form"))
+    || $$("#stavnica .sv-create-form textarea, #stavnica .sv-create-form input, #stavnica .sv-adj-form input[type=text], #stavnica .sv-adj-form input[type=email]").some((x) => x.value.trim()));
 }
-setInterval(svBackgroundRefresh, 5 * 60 * 1000); // cheap check; actual fetch at most once per hour
-document.addEventListener("visibilitychange", () => { if (!document.hidden) svBackgroundRefresh(); });
+function svMeta() {
+  const el = $("#sv-updated");
+  if (!el) return;
+  const t = sv.fetchedAt ? new Date(sv.fetchedAt).toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" }) : "";
+  el.innerHTML = sv.loading ? "Osvežujem …" : `${t ? `Posodobljeno ob ${t} · ` : ""}<button type="button" class="link-btn" data-sv-reload>Osveži</button>`;
+}
+async function svRefresh(force = false) {
+  if (sv.loading || !sv.state) return;
+  sv.loading = true; svMeta();
+  let next = null;
+  try { next = await scriptLoad("stavnica", true); } catch { sv.fetchedAt = Date.now() - SV_FRESH + 60 * 1000; } // failed: keep the old data, try again in a minute
+  sv.loading = false;
+  if (next) {
+    if (svSig(next) !== svSig(sv.state)) sv.dirty = true;
+    sv.state = next; sv.fetchedAt = Date.now();
+  }
+  if (sv.dirty && !svBusy()) { sv.dirty = false; renderStavnica(); } else svMeta();
+}
+function svKeepFresh() {
+  const box = $("#stavnica");
+  if (currentTab !== "zabava" || !box || box.hidden || document.hidden || !sv.state) return;
+  if (sv.dirty && !svBusy()) { sv.dirty = false; renderStavnica(); return; }
+  if (Date.now() - (sv.fetchedAt || 0) > SV_FRESH) svRefresh();
+}
+setInterval(svKeepFresh, 30 * 1000);
+document.addEventListener("visibilitychange", svKeepFresh);
 function svUpdatePayout() {
   const f = $("#stavnica form.sv-bet"), q = f && sv.state?.questions[f.dataset.svQ];
   if (!q) return;
