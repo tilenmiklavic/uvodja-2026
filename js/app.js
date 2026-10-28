@@ -2551,15 +2551,26 @@ function svSections(bets, adjs) {
     + sec("adj", "Popravki admina", ad, svAdjRow, "");
 }
 /* Zadnje stave: one simple line per bet (who · pick · stake · when), winners marked; question below only on the all-bets list */
+/* "25. 10. · 17:04" for every bet; "pred 12 min" / "pred 3 h" tag only for bets from the last 24 h */
+function svLogWhen(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  return `${d.getDate()}. ${d.getMonth() + 1}. · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function svLogAgo(ts) {
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (!ts || !(m >= 0) || m >= 1440) return "";
+  return m < 1 ? "pravkar" : m < 60 ? `pred ${m} min` : `pred ${Math.floor(m / 60)} h`;
+}
 function svLogRow(b, withQuestion) {
   const q = sv.state.questions.find((x) => x.id === b.question), w = wdWho("", b.name);
   const won = !!q?.result && b.option === q.result, lost = !!q?.result && !won, pay = b.amount * (b.odds || (q ? svOdds(q) : 1));
   return `<li class="sv-log-item${won ? " is-won" : lost ? " is-lost" : ""}">${w.av}
     <div class="sv-log-main">
-      <p class="sv-log-line"><strong class="sv-log-who" title="${esc(w.title)}">${esc(w.label)}</strong><span class="sv-log-amt">${b.amount} ${SV_COIN}</span><span class="sv-log-na muted-text">na</span><span class="sv-log-pick">${esc(q ? svLabel(q, b.option) : b.option)}</span></p>
+      <p class="sv-log-line"><strong class="sv-log-who" title="${esc(w.title)}">${esc(w.label)}</strong><span class="sv-log-amt">${b.amount} ${SV_COIN}</span><span class="sv-log-na muted-text">na</span><span class="sv-log-pick">${esc(q ? svLabel(q, b.option) : b.option)}</span>${svLogAgo(b.ts) ? `<span class="sv-log-ago">${svLogAgo(b.ts)}</span>` : ""}</p>
       ${withQuestion && q ? `<a class="sv-log-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : ""}
     </div>
-    <span class="sv-log-end">${won ? `<span class="sv-log-won" title="Zadel">✓ +${pay}</span>` : lost ? `<span class="sv-log-lost" title="Ni zadel">✗ −${b.amount}</span>` : ""}<span class="sv-log-time muted-text">${esc(svAgo(b.ts))}</span></span>
+    <span class="sv-log-end">${won ? `<span class="sv-log-won" title="Zadel">✓ +${pay}</span>` : lost ? `<span class="sv-log-lost" title="Ni zadel">✗ −${b.amount}</span>` : ""}<time class="sv-log-time muted-text" datetime="${b.ts ? new Date(b.ts).toISOString() : ""}">${esc(svLogWhen(b.ts))}</time></span>
   </li>`;
 }
 function svRecent(list, withQuestion) {

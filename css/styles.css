@@ -1872,8 +1872,8 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .sv-list .sv-log li.sv-log-item:first-child { border-top: 0; }
 .sv-log-item .avatar { flex: none; }
 .sv-log-main { flex: 1; min-width: 0; }
-.sv-log-line { margin: 0; display: flex; align-items: center; gap: .4rem; min-width: 0; font-size: .9rem; }
-.sv-log-who { font-weight: 800; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-log-line { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .4rem; min-width: 0; font-size: .9rem; }
+.sv-log-who { flex: 0 1 auto; max-width: 100%; font-weight: 800; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sv-log-pick { flex: none; padding: .05rem .5rem; border-radius: 999px; background: rgba(248,164,24,.16); color: var(--gold-soft); font-weight: 700; font-size: .8rem; }
 .sv-log-amt { flex: none; display: inline-flex; align-items: center; gap: .2rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); }
 .sv-log-amt .sv-coin { width: 14px; height: 14px; }
@@ -1882,6 +1882,7 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .sv-log-q::first-letter { text-transform: uppercase; }
 .sv-log-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .sv-log-end { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: .15rem; }
-.sv-log-time { font-size: .75rem; white-space: nowrap; }
+.sv-log-time { font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sv-log-ago { flex: none; padding: .02rem .45rem; border-radius: 999px; border: 1px solid rgba(248,164,24,.55); color: var(--gold-soft); font-size: .7rem; font-weight: 700; white-space: nowrap; }
 .sv-log-lost { padding: .05rem .45rem; border-radius: 999px; background: rgba(229,72,77,.16); color: #ff8a8d; font-weight: 800; font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .sv-log-won { padding: .05rem .45rem; border-radius: 999px; background: rgba(107,142,35,.25); color: #a8d47a; font-weight: 800; font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
