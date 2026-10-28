@@ -2553,13 +2553,13 @@ function svSections(bets, adjs) {
 /* Zadnje stave: one simple line per bet (who · pick · stake · when), winners marked; question below only on the all-bets list */
 function svLogRow(b, withQuestion) {
   const q = sv.state.questions.find((x) => x.id === b.question), w = wdWho("", b.name);
-  const won = q?.result && b.option === q.result, pay = b.amount * (b.odds || (q ? svOdds(q) : 1));
-  return `<li class="sv-log-item${won ? " is-won" : ""}">${w.av}
+  const won = !!q?.result && b.option === q.result, lost = !!q?.result && !won, pay = b.amount * (b.odds || (q ? svOdds(q) : 1));
+  return `<li class="sv-log-item${won ? " is-won" : lost ? " is-lost" : ""}">${w.av}
     <div class="sv-log-main">
       <p class="sv-log-line"><strong class="sv-log-who" title="${esc(w.title)}">${esc(w.label)}</strong><span class="sv-log-amt">${b.amount} ${SV_COIN}</span><span class="sv-log-na muted-text">na</span><span class="sv-log-pick">${esc(q ? svLabel(q, b.option) : b.option)}</span></p>
       ${withQuestion && q ? `<a class="sv-log-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : ""}
     </div>
-    <span class="sv-log-end">${won ? `<span class="sv-log-won" title="Zadel">✓ +${pay}</span>` : ""}<span class="sv-log-time muted-text">${esc(svAgo(b.ts))}</span></span>
+    <span class="sv-log-end">${won ? `<span class="sv-log-won" title="Zadel">✓ +${pay}</span>` : lost ? `<span class="sv-log-lost" title="Ni zadel">✗ −${b.amount}</span>` : ""}<span class="sv-log-time muted-text">${esc(svAgo(b.ts))}</span></span>
   </li>`;
 }
 function svRecent(list, withQuestion) {
