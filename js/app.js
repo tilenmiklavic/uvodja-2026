@@ -2550,9 +2550,21 @@ function svSections(bets, adjs) {
     + sec("done", "Zaključene stave", done, row, "")
     + sec("adj", "Popravki admina", ad, svAdjRow, "");
 }
+/* Zadnje stave: one simple line per bet (who · pick · stake · when), winners marked; question below only on the all-bets list */
+function svLogRow(b, withQuestion) {
+  const q = sv.state.questions.find((x) => x.id === b.question), w = wdWho("", b.name);
+  const won = q?.result && b.option === q.result, pay = b.amount * (b.odds || (q ? svOdds(q) : 1));
+  return `<li class="sv-log-item${won ? " is-won" : ""}">${w.av}
+    <div class="sv-log-main">
+      <p class="sv-log-line"><strong class="sv-log-who" title="${esc(w.title)}">${esc(w.label)}</strong><span class="sv-log-amt">${b.amount} ${SV_COIN}</span><span class="sv-log-na muted-text">na</span><span class="sv-log-pick">${esc(q ? svLabel(q, b.option) : b.option)}</span></p>
+      ${withQuestion && q ? `<a class="sv-log-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : ""}
+    </div>
+    <span class="sv-log-end">${won ? `<span class="sv-log-won" title="Zadel">✓ +${pay}</span>` : ""}<span class="sv-log-time muted-text">${esc(svAgo(b.ts))}</span></span>
+  </li>`;
+}
 function svRecent(list, withQuestion) {
   if (!list.length) return `<p class="muted-text">Še ni stav.</p>`;
-  return `<ul class="sv-bets">${list.map((b) => svBetRow(b, { who: true, question: withQuestion })).join("")}</ul>`;
+  return `<ul class="sv-log">${list.map((b) => svLogRow(b, withQuestion)).join("")}</ul>`;
 }
 async function renderStavnica(force = false) {
   const box = $("#stavnica");
@@ -2563,6 +2575,7 @@ async function renderStavnica(force = false) {
     const stage = (s) => { if (!sv.state) box.innerHTML = `<p class="muted-text sv-loading">${s === "auth" ? "Preverjam prijavo …" : "Nalagam stave …"}</p>`; };
     stage("load");
     if (sv.media === undefined) { try { const r = await fetch("data/stavnica.json", { cache: "no-store" }); sv.media = r.ok ? await r.json() : null; } catch { sv.media = null; } }
+    if (osData === undefined) { try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; } } // OS photos for players' avatars
     try { sv.state = sv.state && !force ? await svCall({}, stage) : await scriptLoad("stavnica", force); sv.error = null; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err; }
     sv.loading = false;
   }

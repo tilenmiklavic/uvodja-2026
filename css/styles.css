@@ -1865,3 +1865,22 @@ a.sv-l-q:hover { color: var(--gold-soft); text-decoration: underline; }
 .sv-resolve h3 { margin: 0 0 .3rem; font-size: 1rem; }
 .sv-resolve-btns { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
 .sv-resolve-btns .btn { min-height: 40px; }
+
+/* —— Stavnica: Zadnje stave as a simple activity log —— */
+.sv-log { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.03); }
+.sv-log-item { display: flex; align-items: center; gap: .6rem; padding: .55rem .7rem; }
+.sv-log-item + .sv-log-item { border-top: 1px solid var(--line); }
+.sv-log-item .avatar { flex: none; }
+.sv-log-main { flex: 1; min-width: 0; }
+.sv-log-line { margin: 0; display: flex; align-items: center; gap: .4rem; min-width: 0; font-size: .9rem; }
+.sv-log-who { font-weight: 800; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-log-pick { flex: none; padding: .05rem .5rem; border-radius: 999px; background: rgba(248,164,24,.16); color: var(--gold-soft); font-weight: 700; font-size: .8rem; }
+.sv-log-amt { flex: none; display: inline-flex; align-items: center; gap: .2rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); }
+.sv-log-amt .sv-coin { width: 14px; height: 14px; }
+.sv-log-na { flex: none; font-size: .8rem; }
+.sv-log-q { display: block; margin-top: .1rem; font-size: .78rem; color: var(--ink-muted); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-log-q::first-letter { text-transform: uppercase; }
+.sv-log-q:hover { color: var(--gold-soft); text-decoration: underline; }
+.sv-log-end { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: .15rem; }
+.sv-log-time { font-size: .75rem; white-space: nowrap; }
+.sv-log-won { padding: .05rem .45rem; border-radius: 999px; background: rgba(107,142,35,.25); color: #a8d47a; font-weight: 800; font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
