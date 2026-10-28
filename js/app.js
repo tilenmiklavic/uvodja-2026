@@ -164,7 +164,7 @@ function closeNavMore(focusToggle = false) {
 }
 
 function syncHeaderHeight() {
-  const h = $(".site-header")?.offsetHeight || 60;
+  const h = Math.round($(".site-header")?.getBoundingClientRect().height || 0) || 60;
   document.documentElement.style.setProperty("--hdr-h", `${h}px`);
 }
 
@@ -186,8 +186,14 @@ document.addEventListener("keydown", (e) => {
 });
 
 function bindNavMore() {
+  // --hdr-h positions the sticky day strip / dates under the header: follow the header's real size (rotation,
+  // wrapping tabs, app resumed from the background) instead of measuring only on window resize
   syncHeaderHeight();
   window.addEventListener("resize", syncHeaderHeight);
+  window.addEventListener("orientationchange", () => setTimeout(syncHeaderHeight, 300));
+  window.addEventListener("pageshow", syncHeaderHeight);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncHeaderHeight(); });
+  if ("ResizeObserver" in window && $(".site-header")) new ResizeObserver(syncHeaderHeight).observe($(".site-header"));
   const t = $("#nav-more-toggle"), m = $("#nav-more");
   if (!t || !m) return;
   t.addEventListener("click", (e) => {
