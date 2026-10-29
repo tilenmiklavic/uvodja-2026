@@ -2,7 +2,7 @@
  * Zabava → Stavnica: betting with virtual coins ("zlatniki").
  * Questions come from Drive 09_Arhiv/trop/wordle/stavnica, tab "questions" (question | answer | options | resolved [| image]);
  * the optional "image" column holds the question card's image: an image inserted into the cell (Insert → Image → In cell),
- * an =IMAGE("https://…") formula, or a plain https:// link.
+ * an =IMAGE("https://…") formula, a plain https:// link, or a data:image/… URL (uploaded from the site).
  * every bet is appended to tab "bets" with the bettor's name and e-mail.
  *
  * Hook it into doPost (before the Wordle-specific code):
@@ -15,7 +15,8 @@
  * then Deploy → Manage deployments → edit → New version (same /exec URL).
  *
  * Admins can add or take away zlatniki (action "adjust", sheet "popravki"); players see these in "Moje stave".
- * Admins can also add a question (action "create": question, options[], expires?) and resolve or reopen one
+ * Admins can also add a question (action "create": question, options[], expires?, image? = small JPEG/PNG/WebP
+ * data: URL, resized in the browser) and resolve or reopen one
  * (action "resolve": question, result = one of its options, or "" to reopen) without editing the sheet.
  * Rules: everyone starts with STAVNICA_BUDGET zlatnikov. Fixed odds = number of options: a winning bet on a
  * yes/no question pays 2× the stake, on a 3-option question 3×, … Other people's bets don't change the odds.
@@ -119,7 +120,7 @@ function stavnicaState_(ss, me, withPeople) {
     if (v && typeof v === "object" && typeof v.getContentUrl === "function") return v.getContentUrl() || v.getUrl(); // CellImage: Google-hosted copy first (the source site may block hotlinking)
     const m = /^=IMAGE\(\s*"([^"]+)"/i.exec(fx || "");
     if (m) return m[1];
-    return /^https?:\/\//i.test(String(v || "").trim()) ? String(v).trim() : "";
+    return /^(https?:\/\/|data:image\/)/i.test(String(v || "").trim()) ? String(v).trim() : "";
   };
   const resCol = col("resolved") >= 0 ? col("resolved") : col("result");
   const questions = qRows.map((r, i) => ({ r: r, i: i })).filter((x) => String(x.r[col("question")] || "").trim()).map((x) => {
@@ -239,6 +240,13 @@ function stavnicaCreate_(ss, body) {
   set("answer", type);
   set("options", stavnicaText_(options.join("/")));
   set("expires", stavnicaText_(String(body.expires || "").trim().slice(0, 20)));
+  const image = String(body.image || "");
+  if (image) {
+    if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/]+=*$/.test(image)) return "slika ni v pravi obliki";
+    if (image.length > 48000) return "slika je prevelika";
+    if (head.indexOf("image") < 0) return "v listu manjka stolpec image";
+    set("image", image);
+  }
   sh.appendRow(row);
   return "";
 }

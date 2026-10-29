@@ -2712,7 +2712,11 @@ function svCreateForm() {
         <span class="sv-create-opts"><input type="text" name="options" required placeholder="Da, Ne" autocomplete="off" />
         <button type="button" class="btn ghost" data-sv-preset="Da, Ne">Da / Ne</button></span></label>
       <label><span>Rok <span class="muted-text">· neobvezno, npr. 31.10.</span></span><input type="text" name="expires" maxlength="20" autocomplete="off" /></label>
-      <p class="muted-text sv-help">Kvota = število možnosti (×2 pri Da/Ne). Sliko lahko dodaš kasneje v listu.</p>
+      <div class="sv-create-img"><span class="sv-create-l">Slika <span class="muted-text">· neobvezno, izreže se na kvadrat</span></span>
+        <div class="sv-create-img-row"><img class="sv-img" data-sv-img-preview alt="" width="48" height="48" hidden />
+          <label class="btn ghost sv-img-pick">📷 Izberi sliko<input type="file" name="image" accept="image/*" data-sv-img-input hidden /></label>
+          <button type="button" class="btn ghost" data-sv-img-clear hidden>Odstrani</button></div></div>
+      <p class="muted-text sv-help">Kvota = število možnosti (×2 pri Da/Ne).</p>
       <div class="sv-adj-btns"><button type="submit" class="btn primary">Dodaj stavo</button></div>
       <p class="sv-status" role="status" aria-live="polite"></p>
     </form></details>`;
@@ -2733,6 +2737,44 @@ document.addEventListener("click", (e) => {
   if (pre) { const f = pre.closest("form"); f.options.value = pre.dataset.svPreset; f.options.focus(); }
 });
 document.addEventListener("toggle", (e) => { if (e.target.matches?.("#stavnica .sv-create")) sv.createOpen = e.target.open; }, true);
+/* Bet image: centre-cropped to a square and shrunk to a small JPEG data: URL (it is stored in a sheet cell, max ~48 000 chars) */
+async function svImageData(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("slike ni bilo mogoče prebrati")); i.src = url; });
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    if (!side) throw new Error("prazna slika");
+    for (const [px, qual] of [[288, 0.82], [288, 0.68], [224, 0.68], [192, 0.6], [160, 0.55]]) {
+      const c = document.createElement("canvas"); c.width = c.height = px;
+      const g = c.getContext("2d"); g.fillStyle = "#16242f"; g.fillRect(0, 0, px, px);
+      g.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, px, px);
+      const data = c.toDataURL("image/jpeg", qual);
+      if (data.length <= 45000) return data;
+    }
+    throw new Error("slika je prevelika");
+  } finally { URL.revokeObjectURL(url); }
+}
+document.addEventListener("change", async (e) => {
+  const inp = e.target.closest?.("[data-sv-img-input]");
+  if (!inp) return;
+  const f = inp.closest("form"), prev = $("[data-sv-img-preview]", f), clear = $("[data-sv-img-clear]", f), status = $(".sv-status", f);
+  f.dataset.image = "";
+  if (!inp.files?.[0]) return;
+  try {
+    status.className = "sv-status"; status.textContent = "Pripravljam sliko …";
+    f.dataset.image = await svImageData(inp.files[0]);
+    prev.src = f.dataset.image; prev.hidden = false; clear.hidden = false; status.textContent = "";
+  } catch (err) {
+    prev.hidden = true; clear.hidden = true; inp.value = "";
+    status.className = "sv-status is-err"; status.textContent = `Slika: ${err.message}.`;
+  }
+});
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-sv-img-clear]");
+  if (!b) return;
+  const f = b.closest("form");
+  f.dataset.image = ""; $("[data-sv-img-input]", f).value = ""; $("[data-sv-img-preview]", f).hidden = true; b.hidden = true;
+});
 document.addEventListener("submit", async (e) => {
   const f = e.target.closest("#stavnica form[data-sv-create]");
   if (!f) return;
@@ -2743,7 +2785,7 @@ document.addEventListener("submit", async (e) => {
   if (options.length < 2 || options.length > 8) { status.className = "sv-status is-err"; status.textContent = "Vpiši 2–8 možnosti, ločenih z vejico."; return; }
   btn.disabled = true; status.className = "sv-status"; status.textContent = "Dodajam …";
   try {
-    sv.state = await svCall({ action: "create", question, options, expires });
+    sv.state = await svCall({ action: "create", question, options, expires, image: f.dataset.image || "" });
     sv.fetchedAt = Date.now(); scriptSet("stavnica", sv.state); sv.createOpen = false;
     const q = sv.state.questions.find((x) => x.id.toLowerCase() === question.toLowerCase());
     if (q) location.hash = `#zabava/stavnica/${svSlug(q)}`; else renderStavnica();
@@ -2914,7 +2956,8 @@ const svSig = (x) => JSON.stringify([x.questions, x.recent, x.me, x.people]);
 function svBusy() {
   const a = document.activeElement;
   return !!($("#stavnica form.sv-bet") || (a && a.closest?.("#stavnica form"))
-    || $$("#stavnica .sv-create-form textarea, #stavnica .sv-create-form input, #stavnica .sv-adj-form input[type=text], #stavnica .sv-adj-form input[type=email]").some((x) => x.value.trim()));
+    || $$("#stavnica .sv-create-form textarea, #stavnica .sv-create-form input:not([type=file]), #stavnica .sv-adj-form input[type=text], #stavnica .sv-adj-form input[type=email]").some((x) => x.value.trim())
+    || !!$("#stavnica .sv-create-form")?.dataset.image);
 }
 function svMeta() {
   const el = $("#sv-updated");

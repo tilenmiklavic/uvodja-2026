@@ -1901,3 +1901,9 @@ button.vbar { border: 0; padding: 0; background: none; color: inherit; font: inh
 button.vbar.is-dim .vbar-fill { opacity: .35; }
 button.vbar.is-sel .vbar-fill { background: var(--gold-soft); box-shadow: 0 0 0 2px var(--gold); }
 button.vbar.is-sel .vbar-n, button.vbar.is-sel .vbar-d { color: var(--ink); font-weight: 800; }
+.sv-create-img { display: grid; gap: .3rem; }
+.sv-create-l { font-weight: 700; font-size: .88rem; }
+.sv-create-l .muted-text { font-weight: 400; }
+.sv-create-img-row { display: flex; align-items: center; gap: .5rem; }
+.sv-create-img-row .sv-img { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; }
+.sv-create-form label.sv-img-pick { display: inline-flex; align-items: center; min-height: 40px; padding: 0 .8rem; font-weight: 700; cursor: pointer; }
