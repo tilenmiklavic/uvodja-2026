@@ -2837,8 +2837,6 @@ function svOverview(st) {
     </div>
     <p class="muted-text sv-help">Samo za admina. Stanje = ${st.budget} − vloženo + priigrano + popravki. Klikni igralca za podrobnosti, graf in popravek stanja.</p>
     ${svCreateForm()}
-    <details class="card sv-adj-new"><summary>Popravek za drugega igralca (po e-naslovu)</summary>${svAdjForm(null)}
-      <datalist id="sv-emails">${people.map((p) => `<option value="${esc(p.email)}">${esc(p.name)}</option>`).join("")}</datalist></details>
     <section class="sv-list"><h3>Igralci</h3>${people.length ? `<div class="sv-people">${people.map(row).join("")}</div>` : `<p class="muted-text">Še nihče ni stavil.</p>`}</section>`;
 }
 /* Stanje (free coins) and portfelj (stanje + stakes still in play) after every event, oldest first */
