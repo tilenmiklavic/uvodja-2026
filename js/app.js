@@ -683,6 +683,25 @@ function ljNow() {
   return { date: `${parts.year}-${parts.month}-${parts.day}`, min: Number(parts.hour) * 60 + Number(parts.minute), label: `${parts.hour}:${parts.minute}` };
 }
 function toMin(t) { const [h, m] = String(t || "").split(/[:.]/).map(Number); return Number.isFinite(h) ? h * 60 + (m || 0) : null; }
+/* Opening Časovnica: show "now" – the now line on a course day (a third down the visible area), otherwise the next
+   course day; after the course, stay at the top. Not for day/event links or while searching. */
+function scrollToNow() {
+  if ($("#tab-casovnica")?.hidden || state.query.trim()) return;
+  placeNowLine();
+  const line = $("#timetable-tree .tl-now");
+  if (line) {
+    const visible = window.innerHeight - scrollOffset();
+    window.scrollTo({ top: Math.max(0, line.getBoundingClientRect().top + window.scrollY - scrollOffset() - visible / 3), behavior: "auto" });
+    return;
+  }
+  const today = ljNow().date;
+  const next = $$("#timetable-tree .tl-day:not(.hidden-by-filter)").find((el) => (el.dataset.date || "") >= today);
+  if (next) scrollToEl(next, "auto"); else window.scrollTo({ top: 0, behavior: "auto" });
+}
+/* run after layout settles (fonts, images, header height) */
+function scrollToNowSoon() {
+  requestAnimationFrame(() => { scrollToNow(); setTimeout(scrollToNow, 350); });
+}
 function placeNowLine() {
   $$(".tl-now").forEach((n) => n.remove());
   const now = ljNow();
@@ -1661,7 +1680,7 @@ function openPerson(slug) {
 
 function applyHash() {
   const hash = location.hash.replace(/^#/, "");
-  if (!hash || hash === "casovnica") { setTab("casovnica"); return; }
+  if (!hash || hash === "casovnica") { setTab("casovnica"); scrollToNowSoon(); return; }
   if (hash === "izrocki") { setTab("gradiva"); history.replaceState(null, "", "#gradiva"); return; }
   if (hash === "zadolzitve") {
     setTab("teme"); showTemeList();
@@ -1701,7 +1720,7 @@ function bindControls() {
     if (tab === "os") history.replaceState(null, "", "#os"); // leave group detail
     if (tab === "uu") history.replaceState(null, "", "#uu");
     setTab(tab);
-    if (tab === "casovnica") history.replaceState(null, "", "#casovnica");
+    if (tab === "casovnica") { history.replaceState(null, "", "#casovnica"); scrollToNowSoon(); }
     else history.replaceState(null, "", `#${tab}`);
   }));
   $$("[data-tab-link]").forEach((a) => a.addEventListener("click", (e) => {
@@ -1713,6 +1732,7 @@ function bindControls() {
     if (tab === "uu") history.replaceState(null, "", "#uu");
     setTab(tab);
     history.replaceState(null, "", `#${tab}`);
+    if (tab === "casovnica") scrollToNowSoon();
   }));
   // Timeline: tapping a date block clears search and scrolls to that day; filter toggle in the search row
   $("#timetable-tree").addEventListener("click", (e) => {
