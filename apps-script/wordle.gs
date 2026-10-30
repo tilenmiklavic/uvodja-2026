@@ -1,4 +1,4 @@
-// SCRIPT_VERSION: v6 (2026-10-28) - visit stats per day (Analitika day filter)
+// SCRIPT_VERSION: v7 (2026-10-30) - every Wordle guess logged to tab "poskusi"
 /**
  * U Vodja 2026 – Wordle rezultati (Google Apps Script, bound to the results Sheet).
  * Sheet tab "rezultati", header row: Timestamp | Email | Name | Date | Guesses | Solved | Ms
@@ -8,6 +8,8 @@
  * doGet   → {ok:true, results:[{email,name,date,guesses,solved,ms}]}  (?callback=fn for JSONP)
  *
  * Sessions: doPost {type:'session', credential} → {ok, session, exp}; see common.gs (siteSessionIssue_).
+ * Guesses: doPost {type:'wordle-guess', credential, date, n, guess, pattern, t, dt} → tab "poskusi", one row per guess
+ *         (n = 1–6; n = 0 = puzzle opened); the server time is recorded too, so the timing can't be faked.
  * Visits: doPost {type:'visit', credential, email?, name?, page, device, ts?} → tab "obiski"
  *         (Timestamp|Email|Name|Page|Device|Verified); invalid/expired token → accepted, Verified=false.
  * Stats: doPost {type:'visitstats', credential} → aggregates only, ONLY for a valid token in STATS_ADMINS
@@ -77,6 +79,7 @@ function doPost(e) {
     var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     if (body.type === 'session') return siteSessionIssue_(body);
     if (body.type === 'visit') return logVisit_(body);
+    if (body.type === 'wordle-guess') return logGuess_(body);
     if (body.type === 'visitstats') return visitStatsAuth_(body);
     if (body.type === 'preverba') return handlePreverba(body);
     if (body.type === 'stavnica') return handleStavnica(body);
@@ -118,7 +121,7 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v6' });
+  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v7' });
   var cb = e && e.parameter && e.parameter.callback;
   if (e && e.parameter && e.parameter.type === 'visits') return json_({ ok: false, error: 'use_post' }, cb);
   try {
@@ -133,6 +136,31 @@ function doGet(e) {
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) }, cb);
   }
+}
+
+/* —— Every guess (tab "poskusi"): Čas | Email | Ime | Datum | Poskus | Beseda | Vzorec | Od začetka (s) | Od prejšnjega (s)
+   n = 0 is "puzzle opened" (the timer itself starts at the first letter typed). Times are the player's own clock;
+   column A is the server's clock. —— */
+var GUESS_SHEET = 'poskusi';
+function logGuess_(body) {
+  var who = verifyToken_(body.credential);
+  var date = String(body.date || ''), n = Number(body.n);
+  var today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > today) return json_({ ok: false, error: 'bad_date' });
+  if (PUZZLE_DATES.length && PUZZLE_DATES.indexOf(date) < 0) return json_({ ok: false, error: 'not_a_puzzle_date' });
+  if (!(n >= 0 && n <= 6 && Math.floor(n) === n)) return json_({ ok: false, error: 'bad_n' });
+  var guess = n ? String(body.guess || '').toLowerCase() : '(odprto)', pattern = n ? String(body.pattern || '') : '';
+  if (n && !/^[a-zčšž]{5}$/.test(guess)) return json_({ ok: false, error: 'bad_guess' });
+  if (n && !/^[GY.]{5}$/.test(pattern)) return json_({ ok: false, error: 'bad_pattern' });
+  var sec = function (v) { v = Number(v); return v >= 0 && v < 86400000 ? Math.round(v / 100) / 10 : ''; };
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName(GUESS_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(GUESS_SHEET);
+    sh.appendRow(['Čas', 'Email', 'Ime', 'Datum', 'Poskus', 'Beseda', 'Vzorec', 'Od začetka (s)', 'Od prejšnjega (s)']);
+    sh.setFrozenRows(1);
+  }
+  sh.appendRow([new Date(), who.email, who.name, "'" + date, n, "'" + guess, "'" + pattern, n ? sec(body.t) : '', n ? sec(body.dt) : '']);
+  return json_({ ok: true });
 }
 
 /* —— Page visits (tab "obiski") —— */

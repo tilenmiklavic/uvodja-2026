@@ -1815,7 +1815,7 @@ function wdScore(guess, answer) {
 const wdKey = (date) => `uvodja.wordle.${date}`;
 function wdStats() { try { return JSON.parse(localStorage.getItem("uvodja.wordle.stats")) || null; } catch { return null; } }
 function wdSaveGame() {
-  try { localStorage.setItem(wdKey(wd.puzzle.date), JSON.stringify({ guesses: wd.guesses, done: wd.done, won: wd.won, startTs: wd.startTs, endTs: wd.endTs })); } catch {}
+  try { localStorage.setItem(wdKey(wd.puzzle.date), JSON.stringify({ guesses: wd.guesses, times: wd.times, done: wd.done, won: wd.won, startTs: wd.startTs, endTs: wd.endTs, opened: wd.opened })); } catch {}
 }
 /* Timer: starts on the first letter of the first word, stops when the game ends (wall clock, survives reloads) */
 const wdFmtMs = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
@@ -1872,6 +1872,8 @@ async function renderWordle() {
     let saved = null; try { saved = JSON.parse(localStorage.getItem(wdKey(p.date))); } catch {}
     wd.guesses = saved?.guesses || []; wd.done = !!saved?.done; wd.won = !!saved?.won; wd.cur = [];
     wd.startTs = saved?.startTs || null; wd.endTs = saved?.endTs || null;
+    wd.times = saved?.times || []; wd.opened = !!saved?.opened;
+    if (!wd.opened && !wd.done) { wd.opened = true; wdSaveGame(); wdLogGuess({ date: p.date, n: 0 }); }
   }
   $("#wd-sub").textContent = `#${p.n} · ${wdFmtDate(p.date)}`;
   wdMsg(wd.done ? (wd.won ? "Bravo! 🎉" : `Beseda je bila: ${wd.answer.toUpperCase()}`) : "");
@@ -1933,6 +1935,11 @@ function wdInput(k) {
     const guess = wd.cur.join("");
     if (wd.valid && !wd.valid.has(guess) && guess !== wd.answer) { wdMsg("Te besede ni na seznamu."); shakeRow(); return; }
     wd.guesses.push(guess); wd.cur = [];
+    const now = Date.now(), prev = (wd.times || []).at(-1) ?? wd.startTs ?? now;
+    (wd.times ||= []).push(now);
+    wdLogGuess({ date: wd.puzzle.date, n: wd.guesses.length, guess,
+      pattern: wdScore(guess, wd.answer).map((x) => (x === "correct" ? "G" : x === "present" ? "Y" : ".")).join(""),
+      t: wd.startTs ? now - wd.startTs : 0, dt: now - prev });
     if (guess === wd.answer) { wd.done = true; wd.won = true; }
     else if (wd.guesses.length >= WD_MAX) { wd.done = true; }
     if (wd.done) wd.endTs = Date.now();
@@ -2175,6 +2182,15 @@ function wdResendMissing() {
     wd.resent.add(p.date); added = true;
   }
   if (added) { wdSetQueue(q); wdFlushQueue(); }
+}
+/* Each guess (and the first opening, n = 0) → Apps Script tab "poskusi", fire-and-forget so the game never waits */
+function wdLogGuess(item) {
+  wdConfig().then((cfg) => {
+    const credential = currentCred(30000);
+    if (!cfg?.scriptUrl || !credential) return;
+    fetch(cfg.scriptUrl, { method: "POST", keepalive: true, headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ type: "wordle-guess", ...item, credential }) }).catch(() => {});
+  }).catch(() => {});
 }
 async function wdSubmit(item) {
   const cfg = await wdConfig();
