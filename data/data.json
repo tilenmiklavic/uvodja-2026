@@ -24,7 +24,7 @@
       "programId": "10xDmjgoYQrPWPA_PTVzpI-o4Hxot0_urdb5xK4rtjx4",
       "folderId": "166EnwAANG6DbhPG8EwAfIYS7jc3rgz6i"
     },
-    "generatedAt": "2026-10-28",
+    "generatedAt": "2026-10-31",
     "matchStats": {
       "matched": 19,
       "unmatched_program": 9,
@@ -175,7 +175,7 @@
       "hasColumn": true
     },
     "izrockiProgress": {
-      "ready": 9,
+      "ready": 10,
       "total": 19,
       "unknownPages": 0
     }
@@ -8021,9 +8021,9 @@
     "folderId": "1IsQ6Ojl0j6j-SzhFkJo_pVyi2fN-uKmx",
     "folderUrl": "https://drive.google.com/drive/folders/1IsQ6Ojl0j6j-SzhFkJo_pVyi2fN-uKmx",
     "folderTitle": "Izročki",
-    "updatedAt": "2026-10-27T14:02:21+02:00",
-    "generatedAt": "2026-10-28T07:30:00+00:00",
-    "ready": 9,
+    "updatedAt": "2026-10-30T16:02:49+02:00",
+    "generatedAt": "2026-10-31T08:00:00+00:00",
+    "ready": 10,
     "total": 19,
     "readySlugs": [
       "jaz-vodja",
@@ -8034,7 +8034,8 @@
       "skavti-v-mladinskem-delu",
       "vodenje-procesov",
       "vodenje-voditeljev",
-      "drzavna-raven-skavti-na-mednarodni-ravni"
+      "drzavna-raven-skavti-na-mednarodni-ravni",
+      "upravljanje-in-spremljanje-sprememb"
     ],
     "files": [
       {
@@ -8203,6 +8204,18 @@
         "temaSlug": "drzavna-raven-skavti-na-mednarodni-ravni",
         "temaTitle": "Državna raven",
         "pageCount": 3,
+        "pageCountSource": "pdf_export+pdfinfo"
+      },
+      {
+        "id": "1Nhi3ZQPeBdrPTh54OL0TeBgyrNQccLJyUQGovfiZXiM",
+        "title": "08_Upravljajne in spremljanje sprememb",
+        "url": "https://docs.google.com/document/d/1Nhi3ZQPeBdrPTh54OL0TeBgyrNQccLJyUQGovfiZXiM/edit",
+        "mimeType": "application/vnd.google-apps.document",
+        "type": "gdoc",
+        "modifiedTime": "2026-10-30T14:02:49.515Z",
+        "temaSlug": "upravljanje-in-spremljanje-sprememb",
+        "temaTitle": "Upravljanje in spremljanje sprememb",
+        "pageCount": 4,
         "pageCountSource": "pdf_export+pdfinfo"
       }
     ],
@@ -8374,6 +8387,21 @@
             "url": "https://docs.google.com/document/d/10AEqvYB8FQOebw9L3-7-WR_QNwgmCeo-s132b4XMyKw/edit",
             "type": "gdoc",
             "pageCount": 3
+          }
+        ]
+      },
+      {
+        "slug": "upravljanje-in-spremljanje-sprememb",
+        "title": "Upravljanje in spremljanje sprememb",
+        "fileCount": 1,
+        "pageCount": 4,
+        "files": [
+          {
+            "id": "1Nhi3ZQPeBdrPTh54OL0TeBgyrNQccLJyUQGovfiZXiM",
+            "title": "08_Upravljajne in spremljanje sprememb",
+            "url": "https://docs.google.com/document/d/1Nhi3ZQPeBdrPTh54OL0TeBgyrNQccLJyUQGovfiZXiM/edit",
+            "type": "gdoc",
+            "pageCount": 4
           }
         ]
       }
