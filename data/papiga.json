@@ -1,14 +1,16 @@
 {
- "_note": "Spot-A-Papiga: one picture per day. The parrot positions are NOT here – they live in the Drive sheet »papiga« (tab spots) and only the Apps Script (apps-script/papiga.gs) checks taps.",
+ "_note": "Spot-A-Papiga: one picture per day. s = parrot centre and radius [x, y, r] in pixels of the original picture (orig), XOR+base64 with key – NOT secure (like Wordle). Spots come from the Drive sheet »papiga« (tab spots) via scripts/build_papiga.py; the Apps Script uses the sheet to check reported finds.",
  "width": 1344,
  "height": 1800,
+ "key": "papiga2026",
+ "orig": [1792, 2400],
  "puzzles": [
-  { "date": "2026-11-02", "n": 1, "img": "assets/papiga/2026-11-02.webp" },
-  { "date": "2026-11-03", "n": 2, "img": "assets/papiga/2026-11-03.webp" },
-  { "date": "2026-11-04", "n": 3, "img": "assets/papiga/2026-11-04.webp" },
-  { "date": "2026-11-05", "n": 4, "img": "assets/papiga/2026-11-05.webp" },
-  { "date": "2026-11-06", "n": 5, "img": "assets/papiga/2026-11-06.webp" },
-  { "date": "2026-11-07", "n": 6, "img": "assets/papiga/2026-11-07.webp" },
-  { "date": "2026-11-08", "n": 7, "img": "assets/papiga/2026-11-08.webp" }
+  {"date": "2026-11-02", "n": 1, "img": "assets/papiga/2026-11-02.webp", "s": "K1BFXlJNBQEHGkZULQ=="},
+  {"date": "2026-11-03", "n": 2, "img": "assets/papiga/2026-11-03.webp", "s": "K1JHW0tQBQYCGkVRLQ=="},
+  {"date": "2026-11-04", "n": 3, "img": "assets/papiga/2026-11-04.webp", "s": "K1BDWFNNAwgHA1xXQDQ="},
+  {"date": "2026-11-05", "n": 4, "img": "assets/papiga/2026-11-05.webp", "s": "K1JCW0tQAAUHGkZRLQ=="},
+  {"date": "2026-11-06", "n": 5, "img": "assets/papiga/2026-11-06.webp", "s": "K1dCWUtVCgAeAUA8"},
+  {"date": "2026-11-07", "n": 6, "img": "assets/papiga/2026-11-07.webp", "s": "K1BHWldNBwAHGkZULQ=="},
+  {"date": "2026-11-08", "n": 7, "img": "assets/papiga/2026-11-08.webp", "s": "K1BDX1dNAwQDA1xWQDQ="}
  ]
 }
