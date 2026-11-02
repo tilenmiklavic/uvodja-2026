@@ -2319,27 +2319,27 @@ document.addEventListener("click", (e) => {
   if (t) { wd.scoreTab = t.dataset.stab; renderScoreboard(); }
 });
 
-/* —— Zabava → Spot-A-Papiga: find the parrot in today's picture (data/papiga.json). Taps are checked by Apps Script
-   (apps-script/papiga.gs), so where the parrot is never reaches the browser before the player is done.
-   Time runs on the server from »Začni iskanje« to the hit; every missed tap adds PP_PENALTY to the score. —— */
+/* —— Zabava → Spot-A-Papiga: find the parrot in today's picture (data/papiga.json). Taps are checked right here against
+   the spot (XOR+base64 scrambled like Wordle – NOT secure); every start/tap/give-up is logged to Apps Script
+   (apps-script/papiga.gs) in the background and the result goes through a retry queue like Wordle's.
+   The timer runs from »Začni iskanje« to the hit; every missed tap adds PP_PENALTY to the score. —— */
 const PP_PENALTY = 10000;
 const PP_MAX_ZOOM = 8;
-const pp = { data: null, puzzle: null, g: null, s: 1, tx: 0, ty: 0, busy: false, pending: null, scores: undefined };
+const PP_SLACK = 1.15; // a tap a bit outside the circle still counts (same as the server)
+const pp = { data: null, puzzle: null, g: null, s: 1, tx: 0, ty: 0, scores: undefined };
 const ppKey = (date) => `uvodja.papiga.${date}`;
 function ppSave() { try { localStorage.setItem(ppKey(pp.puzzle.date), JSON.stringify(pp.g)); } catch {} }
 function ppMsg(t) { ["#pp-msg", "#pp-fs-msg"].forEach((s) => { const m = $(s); if (m) m.textContent = t || ""; }); }
 const ppScore = (r) => (r.found && Number(r.ms) > 0 ? Number(r.ms) + (Number(r.misses) || 0) * PP_PENALTY : Infinity);
 const ppMissCount = (g) => g.missCount ?? g.misses.length;
-function ppErr(err) {
-  const e = String(err?.message || "");
-  if (err?.kind === "config") return "Igra še ni povezana s strežnikom.";
-  if (err?.kind === "auth") return "Za igro se prijavi (prijava je potekla – osveži jo v meniju).";
-  if (e === "bad_guesses" || e === "bad_action") return "Strežnik igre še ne pozna (Apps Script ni posodobljen).";
-  if (e === "not_allowed") return "Ta račun ne more igrati.";
-  if (e === "past_date" || e === "future_date") return "Ta slika ni več današnja – osveži stran.";
-  if (err?.kind === "timeout" || err?.kind === "network" || err?.kind === "offline") return "Ni povezave s strežnikom – poskusi znova.";
-  return `Napaka strežnika (${e || "neznano"}).`;
+/* Parrot spot(s) of a puzzle as fractions of the picture: [{x, y, r}] (r as a fraction of the width) */
+function ppSpots(p) {
+  try {
+    const [W, H] = pp.data.orig, a = JSON.parse(wdDeobf(p.s, pp.data.key));
+    return (Array.isArray(a[0]) ? a : [a]).map(([x, y, r]) => ({ x: x / W, y: y / H, r: r / W }));
+  } catch { return []; }
 }
+const ppIsHit = (spots, x, y) => { const [W, H] = pp.data.orig; return spots.some((s) => Math.hypot((x - s.x) * W, (y - s.y) * H) <= s.r * W * PP_SLACK); };
 
 async function ppLoadData() {
   if (!pp.data) { try { const r = await fetch("data/papiga.json", { cache: "no-store" }); pp.data = r.ok ? await r.json() : null; } catch { pp.data = null; } }
@@ -2362,7 +2362,7 @@ async function renderPapiga() {
     pp.puzzle = p;
     let g = null; try { g = JSON.parse(localStorage.getItem(ppKey(p.date))); } catch {}
     pp.g = g && Array.isArray(g.misses) ? g : { started: false, startTs: null, misses: [], done: false };
-    pp.s = 1; pp.tx = 0; pp.ty = 0; pp.synced = false;
+    pp.s = 1; pp.tx = 0; pp.ty = 0;
     const img = $("#pp-img"), start = $("#pp-start");
     start.disabled = true; start.textContent = "Nalagam sliko …";
     img.onload = () => { start.disabled = false; start.textContent = "Začni iskanje 🦜"; };
@@ -2373,31 +2373,65 @@ async function renderPapiga() {
   $("#pp-sub").textContent = `#${p.n} · ${wdFmtDate(p.date)}`;
   $("#pp-stage").hidden = false;
   ppDraw();
-  if (pp.g.started && !pp.g.done && !pp.synced) ppSync();
 }
-/* Server state for today (other device, reload): misses so far, start time, or the finished result */
-async function ppSync() {
-  if (!pp.puzzle || pp.syncing) return;
-  pp.syncing = true;
-  const date = pp.puzzle.date;
-  try { const res = await scriptPost({ type: "papiga", action: "open", date }); if (pp.puzzle?.date === date) { pp.synced = true; ppApply(res); } }
-  catch { /* keep the local state; the next tap asks the server anyway */ }
-  finally { pp.syncing = false; }
-}
-function ppApply(res) {
+/* Finished on another device (its result is on the leaderboard): show it here too */
+function ppAdopt(row) {
   const g = pp.g;
-  if (!g || !res) return;
-  if (res.done) {
-    const was = g.done;
-    Object.assign(g, { started: true, done: true, found: !!res.found, ms: res.ms || null, missCount: Number(res.misses) || 0, spots: res.spots || [] });
-    if (!g.endTs) g.endTs = Date.now();
-    if (!was && !g.found && g.spots[0]) ppFocus(g.spots[0]);
-  } else {
-    g.missCount = Number(res.misses) || 0;
-    if (Array.isArray(res.missList)) g.misses = res.missList.filter((m) => Number.isFinite(m[0]) && Number.isFinite(m[1]));
-    if (res.elapsed > 0) g.startTs = Date.now() - res.elapsed;
-  }
+  if (!g || g.done || !pp.puzzle) return;
+  Object.assign(g, { started: true, done: true, found: !!row.found, ms: Number(row.ms) || null, missCount: Number(row.misses) || 0, endTs: Date.now() });
   ppSave(); ppDraw();
+}
+/* Background log of start / taps / give-up (tab papiga-kliki); the game never waits for it */
+function ppLog(item) {
+  wdConfig().then((cfg) => {
+    const credential = currentCred(30000);
+    if (!cfg?.scriptUrl || !credential) return;
+    fetch(cfg.scriptUrl, { method: "POST", keepalive: true, headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ type: "papiga", ...item, credential }) }).catch(() => {});
+  }).catch(() => {});
+}
+/* Results: queued on the device and sent until the server has them (like Wordle) */
+const PP_QUEUE = "uvodja.papiga.queue";
+function ppQueue() { try { return JSON.parse(localStorage.getItem(PP_QUEUE)) || []; } catch { return []; } }
+function ppSetQueue(q) { try { localStorage.setItem(PP_QUEUE, JSON.stringify(q)); } catch {} }
+async function ppFlush(interactive = false) {
+  const cfg = await wdConfig();
+  if (!cfg?.scriptUrl || !state.user || pp.flushing) return;
+  let q = ppQueue();
+  if (!q.length) return;
+  pp.flushing = true;
+  let sent = false;
+  try {
+    const cred = interactive ? await wdFreshToken() : currentCred();
+    if (!cred) return;
+    for (const item of [...q]) {
+      try {
+        const res = await wdPost(cfg.scriptUrl, { type: "papiga", action: "result", ...item }, cred);
+        // done, or an answer that won't change on retry; an older script (bad_action) keeps it queued until it is updated
+        if (res.ok || ["bad_date", "future_date", "not_a_puzzle_date", "not_a_hit", "not_allowed"].includes(res.error)) { q = q.filter((x) => x.date !== item.date); sent = sent || res.ok; }
+      } catch { /* network: keep queued */ }
+    }
+    ppSetQueue(q);
+  } finally { pp.flushing = false; }
+  if (sent) loadPpScores(true);
+}
+function ppFinish(found, x, y) {
+  const g = pp.g, date = pp.puzzle.date;
+  g.done = true; g.found = found; g.endTs = Date.now();
+  g.ms = found && g.startTs ? g.endTs - g.startTs : null;
+  ppSave();
+  const item = { date, found, ms: g.ms, misses: g.misses.length, ...(found ? { x, y } : {}) };
+  ppSetQueue([...ppQueue().filter((i) => i.date !== date), item]);
+  // show it on the leaderboard right away; the next refresh brings the server's copy
+  const u = state.user;
+  if (u && Array.isArray(pp.scores)) {
+    pp.scores = [...pp.scores.filter((r) => !(r.date === date && r.email === u.email.toLowerCase())),
+      { email: u.email.toLowerCase(), name: u.name || u.email, date, found, ms: g.ms, misses: g.misses.length }];
+    renderPpScores();
+  }
+  if (!found) { const s = ppSpots(pp.puzzle)[0]; if (s) ppFocus(s); }
+  ppDraw();
+  ppFlush(true);
 }
 function ppDraw() {
   const g = pp.g, stage = $("#pp-stage");
@@ -2409,11 +2443,9 @@ function ppDraw() {
   $("#pp-help").hidden = !g.started || g.done;
   const n = ppMissCount(g);
   $("#pp-misses").textContent = n ? `Zgrešeno: ${n} (+${n * PP_PENALTY / 1000} s)` : "Še brez zgrešenih klikov";
-  $("#pp-giveup").disabled = pp.busy;
   const pct = (v) => `${(v * 100).toFixed(3)}%`;
   $("#pp-marks").innerHTML = g.misses.map(([x, y]) => `<i class="pp-x" style="left:${pct(x)};top:${pct(y)}"></i>`).join("")
-    + (pp.pending ? `<i class="pp-pending" style="left:${pct(pp.pending[0])};top:${pct(pp.pending[1])}"></i>` : "")
-    + (g.done ? (g.spots || []).map((s) => `<i class="pp-hit${g.found ? "" : " is-reveal"}" style="left:${pct(s.x)};top:${pct(s.y)};width:${pct(s.r * 2.3)}"></i>`).join("") : "");
+    + (g.done ? ppSpots(pp.puzzle).map((s) => `<i class="pp-hit${g.found ? "" : " is-reveal"}" style="left:${pct(s.x)};top:${pct(s.y)};width:${pct(s.r * 2.3)}"></i>`).join("") : "");
   if (g.done) {
     ppMsg(g.found ? `Papiga najdena! 🦜${g.ms ? ` ⏱ ${wdFmtMs(g.ms)}` : ""}${n ? ` · ${n}× zgrešeno (+${n * PP_PENALTY / 1000} s)` : ""}` : "Papiga se je skrivala tukaj 👆 Jutri nova slika!");
   }
@@ -2465,43 +2497,32 @@ function ppFocus(spot) {
   pp.s = 3; pp.tx = W / 2 - spot.x * w * pp.s; pp.ty = H / 2 - spot.y * h * pp.s;
   ppTransform();
 }
-async function ppStart() {
+function ppStart() {
   const g = pp.g;
   if (!g || g.started || !pp.puzzle) return;
   if (!state.user) { ppMsg("Za igro se prijavi."); return; }
   g.started = true; g.startTs = Date.now(); ppSave(); ppDraw();
-  try { ppApply(await scriptPost({ type: "papiga", action: "open", date: pp.puzzle.date })); pp.synced = true; }
-  catch (err) {
-    if (!["timeout", "network", "offline"].includes(err?.kind)) { g.started = false; g.startTs = null; ppSave(); ppDraw(); }
-    ppMsg(ppErr(err));
-  }
+  ppLog({ action: "open", date: pp.puzzle.date });
 }
-async function ppTap(clientX, clientY) {
+function ppTap(clientX, clientY) {
   const g = pp.g;
-  if (!g || !g.started || g.done || pp.busy || !pp.puzzle) return;
+  if (!g || !g.started || g.done || !pp.puzzle) return;
   const r = $("#pp-img").getBoundingClientRect();
   const x = (clientX - r.left) / r.width, y = (clientY - r.top) / r.height;
   if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) return;
-  pp.busy = true; pp.pending = [x, y]; ppMsg("Preverjam …"); ppDraw();
-  try {
-    const res = await scriptPost({ type: "papiga", action: "click", date: pp.puzzle.date, x, y, ms: g.startTs ? Date.now() - g.startTs : null });
-    pp.pending = null;
-    if (res.done) { ppApply(res); loadPpScores(true); }
-    else {
-      g.misses.push([x, y]); g.missCount = Number(res.misses) || g.misses.length; ppSave();
-      ppMsg(["To ni papiga 🙈", "Ne, tu je ni 🙈", "Skoraj … ali pa tudi ne 🙈"][g.misses.length % 3] + ` (+${PP_PENALTY / 1000} s)`);
-    }
-  } catch (err) { ppMsg(ppErr(err)); }
-  finally { pp.busy = false; pp.pending = null; ppDraw(); }
+  const hit = ppIsHit(ppSpots(pp.puzzle), x, y);
+  ppLog({ action: "tap", date: pp.puzzle.date, x, y, hit, t: g.startTs ? Date.now() - g.startTs : null });
+  if (hit) { ppFinish(true, x, y); return; }
+  g.misses.push([x, y]); ppSave();
+  ppMsg(["To ni papiga 🙈", "Ne, tu je ni 🙈", "Skoraj … ali pa tudi ne 🙈"][g.misses.length % 3] + ` (+${PP_PENALTY / 1000} s)`);
+  ppDraw();
 }
-async function ppGiveUp() {
+function ppGiveUp() {
   const g = pp.g;
-  if (!g || !g.started || g.done || pp.busy) return;
+  if (!g || !g.started || g.done) return;
   if (!confirm("Res želiš videti, kje je papiga? Današnja igra bo štela kot nenajdena.")) return;
-  pp.busy = true; ppDraw();
-  try { ppApply(await scriptPost({ type: "papiga", action: "giveup", date: pp.puzzle.date })); loadPpScores(true); }
-  catch (err) { ppMsg(ppErr(err)); }
-  finally { pp.busy = false; ppDraw(); }
+  ppLog({ action: "giveup", date: pp.puzzle.date, t: g.startTs ? Date.now() - g.startTs : null });
+  ppFinish(false);
 }
 (function ppBindStage() {
   const st = $("#pp-stage");
@@ -2551,13 +2572,7 @@ async function ppGiveUp() {
   st.addEventListener("dblclick", (e) => { if (!pp.g?.started || pp.g.done) { const p = rel({ x: e.clientX, y: e.clientY }); ppZoomAt(2, p.x, p.y); } });
 })();
 document.addEventListener("click", (e) => {
-  const z = e.target.closest("[data-pp-zoom]");
-  if (z) {
-    const st = $("#pp-stage"), k = z.dataset.ppZoom;
-    if (k === "full") { ppFull(); return; }
-    if (k === "reset") { pp.s = 1; ppTransform(); } else ppZoomAt(k === "in" ? 1.6 : 1 / 1.6, st.clientWidth / 2, st.clientHeight / 2);
-    return;
-  }
+  if (e.target.closest("[data-pp-zoom='full']")) { ppFull(); return; }
   if (e.target.closest("#pp-start")) ppStart();
   else if (e.target.closest("#pp-giveup")) ppGiveUp();
   const t = e.target.closest(".pp-stab");
@@ -2607,7 +2622,8 @@ async function loadPpScores(force = false) {
   renderPpScores();
   // Finished on another device: pick up the result
   const u = state.user, g = pp.g;
-  if (u && g && !g.done && pp.puzzle && (pp.scores || []).some((r) => r.date === pp.puzzle.date && r.email === u.email.toLowerCase())) { pp.synced = false; ppSync(); }
+  const mine = u && g && !g.done && pp.puzzle && (pp.scores || []).find((r) => r.date === pp.puzzle.date && r.email === u.email.toLowerCase());
+  if (mine) ppAdopt(mine);
 }
 function renderPpScoreMeta() {
   const el = $("#pp-score-meta");
@@ -2678,6 +2694,7 @@ async function init() {
   tokMaintain(); // renew an expired/expiring sign-in right away, on whatever page the user lands
   ensureSession(); // swap the Google sign-in for a 60-day site session (or renew one that is getting old)
   wdFlushQueue();
+  ppFlush();
 }
 
 init().catch((err) => {

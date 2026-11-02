@@ -1,19 +1,19 @@
 /**
- * Zabava → Spot-A-Papiga: a daily "find the parrot" picture. The answers never reach the browser:
- * the site sends where the player tapped and this script says hit or miss.
+ * Zabava → Spot-A-Papiga: a daily "find the parrot" picture. Taps are checked in the browser (instant); this script
+ * only records them and the result, and checks that a reported find really is on the parrot.
  *
  * Answers: Drive papiga sheet (PAPIGA_SPOTS_ID), tab "spots": date | spot | image
  *   date  = 4. 11. 2026 (text or a date cell)
  *   spot  = "x 1314, y 1855, r 60": centre and radius of the parrot in pixels of the original 1792×2400 picture
- *           (one parrot per picture).
+ *           (one parrot per picture). The site has the same spots (scrambled) in data/papiga.json – keep them in sync.
  * Results go into Drive wordle/results (PAPIGA_RESULTS_ID, the Wordle results sheet):
  *   tab "results-papiga" Čas | Email | Ime | Datum | Najdeno | Ms | Zgrešeni
  *   tab "papiga-kliki"   Čas | Email | Ime | Datum | Dejanje | X | Y | Zadetek | Od začetka (s)
  *
  * doPost {type:'papiga', action, credential, date, …}
- *   action 'open'   → starts the clock (first time only) → {ok, done, found?, ms?, misses, spots?}
- *   action 'click'  {x, y (0–1 of the picture), ms?} → {ok, hit, done, misses, ms?, spots?}
- *   action 'giveup' → {ok, done, found:false, spots}
+ *   action 'open' | 'tap' {x, y, hit, t} | 'giveup' {t} → one row in papiga-kliki (the site doesn't wait for it)
+ *   action 'result' {found, ms, misses, x?, y?} → one row per player and day in results-papiga (first one wins);
+ *                   a find must be on the parrot (x, y = the winning tap, 0–1 of the picture)
  * doGet ?type=papiga → {ok, results:[{email,name,date,found,ms,misses}]}  (?callback=fn for JSONP)
  *
  * Hook it into Code.gs (needs Code.gs helpers verifyToken_, json_, cellDate_, TZ):
@@ -21,7 +21,6 @@
  *   doGet, first line in the function: if (e && e.parameter && e.parameter.type === 'papiga') return papigaResults_(e.parameter.callback);
  *
  * then Deploy → Manage deployments → edit → New version (same /exec URL).
- * The time counts on the server from 'open' (the player pressing »Začni«) to the hit, so it can't be faked.
  */
 var PAPIGA_SPOTS_ID = '1KPqzbRza8vqAV9SrRb6GDrqpTUKaAHY3r7BMkOSaQ_o';
 var PAPIGA_W = 1792, PAPIGA_H = 2400;  // original picture size the spot pixels refer to
@@ -62,67 +61,50 @@ function papigaSpots_() {
   return out;
 }
 
-/** Spots for the browser (only once the player is done): centre and radius as fractions of the picture's width/height. */
-function papigaOut_(spots) {
-  return spots.map(function (s) { return { x: s.x / PAPIGA_W, y: s.y / PAPIGA_H, r: s.r / PAPIGA_W }; });
-}
-
 function handlePapiga(body) {
   try {
     var who = verifyToken_(body.credential);
     var date = String(body.date || ''), action = String(body.action || '');
     var today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json_({ ok: false, error: 'bad_date' });
-    if (date !== today) return json_({ ok: false, error: date > today ? 'future_date' : 'past_date' });
+    if (date > today) return json_({ ok: false, error: 'future_date' });
     var spots = papigaSpots_()[date];
     if (!spots) return json_({ ok: false, error: 'not_a_puzzle_date' });
+    var now = new Date(), num = function (v, d) { v = Number(v); return isFinite(v) ? Math.round(v * Math.pow(10, d)) / Math.pow(10, d) : ''; };
+    var sec = function (v) { v = Number(v); return v >= 0 && v < 86400000 ? Math.round(v / 100) / 10 : ''; };
 
-    var lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-    try {
-      // This player's result for the day (if any)
-      var res = papigaResultsSheet_(), rrows = res.getDataRange().getValues();
-      for (var i = 1; i < rrows.length; i++) {
-        if (String(rrows[i][1]).toLowerCase() === who.email && cellDate_(rrows[i][3]) === date) {
-          var found = rrows[i][4] === true || String(rrows[i][4]).toUpperCase() === 'TRUE';
-          return json_({ ok: true, done: true, found: found, ms: Number(rrows[i][5]) || null, misses: Number(rrows[i][6]) || 0, spots: papigaOut_(spots) });
-        }
-      }
-      // Clicks so far: start time (first 'open') and misses
-      var clicks = papigaClicksSheet_(), crows = clicks.getDataRange().getValues(), start = null, misses = 0, missList = [];
-      for (var j = 1; j < crows.length; j++) {
-        if (String(crows[j][1]).toLowerCase() !== who.email || cellDate_(crows[j][3]) !== date) continue;
-        if (crows[j][4] === 'odprto' && !start) start = crows[j][0] instanceof Date ? crows[j][0].getTime() : null;
-        if (crows[j][4] === 'klik' && !(crows[j][7] === true || String(crows[j][7]).toUpperCase() === 'TRUE')) { misses++; missList.push([Number(crows[j][5]), Number(crows[j][6])]); }
-      }
-      var now = new Date(), since = start ? Math.round((now.getTime() - start) / 100) / 10 : '';
-
-      if (action === 'open') {
-        if (!start) clicks.appendRow([now, who.email, who.name, "'" + date, 'odprto', '', '', '', 0]);
-        return json_({ ok: true, done: false, misses: misses, missList: missList, elapsed: start ? now.getTime() - start : 0 });
-      }
-      if (action === 'giveup') {
-        clicks.appendRow([now, who.email, who.name, "'" + date, 'predaja', '', '', '', since]);
-        res.appendRow([now, who.email, who.name, "'" + date, false, '', misses]);
-        return json_({ ok: true, done: true, found: false, misses: misses, spots: papigaOut_(spots) });
-      }
-      if (action === 'click') {
-        var x = Number(body.x), y = Number(body.y);
-        if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) return json_({ ok: false, error: 'bad_xy' });
-        var px = x * PAPIGA_W, py = y * PAPIGA_H;
-        var hit = spots.some(function (s) { var dx = px - s.x, dy = py - s.y; return Math.sqrt(dx * dx + dy * dy) <= s.r * PAPIGA_SLACK; });
-        clicks.appendRow([now, who.email, who.name, "'" + date, 'klik', Math.round(x * 10000) / 10000, Math.round(y * 10000) / 10000, hit, since]);
-        if (!hit) return json_({ ok: true, hit: false, done: false, misses: misses + 1 });
-        // Time: server clock from the first 'open'; the player's own timer only when the open never arrived
-        var ms = start ? now.getTime() - start : Math.floor(Number(body.ms));
-        if (!(ms > 0 && ms < 86400000)) ms = '';
-        res.appendRow([now, who.email, who.name, "'" + date, true, ms, misses]);
-        return json_({ ok: true, hit: true, done: true, found: true, ms: ms || null, misses: misses, spots: papigaOut_(spots) });
-      }
-      return json_({ ok: false, error: 'bad_action' });
-    } finally {
-      lock.releaseLock();
+    if (action === 'open' || action === 'tap' || action === 'giveup') {
+      var label = { open: 'odprto', tap: 'klik', giveup: 'predaja' }[action];
+      papigaClicksSheet_().appendRow([now, who.email, who.name, "'" + date, label,
+        action === 'tap' ? num(body.x, 4) : '', action === 'tap' ? num(body.y, 4) : '', action === 'tap' ? body.hit === true : '', action === 'open' ? 0 : sec(body.t)]);
+      return json_({ ok: true });
     }
+    if (action === 'result') {
+      var found = body.found === true, misses = Math.floor(Number(body.misses));
+      if (!(misses >= 0 && misses < 10000)) misses = 0;
+      var ms = Math.floor(Number(body.ms));
+      if (!found || !(ms > 0 && ms < 86400000)) ms = '';
+      if (found) {
+        var x = Number(body.x), y = Number(body.y);
+        var hit = x >= 0 && x <= 1 && y >= 0 && y <= 1 && spots.some(function (s) {
+          var dx = x * PAPIGA_W - s.x, dy = y * PAPIGA_H - s.y; return Math.sqrt(dx * dx + dy * dy) <= s.r * PAPIGA_SLACK;
+        });
+        if (!hit) return json_({ ok: false, error: 'not_a_hit' });
+      }
+      var lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        var res = papigaResultsSheet_(), rows = res.getDataRange().getValues();
+        for (var i = 1; i < rows.length; i++) {
+          if (String(rows[i][1]).toLowerCase() === who.email && cellDate_(rows[i][3]) === date) return json_({ ok: true, duplicate: true });
+        }
+        res.appendRow([now, who.email, who.name, "'" + date, found, ms, misses]);
+      } finally {
+        lock.releaseLock();
+      }
+      return json_({ ok: true });
+    }
+    return json_({ ok: false, error: 'bad_action' });
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) });
   }
