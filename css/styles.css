@@ -1953,3 +1953,5 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .pp-bar { display: flex; align-items: center; justify-content: space-between; gap: .8rem; font-size: .9rem; }
 .pp-bar[hidden], .pp-help[hidden] { display: none; }
 .pp-help { margin: 0; font-size: .8rem; text-align: center; }
+.pp-save { margin: 0; font-size: .85rem; text-align: center; color: #f5a3a3; }
+.pp-save[hidden] { display: none; }
