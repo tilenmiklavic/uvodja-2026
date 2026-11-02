@@ -4,11 +4,11 @@
  *
  * Answers: Drive papiga sheet (PAPIGA_SPOTS_ID), tab "spots": date | spot | image
  *   date  = 4. 11. 2026 (text or a date cell)
- *   spot  = "x 1314, y 1855, r 60": centre and radius in pixels of the original 1792×2400 picture;
- *           several parrots: separate them with ";" (any one of them counts as found).
- * Results go into the spreadsheet this script is bound to (same as Wordle):
- *   tab "papiga"       Čas | Email | Ime | Datum | Najdeno | Ms | Zgrešeni
- *   tab "papiga-kliki" Čas | Email | Ime | Datum | Dejanje | X | Y | Zadetek | Od začetka (s)
+ *   spot  = "x 1314, y 1855, r 60": centre and radius of the parrot in pixels of the original 1792×2400 picture
+ *           (one parrot per picture).
+ * Results go into Drive wordle/results (PAPIGA_RESULTS_ID, the Wordle results sheet):
+ *   tab "results-papiga" Čas | Email | Ime | Datum | Najdeno | Ms | Zgrešeni
+ *   tab "papiga-kliki"   Čas | Email | Ime | Datum | Dejanje | X | Y | Zadetek | Od začetka (s)
  *
  * doPost {type:'papiga', action, credential, date, …}
  *   action 'open'   → starts the clock (first time only) → {ok, done, found?, ms?, misses, spots?}
@@ -26,10 +26,11 @@
 var PAPIGA_SPOTS_ID = '1KPqzbRza8vqAV9SrRb6GDrqpTUKaAHY3r7BMkOSaQ_o';
 var PAPIGA_W = 1792, PAPIGA_H = 2400;  // original picture size the spot pixels refer to
 var PAPIGA_SLACK = 1.15;               // a tap a bit outside the circle still counts
-var PAPIGA_RESULTS = 'papiga', PAPIGA_CLICKS = 'papiga-kliki';
+var PAPIGA_RESULTS_ID = '1-HJCqFOFjiHASiLN2c5ecXLlkq1e8W3WgjT6Py0hM_k'; // Drive wordle/results
+var PAPIGA_RESULTS = 'results-papiga', PAPIGA_CLICKS = 'papiga-kliki';
 
 function papigaSheet_(name, header) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName(name);
+  var ss = SpreadsheetApp.openById(PAPIGA_RESULTS_ID), sh = ss.getSheetByName(name);
   if (!sh) { sh = ss.insertSheet(name); sh.appendRow(header); sh.setFrozenRows(1); }
   return sh;
 }

@@ -1912,6 +1912,8 @@ button.vbar.is-sel .vbar-n, button.vbar.is-sel .vbar-d { color: var(--ink); font
 .sv-create-form label.sv-img-pick { display: inline-flex; align-items: center; min-height: 40px; padding: 0 .8rem; font-weight: 700; cursor: pointer; }
 
 /* —— Zabava → Spot-A-Papiga —— */
+.zb-choice.zb-wide { grid-column: 1 / -1; }
+.zb-choice.zb-wide img { aspect-ratio: 4 / 1; object-fit: cover; }
 .papiga { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: .5rem; }
 .papiga[hidden] { display: none; }
 .pp-stage { position: relative; width: min(100%, calc(74svh * 3 / 4)); aspect-ratio: 3 / 4; margin: 0 auto; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line); background: #10202e; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
