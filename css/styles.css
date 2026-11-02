@@ -1914,6 +1914,12 @@ button.vbar.is-sel .vbar-n, button.vbar.is-sel .vbar-d { color: var(--ink); font
 /* —— Zabava → Spot-A-Papiga —— */
 .zb-choice.zb-wide { grid-column: 1 / -1; }
 .zb-choice.zb-wide img { aspect-ratio: 4 / 1; object-fit: cover; }
+.zb-choice.is-soon { position: relative; overflow: hidden; }
+.zb-choice.is-soon::after, .pp-soon-ribbon { content: "Pride kmalu"; position: absolute; top: 22px; right: -46px; width: 190px; padding: .35rem 0; transform: rotate(35deg); text-align: center; background: var(--gold); color: var(--navy-deep); font-weight: 900; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; box-shadow: 0 3px 10px rgba(0,0,0,.35); pointer-events: none; }
+.pp-soon { position: relative; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line); background: var(--card); }
+.pp-soon[hidden] { display: none; }
+.pp-soon img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 1; object-fit: cover; }
+.pp-soon p { margin: 0; padding: .9rem 1.1rem 1rem; text-align: center; }
 .papiga { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: .5rem; }
 .papiga[hidden] { display: none; }
 .pp-stage { position: relative; width: min(100%, calc(74svh * 3 / 4)); aspect-ratio: 3 / 4; margin: 0 auto; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line); background: #10202e; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }

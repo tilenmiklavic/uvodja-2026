@@ -413,7 +413,7 @@ function setTab(name) {
     $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
     $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga";
     if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga();
-    if (zb) window.scrollTo(0, 0);
+    if (zb) window.scrollTo(0, 0); else ppMarkCard();
   }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
   closeNavMore();
@@ -2341,8 +2341,34 @@ function ppErr(err) {
   return `Napaka strežnika (${e || "neznano"}).`;
 }
 
-async function renderPapiga() {
+async function ppLoadData() {
   if (!pp.data) { try { const r = await fetch("data/papiga.json", { cache: "no-store" }); pp.data = r.ok ? await r.json() : null; } catch { pp.data = null; } }
+  return pp.data;
+}
+/* Before the first puzzle day: »Pride kmalu« on the Zabava card and instead of the game */
+const ppFirstDate = () => pp.data?.puzzles?.map((x) => x.date).sort()[0] || null;
+const ppSoon = () => { const f = ppFirstDate(); return !!f && ljNow().date < f; };
+async function ppMarkCard() {
+  await ppLoadData();
+  const card = $(".zb-choice[href='#zabava/papiga']");
+  if (!card) return;
+  const soon = ppSoon();
+  card.classList.toggle("is-soon", soon);
+  const lbl = $(".zb-choice-label", card);
+  if (lbl) lbl.textContent = soon ? `Spot-A-Papiga · od ${wdFmtDate(ppFirstDate())}` : "Spot-A-Papiga";
+}
+async function renderPapiga() {
+  await ppLoadData();
+  const soon = ppSoon();
+  $("#pp-soon").hidden = !soon;
+  $("#pp-score").hidden = soon;
+  if (soon) {
+    pp.puzzle = null; pp.g = null;
+    ["#pp-stage", "#pp-bar", "#pp-help", "#pp-timer"].forEach((s) => { $(s).hidden = true; });
+    $("#pp-sub").textContent = ""; ppMsg("");
+    $("#pp-soon-date").textContent = wdFmtDate(ppFirstDate());
+    return;
+  }
   loadPpScores();
   if (!pp.data) { ppMsg("Igre ni bilo mogoče naložiti."); return; }
   const today = ljNow().date, p = pp.data.puzzles.find((x) => x.date === today);
@@ -2609,6 +2635,7 @@ function renderPpScores() {
 /* While the game is on screen: new picture after midnight, fresh leaderboard every ~1.5 min */
 function ppKeepFresh() {
   if (!state.papigaActive || document.hidden || !pp.data) return;
+  if (ppSoon() !== !$("#pp-soon").hidden) { renderPapiga(); return; }
   if ((pp.puzzle?.date || null) !== (pp.data.puzzles.find((x) => x.date === ljNow().date)?.date || null)) { renderPapiga(); return; }
   loadPpScores();
 }
