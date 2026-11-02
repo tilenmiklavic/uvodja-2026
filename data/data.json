@@ -24,7 +24,7 @@
       "programId": "10xDmjgoYQrPWPA_PTVzpI-o4Hxot0_urdb5xK4rtjx4",
       "folderId": "166EnwAANG6DbhPG8EwAfIYS7jc3rgz6i"
     },
-    "generatedAt": "2026-10-31",
+    "generatedAt": "2026-11-02",
     "matchStats": {
       "matched": 19,
       "unmatched_program": 9,
@@ -175,7 +175,7 @@
       "hasColumn": true
     },
     "izrockiProgress": {
-      "ready": 10,
+      "ready": 11,
       "total": 19,
       "unknownPages": 0
     }
@@ -2083,7 +2083,9 @@
             "title": "11_Odnosi z Javnostmi",
             "url": "https://docs.google.com/document/d/1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c/edit",
             "fileId": "1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c",
-            "created": "2026-09-30"
+            "created": "2026-09-30",
+            "modifiedTime": "2026-11-01T12:45:22.237Z",
+            "textHash": "303e6d32cbe8fdad"
           },
           "isTema": true,
           "temaSlug": "odnosi-z-javnostmi"
@@ -2650,7 +2652,9 @@
         "title": "11_Odnosi z Javnostmi",
         "url": "https://docs.google.com/document/d/1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c/edit",
         "fileId": "1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c",
-        "created": "2026-09-30"
+        "created": "2026-09-30",
+        "modifiedTime": "2026-11-01T12:45:22.237Z",
+        "textHash": "303e6d32cbe8fdad"
       }
     },
     "administrativno vodenje": {
@@ -6816,8 +6820,8 @@
         "url": "https://docs.google.com/document/d/1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c/edit",
         "fileId": "1pTgyQIkvAN4Mr-ebH9Lpe6upZ1lQpiFIInqBjdT_n0c",
         "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-13T17:30:52.956Z",
-        "textHash": "04bffb08ca8ab7e6",
+        "modifiedTime": "2026-11-01T12:45:22.237Z",
+        "textHash": "303e6d32cbe8fdad",
         "cacheFile": "odnosi-z-javnostmi.txt"
       },
       "occurrences": [
@@ -6928,8 +6932,8 @@
         },
         "judgedAt": "2026-10-14T07:30:00+02:00",
         "contentsHash": "bfa05f1c7598c97b",
-        "mikronacrtModifiedTime": "2026-10-05T19:38:49.330Z",
-        "mikronacrtTextHash": "48350c249023f6d6"
+        "mikronacrtModifiedTime": "2026-11-01T12:45:22.237Z",
+        "mikronacrtTextHash": "303e6d32cbe8fdad"
       }
     },
     "administrativno-vodenje-stega": {
@@ -8021,9 +8025,9 @@
     "folderId": "1IsQ6Ojl0j6j-SzhFkJo_pVyi2fN-uKmx",
     "folderUrl": "https://drive.google.com/drive/folders/1IsQ6Ojl0j6j-SzhFkJo_pVyi2fN-uKmx",
     "folderTitle": "Izročki",
-    "updatedAt": "2026-10-30T16:02:49+02:00",
-    "generatedAt": "2026-10-31T08:00:00+00:00",
-    "ready": 10,
+    "updatedAt": "2026-11-01T20:45:32+01:00",
+    "generatedAt": "2026-11-02T08:40:00+00:00",
+    "ready": 11,
     "total": 19,
     "readySlugs": [
       "jaz-vodja",
@@ -8035,7 +8039,8 @@
       "vodenje-procesov",
       "vodenje-voditeljev",
       "drzavna-raven-skavti-na-mednarodni-ravni",
-      "upravljanje-in-spremljanje-sprememb"
+      "upravljanje-in-spremljanje-sprememb",
+      "odnosi-z-javnostmi"
     ],
     "files": [
       {
@@ -8200,7 +8205,7 @@
         "url": "https://docs.google.com/document/d/10AEqvYB8FQOebw9L3-7-WR_QNwgmCeo-s132b4XMyKw/edit",
         "mimeType": "application/vnd.google-apps.document",
         "type": "gdoc",
-        "modifiedTime": "2026-10-27T12:02:21.568Z",
+        "modifiedTime": "2026-11-01T12:25:22.663Z",
         "temaSlug": "drzavna-raven-skavti-na-mednarodni-ravni",
         "temaTitle": "Državna raven",
         "pageCount": 3,
@@ -8216,6 +8221,30 @@
         "temaSlug": "upravljanje-in-spremljanje-sprememb",
         "temaTitle": "Upravljanje in spremljanje sprememb",
         "pageCount": 4,
+        "pageCountSource": "pdf_export+pdfinfo"
+      },
+      {
+        "id": "1ouc3sVmpErWjxeB4qrYM6FhCIDUYBjLA9QVM9hea9uI",
+        "title": "11_Odnosi z javnostmi",
+        "url": "https://docs.google.com/document/d/1ouc3sVmpErWjxeB4qrYM6FhCIDUYBjLA9QVM9hea9uI/edit",
+        "mimeType": "application/vnd.google-apps.document",
+        "type": "gdoc",
+        "modifiedTime": "2026-11-01T19:40:07.664Z",
+        "temaSlug": "odnosi-z-javnostmi",
+        "temaTitle": "Odnosi z javnostmi",
+        "pageCount": 4,
+        "pageCountSource": "pdf_export+pdfinfo"
+      },
+      {
+        "id": "1XrTA61LU7Y-X5FxSvSoDMqQh5lY-HmoOVZjeVmYRaO8",
+        "title": "18_International evening_izročki",
+        "url": "https://docs.google.com/document/d/1XrTA61LU7Y-X5FxSvSoDMqQh5lY-HmoOVZjeVmYRaO8/edit",
+        "mimeType": "application/vnd.google-apps.document",
+        "type": "gdoc",
+        "modifiedTime": "2026-11-01T19:45:32.943Z",
+        "temaSlug": null,
+        "temaTitle": null,
+        "pageCount": 3,
         "pageCountSource": "pdf_export+pdfinfo"
       }
     ],
@@ -8404,9 +8433,32 @@
             "pageCount": 4
           }
         ]
+      },
+      {
+        "slug": "odnosi-z-javnostmi",
+        "title": "Odnosi z javnostmi",
+        "fileCount": 1,
+        "pageCount": 4,
+        "files": [
+          {
+            "id": "1ouc3sVmpErWjxeB4qrYM6FhCIDUYBjLA9QVM9hea9uI",
+            "title": "11_Odnosi z javnostmi",
+            "url": "https://docs.google.com/document/d/1ouc3sVmpErWjxeB4qrYM6FhCIDUYBjLA9QVM9hea9uI/edit",
+            "type": "gdoc",
+            "pageCount": 4
+          }
+        ]
       }
     ],
-    "unmapped": [],
+    "unmapped": [
+      {
+        "id": "1XrTA61LU7Y-X5FxSvSoDMqQh5lY-HmoOVZjeVmYRaO8",
+        "title": "18_International evening_izročki",
+        "url": "https://docs.google.com/document/d/1XrTA61LU7Y-X5FxSvSoDMqQh5lY-HmoOVZjeVmYRaO8/edit",
+        "type": "gdoc",
+        "pageCount": 3
+      }
+    ],
     "unknownPages": [],
     "notes": "Direct children of 02_Program/Teme/Izročki (2026) plus its 'Urejeno' subfolder (since 18.10. the finished izročki live there; 'subfolder' field marks them; 'Za tisk' holds print PNGs 01-17 and is not listed). Page counts: Google Docs via exportMimeType=application/pdf + pdfinfo; PDFs via pdfinfo. Never invent pages — use null if unknown."
   }
