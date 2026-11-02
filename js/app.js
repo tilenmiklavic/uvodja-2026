@@ -2327,7 +2327,7 @@ const PP_MAX_ZOOM = 8;
 const pp = { data: null, puzzle: null, g: null, s: 1, tx: 0, ty: 0, busy: false, pending: null, scores: undefined };
 const ppKey = (date) => `uvodja.papiga.${date}`;
 function ppSave() { try { localStorage.setItem(ppKey(pp.puzzle.date), JSON.stringify(pp.g)); } catch {} }
-function ppMsg(t) { const m = $("#pp-msg"); if (m) m.textContent = t || ""; }
+function ppMsg(t) { ["#pp-msg", "#pp-fs-msg"].forEach((s) => { const m = $(s); if (m) m.textContent = t || ""; }); }
 const ppScore = (r) => (r.found && Number(r.ms) > 0 ? Number(r.ms) + (Number(r.misses) || 0) * PP_PENALTY : Infinity);
 const ppMissCount = (g) => g.missCount ?? g.misses.length;
 function ppErr(err) {
@@ -2427,18 +2427,28 @@ function ppTick() {
   const ms = g.done ? (g.ms ?? (g.endTs && g.startTs ? g.endTs - g.startTs : 0)) : g.startTs ? Date.now() - g.startTs : 0;
   el.classList.toggle("is-done", !!g.done);
   $("span", el).textContent = wdFmtMs(ms);
+  const fs = $("#pp-fs-timer");
+  if (fs) { fs.hidden = el.hidden; fs.textContent = `⏱ ${wdFmtMs(ms)}`; }
   clearTimeout(pp.timer);
   if (g.started && !g.done && state.papigaActive) pp.timer = setTimeout(ppTick, 1000 - (ms % 1000));
 }
 
 /* Zoom & pan: the picture layer is moved with translate + scale (origin top-left), clamped to the stage */
+/* Picture size at zoom 1: fitted into the stage (the stage is the picture's shape, except in full screen) */
+function ppFit() {
+  const st = $("#pp-stage"), W = st.clientWidth, H = st.clientHeight, ar = pp.data ? pp.data.width / pp.data.height : 3 / 4;
+  const w = Math.min(W, H * ar);
+  return { W, H, w, h: w / ar };
+}
 function ppTransform() {
   const st = $("#pp-stage"), pan = $("#pp-pan");
   if (!st || !pan) return;
-  const W = st.clientWidth, H = st.clientHeight;
+  const { W, H, w, h } = ppFit();
+  pan.style.width = `${w}px`; pan.style.height = `${h}px`;
   pp.s = Math.min(PP_MAX_ZOOM, Math.max(1, pp.s));
-  pp.tx = Math.min(0, Math.max(W - W * pp.s, pp.tx));
-  pp.ty = Math.min(0, Math.max(H - H * pp.s, pp.ty));
+  const cw = w * pp.s, ch = h * pp.s; // pp.tx/ty = top-left of the picture in stage pixels; centred while it is smaller than the stage
+  pp.tx = cw <= W ? (W - cw) / 2 : Math.min(0, Math.max(W - cw, pp.tx));
+  pp.ty = ch <= H ? (H - ch) / 2 : Math.min(0, Math.max(H - ch, pp.ty));
   pan.style.transform = `translate(${pp.tx}px, ${pp.ty}px) scale(${pp.s})`;
   pan.style.setProperty("--s", pp.s);
   st.classList.toggle("is-zoomed", pp.s > 1.01);
@@ -2451,8 +2461,8 @@ function ppZoomAt(f, cx, cy) {
 function ppFocus(spot) {
   const st = $("#pp-stage");
   if (!st) return;
-  const W = st.clientWidth, H = st.clientHeight;
-  pp.s = 3; pp.tx = W / 2 - spot.x * W * pp.s; pp.ty = H / 2 - spot.y * H * pp.s;
+  const { W, H, w, h } = ppFit();
+  pp.s = 3; pp.tx = W / 2 - spot.x * w * pp.s; pp.ty = H / 2 - spot.y * h * pp.s;
   ppTransform();
 }
 async function ppStart() {
@@ -2544,6 +2554,7 @@ document.addEventListener("click", (e) => {
   const z = e.target.closest("[data-pp-zoom]");
   if (z) {
     const st = $("#pp-stage"), k = z.dataset.ppZoom;
+    if (k === "full") { ppFull(); return; }
     if (k === "reset") { pp.s = 1; ppTransform(); } else ppZoomAt(k === "in" ? 1.6 : 1 / 1.6, st.clientWidth / 2, st.clientHeight / 2);
     return;
   }
@@ -2554,6 +2565,29 @@ document.addEventListener("click", (e) => {
   if (e.target.closest("[data-pp-refresh]")) loadPpScores(true);
 });
 window.addEventListener("resize", () => { if (state.papigaActive) ppTransform(); });
+/* Full screen: the browser's full screen where it exists (not on iPhone), always also a fixed full-window stage */
+function ppFull(on) {
+  const st = $("#pp-stage");
+  if (!st) return;
+  on ??= !st.classList.contains("is-full");
+  const k = pp.s, cx = st.clientWidth / 2, cy = st.clientHeight / 2, fit = ppFit();
+  const px = (cx - pp.tx) / (fit.w * k), py = (cy - pp.ty) / (fit.h * k); // keep the same spot in the middle
+  st.classList.toggle("is-full", on);
+  document.documentElement.classList.toggle("pp-full-open", on);
+  const b = $("[data-pp-zoom='full']", st);
+  if (b) { b.textContent = on ? "✕" : "⛶"; b.setAttribute("aria-label", on ? "Zapri celozaslonski način" : "Celozaslonski način"); b.title = b.getAttribute("aria-label"); }
+  try {
+    if (on && st.requestFullscreen && !document.fullscreenElement) st.requestFullscreen().catch(() => {});
+    else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch {}
+  requestAnimationFrame(() => { const f = ppFit(); pp.tx = f.W / 2 - px * f.w * k; pp.ty = f.H / 2 - py * f.h * k; ppTransform(); });
+}
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && $("#pp-stage")?.classList.contains("is-full")) ppFull(false);
+  else if (state.papigaActive) ppTransform();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("#pp-stage")?.classList.contains("is-full")) ppFull(false); });
+window.addEventListener("hashchange", () => { if ($("#pp-stage")?.classList.contains("is-full")) ppFull(false); });
 
 /* Leaderboard (GET ?type=papiga): Danes = found first, then time + 10 s per miss; Skupno = parrots found, then total time */
 async function loadPpScores(force = false) {
