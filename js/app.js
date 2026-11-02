@@ -405,14 +405,15 @@ function setTab(name) {
   if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
   if (name === "teme") decorateTemeScores();
   if (name === "vprasanja") renderVprasanja();
-  const zbm = /^zabava\/(wordle|stavnica)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
+  const zbm = /^zabava\/(wordle|stavnica|papiga)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
+  state.papigaActive = name === "zabava" && zb === "papiga";
   updateInstallUI();
   if (name === "zabava") {
     $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
-    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica";
-    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); }
-    if (zb) window.scrollTo(0, 0);
+    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga";
+    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga();
+    if (zb) window.scrollTo(0, 0); else ppMarkCard();
   }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
   closeNavMore();
@@ -1697,7 +1698,7 @@ function applyHash() {
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno|svod)$/.test(hash)) { setTab("preverbe"); return; }
   if (/^analitika\/(obiski|svod|teme|wordle)$/.test(hash)) { setTab("analitika"); return; }
-  if (/^zabava\/(wordle|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
+  if (/^zabava\/(wordle|papiga|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -2020,7 +2021,7 @@ function updateInstallUI() {
   $$("[data-install]").forEach((b) => { b.hidden = !canInstall(); });
   if (!bar) return;
   let snoozed = false; try { snoozed = !!localStorage.getItem(INSTALL_DISMISSED) || !!localStorage.getItem("uvodja.install.snooze"); } catch {} // old 7/14-day snooze counts as dismissed
-  bar.hidden = !state.user || !canInstall() || snoozed || !!state.wordleActive;
+  bar.hidden = !state.user || !canInstall() || snoozed || !!state.wordleActive || !!state.papigaActive;
   if (!bar.hidden && !installEvt) {
     $("#install-sub").textContent = "Tapni Deli ⬆︎ in nato »Dodaj na začetni zaslon«.";
     $("#install-go").textContent = "V redu";
@@ -2074,6 +2075,14 @@ const SCRIPT_FETCH = {
     return j.ok ? j.results || [] : [];
   },
   stavnica: () => svCall(),
+  papiga: async () => {
+    const cfg = await wdConfig();
+    if (!cfg?.scriptUrl) throw new Error("config");
+    const j = await (await fetch(`${cfg.scriptUrl}${cfg.scriptUrl.includes("?") ? "&" : "?"}type=papiga&t=${Date.now()}`)).json();
+    if (!j.ok) throw new Error(j.error || "napaka");
+    if ((j.results || []).some((r) => "guesses" in r)) throw new Error("server_old"); // Apps Script without papiga.gs answers with Wordle rows
+    return j.results || [];
+  },
   ocene: () => scriptPost({ type: "ocene" }),
   vprasanja: () => scriptPost({ type: "vprasanja" }),
   analitika: () => scriptPost({ type: "analitika" }),
@@ -2082,7 +2091,7 @@ const SCRIPT_FETCH = {
 function prefetchScriptData() {
   if (!state.user) return;
   const want = [
-    ...(canSee("zabava") ? ["scores", "stavnica"] : []),
+    ...(canSee("zabava") ? ["scores", "stavnica", "papiga"] : []),
     ...(canSeeOcene() ? ["ocene"] : []),
     ...(canSee("vprasanja") ? ["vprasanja"] : []),
     ...(canSee("analitika") ? ["analitika", "visitstats"] : []),
@@ -2309,6 +2318,329 @@ document.addEventListener("click", (e) => {
   const t = e.target.closest(".wd-stab");
   if (t) { wd.scoreTab = t.dataset.stab; renderScoreboard(); }
 });
+
+/* —— Zabava → Spot-A-Papiga: find the parrot in today's picture (data/papiga.json). Taps are checked by Apps Script
+   (apps-script/papiga.gs), so where the parrot is never reaches the browser before the player is done.
+   Time runs on the server from »Začni iskanje« to the hit; every missed tap adds PP_PENALTY to the score. —— */
+const PP_PENALTY = 10000;
+const PP_MAX_ZOOM = 8;
+const pp = { data: null, puzzle: null, g: null, s: 1, tx: 0, ty: 0, busy: false, pending: null, scores: undefined };
+const ppKey = (date) => `uvodja.papiga.${date}`;
+function ppSave() { try { localStorage.setItem(ppKey(pp.puzzle.date), JSON.stringify(pp.g)); } catch {} }
+function ppMsg(t) { const m = $("#pp-msg"); if (m) m.textContent = t || ""; }
+const ppScore = (r) => (r.found && Number(r.ms) > 0 ? Number(r.ms) + (Number(r.misses) || 0) * PP_PENALTY : Infinity);
+const ppMissCount = (g) => g.missCount ?? g.misses.length;
+function ppErr(err) {
+  const e = String(err?.message || "");
+  if (err?.kind === "config") return "Igra še ni povezana s strežnikom.";
+  if (err?.kind === "auth") return "Za igro se prijavi (prijava je potekla – osveži jo v meniju).";
+  if (e === "bad_guesses" || e === "bad_action") return "Strežnik igre še ne pozna (Apps Script ni posodobljen).";
+  if (e === "not_allowed") return "Ta račun ne more igrati.";
+  if (e === "past_date" || e === "future_date") return "Ta slika ni več današnja – osveži stran.";
+  if (err?.kind === "timeout" || err?.kind === "network" || err?.kind === "offline") return "Ni povezave s strežnikom – poskusi znova.";
+  return `Napaka strežnika (${e || "neznano"}).`;
+}
+
+async function ppLoadData() {
+  if (!pp.data) { try { const r = await fetch("data/papiga.json", { cache: "no-store" }); pp.data = r.ok ? await r.json() : null; } catch { pp.data = null; } }
+  return pp.data;
+}
+/* Before the first puzzle day: »Pride kmalu« on the Zabava card and instead of the game */
+const ppFirstDate = () => pp.data?.puzzles?.map((x) => x.date).sort()[0] || null;
+const ppSoon = () => { const f = ppFirstDate(); return !!f && ljNow().date < f; };
+async function ppMarkCard() {
+  await ppLoadData();
+  const card = $(".zb-choice[href='#zabava/papiga']");
+  if (!card) return;
+  const soon = ppSoon();
+  card.classList.toggle("is-soon", soon);
+  const lbl = $(".zb-choice-label", card);
+  if (lbl) lbl.textContent = soon ? `Spot-A-Papiga · od ${wdFmtDate(ppFirstDate())}` : "Spot-A-Papiga";
+}
+async function renderPapiga() {
+  await ppLoadData();
+  const soon = ppSoon();
+  $("#pp-soon").hidden = !soon;
+  $("#pp-score").hidden = soon;
+  if (soon) {
+    pp.puzzle = null; pp.g = null;
+    ["#pp-stage", "#pp-bar", "#pp-help", "#pp-timer"].forEach((s) => { $(s).hidden = true; });
+    $("#pp-sub").textContent = ""; ppMsg("");
+    $("#pp-soon-date").textContent = wdFmtDate(ppFirstDate());
+    return;
+  }
+  loadPpScores();
+  if (!pp.data) { ppMsg("Igre ni bilo mogoče naložiti."); return; }
+  const today = ljNow().date, p = pp.data.puzzles.find((x) => x.date === today);
+  if (!p) {
+    const next = pp.data.puzzles.find((x) => x.date > today);
+    pp.puzzle = null; pp.g = null;
+    ["#pp-stage", "#pp-bar", "#pp-help", "#pp-timer"].forEach((s) => { $(s).hidden = true; });
+    $("#pp-sub").textContent = "";
+    ppMsg(next ? `Danes ni slike. Naslednja: ${wdFmtDate(next.date)} 🦜` : "Vse papige so najdene — hvala za igro! 🎉");
+    return;
+  }
+  if (pp.puzzle?.date !== p.date) {
+    pp.puzzle = p;
+    let g = null; try { g = JSON.parse(localStorage.getItem(ppKey(p.date))); } catch {}
+    pp.g = g && Array.isArray(g.misses) ? g : { started: false, startTs: null, misses: [], done: false };
+    pp.s = 1; pp.tx = 0; pp.ty = 0; pp.synced = false;
+    const img = $("#pp-img"), start = $("#pp-start");
+    start.disabled = true; start.textContent = "Nalagam sliko …";
+    img.onload = () => { start.disabled = false; start.textContent = "Začni iskanje 🦜"; };
+    img.width = pp.data.width; img.height = pp.data.height; img.src = p.img;
+    if (img.complete && img.naturalWidth) img.onload();
+    ppMsg("");
+  }
+  $("#pp-sub").textContent = `#${p.n} · ${wdFmtDate(p.date)}`;
+  $("#pp-stage").hidden = false;
+  ppDraw();
+  if (pp.g.started && !pp.g.done && !pp.synced) ppSync();
+}
+/* Server state for today (other device, reload): misses so far, start time, or the finished result */
+async function ppSync() {
+  if (!pp.puzzle || pp.syncing) return;
+  pp.syncing = true;
+  const date = pp.puzzle.date;
+  try { const res = await scriptPost({ type: "papiga", action: "open", date }); if (pp.puzzle?.date === date) { pp.synced = true; ppApply(res); } }
+  catch { /* keep the local state; the next tap asks the server anyway */ }
+  finally { pp.syncing = false; }
+}
+function ppApply(res) {
+  const g = pp.g;
+  if (!g || !res) return;
+  if (res.done) {
+    const was = g.done;
+    Object.assign(g, { started: true, done: true, found: !!res.found, ms: res.ms || null, missCount: Number(res.misses) || 0, spots: res.spots || [] });
+    if (!g.endTs) g.endTs = Date.now();
+    if (!was && !g.found && g.spots[0]) ppFocus(g.spots[0]);
+  } else {
+    g.missCount = Number(res.misses) || 0;
+    if (Array.isArray(res.missList)) g.misses = res.missList.filter((m) => Number.isFinite(m[0]) && Number.isFinite(m[1]));
+    if (res.elapsed > 0) g.startTs = Date.now() - res.elapsed;
+  }
+  ppSave(); ppDraw();
+}
+function ppDraw() {
+  const g = pp.g, stage = $("#pp-stage");
+  if (!g || !stage) return;
+  stage.classList.toggle("is-started", !!(g.started || g.done));
+  stage.classList.toggle("is-done", !!g.done);
+  $("#pp-cover").hidden = !!(g.started || g.done);
+  $("#pp-bar").hidden = !g.started || g.done;
+  $("#pp-help").hidden = !g.started || g.done;
+  const n = ppMissCount(g);
+  $("#pp-misses").textContent = n ? `Zgrešeno: ${n} (+${n * PP_PENALTY / 1000} s)` : "Še brez zgrešenih klikov";
+  $("#pp-giveup").disabled = pp.busy;
+  const pct = (v) => `${(v * 100).toFixed(3)}%`;
+  $("#pp-marks").innerHTML = g.misses.map(([x, y]) => `<i class="pp-x" style="left:${pct(x)};top:${pct(y)}"></i>`).join("")
+    + (pp.pending ? `<i class="pp-pending" style="left:${pct(pp.pending[0])};top:${pct(pp.pending[1])}"></i>` : "")
+    + (g.done ? (g.spots || []).map((s) => `<i class="pp-hit${g.found ? "" : " is-reveal"}" style="left:${pct(s.x)};top:${pct(s.y)};width:${pct(s.r * 2.3)}"></i>`).join("") : "");
+  if (g.done) {
+    ppMsg(g.found ? `Papiga najdena! 🦜${g.ms ? ` ⏱ ${wdFmtMs(g.ms)}` : ""}${n ? ` · ${n}× zgrešeno (+${n * PP_PENALTY / 1000} s)` : ""}` : "Papiga se je skrivala tukaj 👆 Jutri nova slika!");
+  }
+  ppTick();
+  ppTransform();
+}
+function ppTick() {
+  const el = $("#pp-timer"), g = pp.g;
+  if (!el || !g) return;
+  el.hidden = !g.started || (g.done && !g.found);
+  const ms = g.done ? (g.ms ?? (g.endTs && g.startTs ? g.endTs - g.startTs : 0)) : g.startTs ? Date.now() - g.startTs : 0;
+  el.classList.toggle("is-done", !!g.done);
+  $("span", el).textContent = wdFmtMs(ms);
+  clearTimeout(pp.timer);
+  if (g.started && !g.done && state.papigaActive) pp.timer = setTimeout(ppTick, 1000 - (ms % 1000));
+}
+
+/* Zoom & pan: the picture layer is moved with translate + scale (origin top-left), clamped to the stage */
+function ppTransform() {
+  const st = $("#pp-stage"), pan = $("#pp-pan");
+  if (!st || !pan) return;
+  const W = st.clientWidth, H = st.clientHeight;
+  pp.s = Math.min(PP_MAX_ZOOM, Math.max(1, pp.s));
+  pp.tx = Math.min(0, Math.max(W - W * pp.s, pp.tx));
+  pp.ty = Math.min(0, Math.max(H - H * pp.s, pp.ty));
+  pan.style.transform = `translate(${pp.tx}px, ${pp.ty}px) scale(${pp.s})`;
+  pan.style.setProperty("--s", pp.s);
+  st.classList.toggle("is-zoomed", pp.s > 1.01);
+}
+function ppZoomAt(f, cx, cy) {
+  const s2 = Math.min(PP_MAX_ZOOM, Math.max(1, pp.s * f)), k = s2 / pp.s;
+  pp.tx = cx - (cx - pp.tx) * k; pp.ty = cy - (cy - pp.ty) * k; pp.s = s2;
+  ppTransform();
+}
+function ppFocus(spot) {
+  const st = $("#pp-stage");
+  if (!st) return;
+  const W = st.clientWidth, H = st.clientHeight;
+  pp.s = 3; pp.tx = W / 2 - spot.x * W * pp.s; pp.ty = H / 2 - spot.y * H * pp.s;
+  ppTransform();
+}
+async function ppStart() {
+  const g = pp.g;
+  if (!g || g.started || !pp.puzzle) return;
+  if (!state.user) { ppMsg("Za igro se prijavi."); return; }
+  g.started = true; g.startTs = Date.now(); ppSave(); ppDraw();
+  try { ppApply(await scriptPost({ type: "papiga", action: "open", date: pp.puzzle.date })); pp.synced = true; }
+  catch (err) {
+    if (!["timeout", "network", "offline"].includes(err?.kind)) { g.started = false; g.startTs = null; ppSave(); ppDraw(); }
+    ppMsg(ppErr(err));
+  }
+}
+async function ppTap(clientX, clientY) {
+  const g = pp.g;
+  if (!g || !g.started || g.done || pp.busy || !pp.puzzle) return;
+  const r = $("#pp-img").getBoundingClientRect();
+  const x = (clientX - r.left) / r.width, y = (clientY - r.top) / r.height;
+  if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) return;
+  pp.busy = true; pp.pending = [x, y]; ppMsg("Preverjam …"); ppDraw();
+  try {
+    const res = await scriptPost({ type: "papiga", action: "click", date: pp.puzzle.date, x, y, ms: g.startTs ? Date.now() - g.startTs : null });
+    pp.pending = null;
+    if (res.done) { ppApply(res); loadPpScores(true); }
+    else {
+      g.misses.push([x, y]); g.missCount = Number(res.misses) || g.misses.length; ppSave();
+      ppMsg(["To ni papiga 🙈", "Ne, tu je ni 🙈", "Skoraj … ali pa tudi ne 🙈"][g.misses.length % 3] + ` (+${PP_PENALTY / 1000} s)`);
+    }
+  } catch (err) { ppMsg(ppErr(err)); }
+  finally { pp.busy = false; pp.pending = null; ppDraw(); }
+}
+async function ppGiveUp() {
+  const g = pp.g;
+  if (!g || !g.started || g.done || pp.busy) return;
+  if (!confirm("Res želiš videti, kje je papiga? Današnja igra bo štela kot nenajdena.")) return;
+  pp.busy = true; ppDraw();
+  try { ppApply(await scriptPost({ type: "papiga", action: "giveup", date: pp.puzzle.date })); loadPpScores(true); }
+  catch (err) { ppMsg(ppErr(err)); }
+  finally { pp.busy = false; ppDraw(); }
+}
+(function ppBindStage() {
+  const st = $("#pp-stage");
+  if (!st) return;
+  const ptrs = new Map();
+  let gest = null;
+  const rel = (p) => { const r = st.getBoundingClientRect(); return { x: p.x - r.left, y: p.y - r.top }; };
+  const panFrom = (p) => ({ moved: false, x0: p.x, y0: p.y, tx0: pp.tx, ty0: pp.ty });
+  st.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".pp-zoom, .pp-cover") || (e.pointerType === "mouse" && e.button !== 0)) return;
+    try { st.setPointerCapture(e.pointerId); } catch {}
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 1) gest = panFrom({ x: e.clientX, y: e.clientY });
+    else if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()], m = rel({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+      gest = { pinch: true, moved: true, d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, s0: pp.s, cx: (m.x - pp.tx) / pp.s, cy: (m.y - pp.ty) / pp.s };
+    }
+  });
+  st.addEventListener("pointermove", (e) => {
+    if (!ptrs.has(e.pointerId) || !gest) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (gest.pinch && ptrs.size >= 2) {
+      const [a, b] = [...ptrs.values()], m = rel({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+      pp.s = Math.min(PP_MAX_ZOOM, Math.max(1, gest.s0 * Math.hypot(a.x - b.x, a.y - b.y) / gest.d0));
+      pp.tx = m.x - gest.cx * pp.s; pp.ty = m.y - gest.cy * pp.s;
+      ppTransform();
+    } else if (!gest.pinch) {
+      const dx = e.clientX - gest.x0, dy = e.clientY - gest.y0;
+      if (!gest.moved && Math.hypot(dx, dy) > 8) gest.moved = true;
+      if (gest.moved) { pp.tx = gest.tx0 + dx; pp.ty = gest.ty0 + dy; ppTransform(); }
+    }
+  });
+  const end = (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.delete(e.pointerId);
+    if (e.type === "pointerup" && gest && !gest.moved && !gest.pinch && ptrs.size === 0) ppTap(e.clientX, e.clientY);
+    if (ptrs.size === 1) { gest = panFrom([...ptrs.values()][0]); gest.moved = true; } // finger left after a pinch: keep panning, no tap
+    else if (!ptrs.size) gest = null;
+  };
+  st.addEventListener("pointerup", end);
+  st.addEventListener("pointercancel", end);
+  st.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const p = rel({ x: e.clientX, y: e.clientY });
+    ppZoomAt(Math.exp(-Math.max(-100, Math.min(100, e.deltaY)) * 0.004), p.x, p.y);
+  }, { passive: false });
+  st.addEventListener("dblclick", (e) => { if (!pp.g?.started || pp.g.done) { const p = rel({ x: e.clientX, y: e.clientY }); ppZoomAt(2, p.x, p.y); } });
+})();
+document.addEventListener("click", (e) => {
+  const z = e.target.closest("[data-pp-zoom]");
+  if (z) {
+    const st = $("#pp-stage"), k = z.dataset.ppZoom;
+    if (k === "reset") { pp.s = 1; ppTransform(); } else ppZoomAt(k === "in" ? 1.6 : 1 / 1.6, st.clientWidth / 2, st.clientHeight / 2);
+    return;
+  }
+  if (e.target.closest("#pp-start")) ppStart();
+  else if (e.target.closest("#pp-giveup")) ppGiveUp();
+  const t = e.target.closest(".pp-stab");
+  if (t) { pp.scoreTab = t.dataset.pstab; renderPpScores(); }
+  if (e.target.closest("[data-pp-refresh]")) loadPpScores(true);
+});
+window.addEventListener("resize", () => { if (state.papigaActive) ppTransform(); });
+
+/* Leaderboard (GET ?type=papiga): Danes = found first, then time + 10 s per miss; Skupno = parrots found, then total time */
+async function loadPpScores(force = false) {
+  const cfg = await wdConfig();
+  const box = $("#pp-score");
+  if (!box) return;
+  if (!cfg?.scriptUrl) { box.hidden = true; return; }
+  box.hidden = false;
+  if (osData === undefined) { try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; } }
+  if (pp.scores === undefined && scriptHas("papiga")) pp.scores = scriptData.papiga.data;
+  const stale = pp.scores === undefined || Date.now() - (scriptData.papiga?.at || 0) > WD_SCORES_FRESH;
+  if (pp.scores !== undefined) renderPpScores(); else $("#pp-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
+  if (!force && !stale) return;
+  pp.scoresLoading = true; renderPpScoreMeta();
+  try { pp.scores = await scriptLoad("papiga", true); } catch { if (pp.scores === undefined) pp.scores = null; }
+  pp.scoresLoading = false;
+  renderPpScores();
+  // Finished on another device: pick up the result
+  const u = state.user, g = pp.g;
+  if (u && g && !g.done && pp.puzzle && (pp.scores || []).some((r) => r.date === pp.puzzle.date && r.email === u.email.toLowerCase())) { pp.synced = false; ppSync(); }
+}
+function renderPpScoreMeta() {
+  const el = $("#pp-score-meta");
+  if (!el) return;
+  const at = scriptData.papiga?.at;
+  const t = at ? new Date(at).toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" }) : "";
+  el.innerHTML = pp.scoresLoading ? `Osvežujem …` : `${t ? `Posodobljeno ob ${t} · ` : ""}<button type="button" class="link-btn" data-pp-refresh>Osveži</button>`;
+}
+function renderPpScores() {
+  const body = $("#pp-score-body");
+  if (!body) return;
+  renderPpScoreMeta();
+  if (!pp.scores) { body.innerHTML = `<p class="muted-text">Lestvice ni bilo mogoče naložiti.</p>`; return; }
+  const tab = pp.scoreTab || "danes";
+  $$(".pp-stab").forEach((b) => b.setAttribute("aria-selected", b.dataset.pstab === tab ? "true" : "false"));
+  const today = ljNow().date;
+  if (tab === "danes") {
+    const rows = pp.scores.filter((r) => r.date === today).sort((a, b) => (a.found === b.found ? ppScore(a) - ppScore(b) : a.found ? -1 : 1));
+    body.innerHTML = rows.length ? `<ol class="wd-board-list">${rows.map((r, i) => {
+      const w = wdWho(r.email, r.name);
+      return `<li><span class="wd-rank">${i + 1}.</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span>${r.misses ? `<span class="wd-time muted-text">${r.misses}× ✕</span>` : ""}<span class="wd-res${r.found ? "" : " fail"}">${r.found ? (ppScore(r) < Infinity ? `⏱ ${wdFmtMs(ppScore(r))}` : "✓") : "predaja"}</span></li>`;
+    }).join("")}</ol>` : `<p class="muted-text">Danes še nihče ni našel papige.</p>`;
+    return;
+  }
+  const agg = {};
+  for (const r of pp.scores) {
+    const a = (agg[r.email] ||= { email: r.email, name: r.name, found: 0, total: 0 });
+    if (r.found) { a.found++; a.total += ppScore(r) < Infinity ? ppScore(r) : 0; }
+  }
+  const rows = Object.values(agg).sort((a, b) => b.found - a.found || a.total - b.total);
+  body.innerHTML = rows.length ? `<ol class="wd-board-list total">${rows.map((a, i) => {
+    const w = wdWho(a.email, a.name);
+    const rank = ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
+    return `<li><span class="wd-rank${i < 3 ? " medal" : ""}">${rank}</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span>${a.found ? `<span class="wd-time muted-text">⏱ ${wdFmtMs(a.total)}</span>` : ""}<span class="wd-res">${a.found} 🦜</span></li>`;
+  }).join("")}</ol>` : `<p class="muted-text">Še ni rezultatov.</p>`;
+}
+/* While the game is on screen: new picture after midnight, fresh leaderboard every ~1.5 min */
+function ppKeepFresh() {
+  if (!state.papigaActive || document.hidden || !pp.data) return;
+  if (ppSoon() !== !$("#pp-soon").hidden) { renderPapiga(); return; }
+  if ((pp.puzzle?.date || null) !== (pp.data.puzzles.find((x) => x.date === ljNow().date)?.date || null)) { renderPapiga(); return; }
+  loadPpScores();
+}
+setInterval(ppKeepFresh, 30 * 1000);
+document.addEventListener("visibilitychange", ppKeepFresh);
 
 async function init() {
   await loadData();

@@ -1910,3 +1910,44 @@ button.vbar.is-sel .vbar-n, button.vbar.is-sel .vbar-d { color: var(--ink); font
 .sv-create-img-row { display: flex; align-items: center; gap: .5rem; }
 .sv-create-img-row .sv-img { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; }
 .sv-create-form label.sv-img-pick { display: inline-flex; align-items: center; min-height: 40px; padding: 0 .8rem; font-weight: 700; cursor: pointer; }
+
+/* —— Zabava → Spot-A-Papiga —— */
+.zb-choice.zb-wide { grid-column: 1 / -1; }
+.zb-choice.zb-wide img { aspect-ratio: 4 / 1; object-fit: cover; }
+.zb-choice.is-soon { position: relative; overflow: hidden; }
+.zb-choice.is-soon::after, .pp-soon-ribbon { content: "Pride kmalu"; position: absolute; top: 22px; right: -46px; width: 190px; padding: .35rem 0; transform: rotate(35deg); text-align: center; background: var(--gold); color: var(--navy-deep); font-weight: 900; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; box-shadow: 0 3px 10px rgba(0,0,0,.35); pointer-events: none; }
+.pp-soon { position: relative; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line); background: var(--card); }
+.pp-soon[hidden] { display: none; }
+.pp-soon img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 1; object-fit: cover; }
+.pp-soon p { margin: 0; padding: .9rem 1.1rem 1rem; text-align: center; }
+.papiga { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: .5rem; }
+.papiga[hidden] { display: none; }
+.pp-stage { position: relative; width: min(100%, calc(74svh * 3 / 4)); aspect-ratio: 3 / 4; margin: 0 auto; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line); background: #10202e; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+.pp-stage[hidden] { display: none; }
+.pp-stage.is-zoomed { cursor: grab; }
+.pp-stage.is-done { cursor: grab; }
+.pp-pan { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+.pp-pan img { display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; -webkit-user-drag: none; }
+.pp-stage:not(.is-started) .pp-pan img { filter: blur(22px) brightness(.7); transform: scale(1.08); }
+.pp-marks { position: absolute; inset: 0; pointer-events: none; }
+.pp-marks i { position: absolute; transform: translate(-50%, -50%) scale(calc(1 / var(--s, 1))); }
+.pp-x { width: 26px; height: 26px; }
+.pp-x::before, .pp-x::after { content: ""; position: absolute; left: 50%; top: 50%; width: 26px; height: 5px; margin: -2.5px 0 0 -13px; border-radius: 3px; background: #e5484d; box-shadow: 0 0 0 1.5px #fff; }
+.pp-x::before { transform: rotate(45deg); } .pp-x::after { transform: rotate(-45deg); }
+.pp-pending { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--gold); box-shadow: 0 0 0 2px rgba(0,0,0,.4); animation: pppulse .8s ease-in-out infinite; }
+@keyframes pppulse { 50% { opacity: .35; } }
+.pp-marks i.pp-hit { transform: translate(-50%, -50%); aspect-ratio: 1; border-radius: 50%; border: calc(4px / var(--s, 1)) solid #4ade80; box-shadow: 0 0 0 calc(2px / var(--s, 1)) #fff, 0 0 calc(18px / var(--s, 1)) rgba(74,222,128,.8); animation: pphit 1.2s ease-out 1; }
+.pp-marks i.pp-hit.is-reveal { border-color: var(--gold); box-shadow: 0 0 0 calc(2px / var(--s, 1)) #fff, 0 0 calc(18px / var(--s, 1)) rgba(248,164,24,.8); }
+@keyframes pphit { from { opacity: 0; transform: translate(-50%, -50%) scale(2.2); } }
+.pp-cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem; padding: 1.2rem; text-align: center; color: #fff; background: rgba(8,20,32,.35); }
+.pp-cover[hidden] { display: none; }
+.pp-cover p { margin: 0; max-width: 26ch; font-size: .9rem; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.pp-start { font-size: 1.1rem; min-height: 48px; padding: .6rem 1.4rem; }
+.pp-start:disabled { opacity: .7; cursor: progress; }
+.pp-zoom { position: absolute; right: .5rem; bottom: .5rem; display: flex; flex-direction: column; gap: .35rem; }
+.pp-stage:not(.is-started) .pp-zoom { display: none; }
+.pp-zoom button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: rgba(8,20,32,.78); color: #fff; font: inherit; font-size: 1.35rem; font-weight: 800; line-height: 1; cursor: pointer; }
+.pp-zoom button:active { filter: brightness(1.4); }
+.pp-bar { display: flex; align-items: center; justify-content: space-between; gap: .8rem; font-size: .9rem; }
+.pp-bar[hidden], .pp-help[hidden] { display: none; }
+.pp-help { margin: 0; font-size: .8rem; text-align: center; }
