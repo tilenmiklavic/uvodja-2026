@@ -1,4 +1,4 @@
-// SCRIPT_VERSION: v7 (2026-10-30) - every Wordle guess logged to tab "poskusi"
+// SCRIPT_VERSION: v8 (2026-11-02) - Spot-A-Papiga (papiga.gs)
 /**
  * U Vodja 2026 – Wordle rezultati (Google Apps Script, bound to the results Sheet).
  * Sheet tab "rezultati", header row: Timestamp | Email | Name | Date | Guesses | Solved | Ms
@@ -80,6 +80,7 @@ function doPost(e) {
     if (body.type === 'session') return siteSessionIssue_(body);
     if (body.type === 'visit') return logVisit_(body);
     if (body.type === 'wordle-guess') return logGuess_(body);
+    if (body.type === 'papiga') return handlePapiga(body);
     if (body.type === 'visitstats') return visitStatsAuth_(body);
     if (body.type === 'preverba') return handlePreverba(body);
     if (body.type === 'stavnica') return handleStavnica(body);
@@ -121,7 +122,8 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v7' });
+  if (e && e.parameter && e.parameter.type === 'papiga') return papigaResults_(e.parameter.callback);
+  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v8' });
   var cb = e && e.parameter && e.parameter.callback;
   if (e && e.parameter && e.parameter.type === 'visits') return json_({ ok: false, error: 'use_post' }, cb);
   try {

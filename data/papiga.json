@@ -1,0 +1,12 @@
+{
+ "_note": "Spot-A-Papiga: one picture per day. The parrot positions are NOT here – they live in the Drive sheet »papiga« (tab spots) and only the Apps Script (apps-script/papiga.gs) checks taps.",
+ "width": 1344,
+ "height": 1800,
+ "puzzles": [
+  { "date": "2026-11-04", "n": 1, "img": "assets/papiga/2026-11-04.webp" },
+  { "date": "2026-11-05", "n": 2, "img": "assets/papiga/2026-11-05.webp" },
+  { "date": "2026-11-06", "n": 3, "img": "assets/papiga/2026-11-06.webp" },
+  { "date": "2026-11-07", "n": 4, "img": "assets/papiga/2026-11-07.webp" },
+  { "date": "2026-11-08", "n": 5, "img": "assets/papiga/2026-11-08.webp" }
+ ]
+}

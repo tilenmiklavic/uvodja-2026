@@ -325,9 +325,40 @@
       <nav class="zb-pick" id="zb-pick" aria-label="Zabava">
         <a class="zb-choice" href="#zabava/wordle"><img src="assets/zabava/wordle.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Dnevni Wordle</span></a>
         <a class="zb-choice" href="#zabava/stavnica"><img src="assets/zabava/stavnica.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Piratska stavnica</span></a>
+        <a class="zb-choice" href="#zabava/papiga"><img src="assets/zabava/papiga.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Spot-A-Papiga</span></a>
       </nav>
       <p class="person-back zb-back" id="zb-back" hidden><a href="#zabava">← Nazaj na Zabavo</a></p>
       <div class="stavnica" id="stavnica" hidden></div>
+      <div class="papiga" id="papiga" hidden>
+        <div class="wd-head">
+          <h2>Spot-A-Papiga</h2>
+          <p class="muted-text wd-sub" id="pp-sub"></p>
+          <p class="wd-timer" id="pp-timer" hidden aria-label="Čas iskanja">⏱ <span>0:00</span></p>
+        </div>
+        <p class="wd-msg" id="pp-msg" role="status" aria-live="polite"></p>
+        <div class="pp-stage" id="pp-stage" hidden>
+          <div class="pp-pan" id="pp-pan"><img id="pp-img" alt="Slika, na kateri se skriva papiga" draggable="false" /><div class="pp-marks" id="pp-marks"></div></div>
+          <div class="pp-cover" id="pp-cover"><button type="button" class="btn primary pp-start" id="pp-start">Začni iskanje 🦜</button><p>Čas teče od klika naprej. Vsak zgrešen klik doda 10 s.</p></div>
+          <div class="pp-zoom" aria-label="Povečava">
+            <button type="button" data-pp-zoom="in" aria-label="Povečaj">+</button>
+            <button type="button" data-pp-zoom="out" aria-label="Pomanjšaj">−</button>
+            <button type="button" data-pp-zoom="reset" aria-label="Prikaži celo sliko">⤢</button>
+          </div>
+        </div>
+        <div class="pp-bar" id="pp-bar" hidden>
+          <span class="muted-text" id="pp-misses"></span>
+          <button type="button" class="link-btn" id="pp-giveup">Predam se</button>
+        </div>
+        <p class="muted-text pp-help" id="pp-help" hidden>Povečaj s prsti ali kolescem miške, premikaj s potegom. Ko najdeš papigo, tapni nanjo.</p>
+        <section class="wd-score" id="pp-score" hidden>
+          <div class="wd-score-tabs" role="tablist">
+            <button type="button" role="tab" class="wd-stab pp-stab" data-pstab="danes" aria-selected="true">Danes</button>
+            <button type="button" role="tab" class="wd-stab pp-stab" data-pstab="skupno" aria-selected="false">Skupno</button>
+          </div>
+          <div id="pp-score-body" class="wd-score-body"></div>
+          <p class="wd-score-meta muted-text" id="pp-score-meta"></p>
+        </section>
+      </div>
       <div class="wordle" id="wordle">
         <div class="wd-head">
           <h2>Wordle</h2>
@@ -354,6 +385,6 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=104" type="module"></script>
+  <script src="js/app.js?v=105" type="module"></script>
 </body>
 </html>
