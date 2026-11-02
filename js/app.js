@@ -1991,10 +1991,10 @@ function wdSetQueue(q) { try { localStorage.setItem(WD_QUEUE, JSON.stringify(q))
 async function wdFreshToken() { return silentToken(15000); }
 /* POST to Apps Script with a time limit; errors carry a kind for user-facing messages */
 const SCRIPT_TIMEOUT_MS = 25000;
-async function wdPost(url, item, credential) {
+async function wdPost(url, item, credential, keepalive = false) {
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), SCRIPT_TIMEOUT_MS);
   let r;
-  try { r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...item, credential }), signal: ctl.signal }); }
+  try { r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...item, credential }), signal: ctl.signal, keepalive }); }
   catch (err) { throw Object.assign(new Error(err.name === "AbortError" ? "timeout" : "network"), { kind: err.name === "AbortError" ? "timeout" : navigator.onLine === false ? "offline" : "network" }); }
   finally { clearTimeout(t); }
   let res;
@@ -2398,23 +2398,27 @@ async function ppFlush(interactive = false) {
   const cfg = await wdConfig();
   if (!cfg?.scriptUrl || !state.user || pp.flushing) return;
   let q = ppQueue();
-  if (!q.length) return;
+  if (!q.length) { ppSaveNote(""); return; }
   pp.flushing = true;
-  let sent = false;
+  let sent = false, problem = "";
   try {
     const cred = interactive ? await wdFreshToken() : currentCred();
-    if (!cred) return;
+    if (!cred) { ppSaveNote("Rezultat še ni shranjen – prijava je potekla (osveži jo v meniju)."); return; }
     for (const item of [...q]) {
       try {
-        const res = await wdPost(cfg.scriptUrl, { type: "papiga", action: "result", ...item }, cred);
-        // done, or an answer that won't change on retry; an older script (bad_action) keeps it queued until it is updated
+        const res = await wdPost(cfg.scriptUrl, { type: "papiga", action: "result", ...item }, cred, true);
+        // done, or an answer that won't change on retry; anything else (e.g. an older script: bad_action) stays queued
         if (res.ok || ["bad_date", "future_date", "not_a_puzzle_date", "not_a_hit", "not_allowed"].includes(res.error)) { q = q.filter((x) => x.date !== item.date); sent = sent || res.ok; }
-      } catch { /* network: keep queued */ }
+        if (!res.ok) problem = res.error || "napaka";
+      } catch (err) { problem = err?.kind === "offline" ? "ni povezave" : err?.message || "napaka"; }
     }
     ppSetQueue(q);
   } finally { pp.flushing = false; }
+  ppSaveNote(q.length ? `Rezultat še ni shranjen (${problem}) – poskusim znova čez pol minute.` : problem ? `Rezultat ni bil sprejet (${problem}).` : "");
   if (sent) loadPpScores(true);
 }
+/* Saving status under the picture (only when something went wrong) */
+function ppSaveNote(t) { const el = $("#pp-save"); if (el) { el.textContent = t; el.hidden = !t; } }
 function ppFinish(found, x, y) {
   const g = pp.g, date = pp.puzzle.date;
   g.done = true; g.found = found; g.endTs = Date.now();
@@ -2663,6 +2667,7 @@ function renderPpScores() {
 /* While the game is on screen: new picture after midnight, fresh leaderboard every ~1.5 min */
 function ppKeepFresh() {
   if (!state.papigaActive || document.hidden || !pp.data) return;
+  if (ppQueue().length) ppFlush();
   if ((pp.puzzle?.date || null) !== (pp.data.puzzles.find((x) => x.date === ljNow().date)?.date || null)) { renderPapiga(); return; }
   loadPpScores();
 }
