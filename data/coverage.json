@@ -566,34 +566,34 @@
     "retorika": {
       "title": "Retorika",
       "programKey": "retorika",
-      "status": "potrebuje_dopolnitev",
+      "status": "pripravljeno",
       "counts": {
-        "vkljuceno": 0,
-        "delno": 2,
+        "vkljuceno": 2,
+        "delno": 0,
         "manjka": 0,
         "total": 2
       },
       "items": [
         {
           "text": "teorija o retoriki",
-          "status": "delno",
-          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
+          "status": "vkljuceno",
+          "evidence": "Potek 2: Glavne točke retorike (15 min) in Potek 3: aristotelov model (ethos, pathos, logos)."
         },
         {
           "text": "načini komunikacije, tehnike in orodja",
-          "status": "delno",
-          "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
+          "status": "vkljuceno",
+          "evidence": "Potek 2–4: govorica telesa in glas, vaji za trebušno dihanje ter tempo in premore (20 min)."
         }
       ],
       "contentsHash": "6c44ae1257e56b38",
       "mikronacrt": {
         "status": "exists",
         "fileId": "1v_Sxn_JW1jqSGg-BbNV0I-OzaMHQTn4g3RNdr6oOOd4",
-        "modifiedTime": "2026-10-07T17:36:52.211Z",
-        "textHash": "90a02a71b4fb4267",
+        "modifiedTime": "2026-11-02T18:45:28.150Z",
+        "textHash": "93c4442c84096b1b",
         "cacheFile": "retorika.txt"
       },
-      "judgedAt": "2026-10-08T07:30:00+02:00"
+      "judgedAt": "2026-11-03T07:30:00+01:00"
     },
     "priprava-in-vodenje-proracuna": {
       "title": "Priprava in vodenje proračuna",
@@ -719,39 +719,39 @@
     "ziva-knjiznica-z-io-jem": {
       "title": "Živa knjižnica z IO-jem",
       "programKey": "živa knjižnica z io-jem",
-      "status": "ni_mikronacrta",
+      "status": "potrebuje_dopolnitev",
       "counts": {
-        "vkljuceno": 0,
-        "delno": 0,
-        "manjka": 3,
+        "vkljuceno": 2,
+        "delno": 1,
+        "manjka": 0,
         "total": 3
       },
       "items": [
         {
           "text": "obisk članov izvršnega odbora",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "status": "vkljuceno",
+          "evidence": "Vsebina: prisotni člani IO-ja; Potek 1: predstavitev članov (20 min) in zaključna misel vsakega člana."
         },
         {
           "text": "možnost pogovora UU s poverjeniki in načelništvom",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "status": "vkljuceno",
+          "evidence": "Potek 1 in 4: vprašanja UU za člane IO-ja (nabiralnik, tabela) + vprašanja (20 min); IO ostane še na večerji in zabavnem večeru."
         },
         {
           "text": "odpiranje aktualnih tematik",
-          "status": "manjka",
-          "evidence": "Ni mikronačrta 2026."
+          "status": "delno",
+          "evidence": "Poslanstvo (30 min) in vprašanja iz škatle odpirajo teme, a aktualne tematike niso izrecno navedene v Poteku."
         }
       ],
       "contentsHash": "3f8a032bf5a431c3",
       "mikronacrt": {
-        "status": "missing",
-        "fileId": null,
-        "modifiedTime": null,
-        "textHash": null,
-        "cacheFile": null
+        "status": "exists",
+        "fileId": "19i9xm8_tLHNqSYWHrtbxZPMirwoDxzXDfbuUcJdsPrY",
+        "modifiedTime": "2026-11-02T19:23:53.603Z",
+        "textHash": "5ef4fca727d52133",
+        "cacheFile": "ziva-knjiznica-z-io-jem.txt"
       },
-      "judgedAt": null
+      "judgedAt": "2026-11-03T07:30:00+01:00"
     },
     "zacetki-skavtstva-v-sloveniji": {
       "title": "Začetki skavtstva v Sloveniji",
