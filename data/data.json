@@ -24,7 +24,7 @@
       "programId": "10xDmjgoYQrPWPA_PTVzpI-o4Hxot0_urdb5xK4rtjx4",
       "folderId": "166EnwAANG6DbhPG8EwAfIYS7jc3rgz6i"
     },
-    "generatedAt": "2026-11-02",
+    "generatedAt": "2026-11-03",
     "matchStats": {
       "matched": 19,
       "unmatched_program": 9,
@@ -54,7 +54,8 @@
         "vodenje procesov",
         "administrativno vodenje",
         "pridobivanje sredstev",
-        "državna raven"
+        "državna raven",
+        "živa knjižnica z io-jem"
       ]
     },
     "branding": {
@@ -1930,10 +1931,13 @@
           "duration": "1,5h+",
           "category": "dodatna",
           "mikronacrt": {
-            "status": "missing",
-            "title": null,
-            "url": null,
-            "label": "Ne obstaja"
+            "status": "exists",
+            "title": "99_Živa knjižnica z IOjem",
+            "url": "https://docs.google.com/document/d/19i9xm8_tLHNqSYWHrtbxZPMirwoDxzXDfbuUcJdsPrY/edit",
+            "fileId": "19i9xm8_tLHNqSYWHrtbxZPMirwoDxzXDfbuUcJdsPrY",
+            "created": "2026-11-02",
+            "modifiedTime": "2026-11-02T19:23:53.603Z",
+            "textHash": "5ef4fca727d52133"
           },
           "isTema": true,
           "temaSlug": "ziva-knjiznica-z-io-jem"
@@ -2737,7 +2741,9 @@
         "title": "14_Retorika",
         "url": "https://docs.google.com/document/d/1v_Sxn_JW1jqSGg-BbNV0I-OzaMHQTn4g3RNdr6oOOd4/edit",
         "fileId": "1v_Sxn_JW1jqSGg-BbNV0I-OzaMHQTn4g3RNdr6oOOd4",
-        "created": "2026-10-06"
+        "created": "2026-10-06",
+        "modifiedTime": "2026-11-02T18:45:28.150Z",
+        "textHash": "93c4442c84096b1b"
       }
     },
     "priprava in vodenje proračuna": {
@@ -2848,10 +2854,13 @@
         "Jakob G."
       ],
       "mikronacrt": {
-        "status": "missing",
-        "title": null,
-        "url": null,
-        "label": "Ne obstaja"
+        "status": "exists",
+        "title": "99_Živa knjižnica z IOjem",
+        "url": "https://docs.google.com/document/d/19i9xm8_tLHNqSYWHrtbxZPMirwoDxzXDfbuUcJdsPrY/edit",
+        "fileId": "19i9xm8_tLHNqSYWHrtbxZPMirwoDxzXDfbuUcJdsPrY",
+        "created": "2026-11-02",
+        "modifiedTime": "2026-11-02T19:23:53.603Z",
+        "textHash": "5ef4fca727d52133"
       }
     },
     "začetki skavtstva": {
@@ -7147,8 +7156,8 @@
         "url": "https://docs.google.com/document/d/1v_Sxn_JW1jqSGg-BbNV0I-OzaMHQTn4g3RNdr6oOOd4/edit",
         "fileId": "1v_Sxn_JW1jqSGg-BbNV0I-OzaMHQTn4g3RNdr6oOOd4",
         "label": "Odpri mikronačrt",
-        "modifiedTime": "2026-10-07T17:36:52.211Z",
-        "textHash": "90a02a71b4fb4267",
+        "modifiedTime": "2026-11-02T18:45:28.150Z",
+        "textHash": "93c4442c84096b1b",
         "cacheFile": "retorika.txt"
       },
       "occurrences": [],
@@ -7171,29 +7180,29 @@
       ],
       "relatedFiles": [],
       "coverage": {
-        "status": "potrebuje_dopolnitev",
+        "status": "pripravljeno",
         "items": [
           {
             "text": "teorija o retoriki",
-            "status": "delno",
-            "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
+            "status": "vkljuceno",
+            "evidence": "Potek 2: Glavne točke retorike (15 min) in Potek 3: aristotelov model (ethos, pathos, logos)."
           },
           {
             "text": "načini komunikacije, tehnike in orodja",
-            "status": "delno",
-            "evidence": "Našteto v Vsebini mikronačrta (in v Ciljih), a Potek je še prazen."
+            "status": "vkljuceno",
+            "evidence": "Potek 2–4: govorica telesa in glas, vaji za trebušno dihanje ter tempo in premore (20 min)."
           }
         ],
         "counts": {
-          "vkljuceno": 0,
-          "delno": 2,
+          "vkljuceno": 2,
+          "delno": 0,
           "manjka": 0,
           "total": 2
         },
-        "judgedAt": "2026-10-08T07:30:00+02:00",
+        "judgedAt": "2026-11-03T07:30:00+01:00",
         "contentsHash": "6c44ae1257e56b38",
-        "mikronacrtModifiedTime": "2026-10-07T17:36:52.211Z",
-        "mikronacrtTextHash": "90a02a71b4fb4267"
+        "mikronacrtModifiedTime": "2026-11-02T18:45:28.150Z",
+        "mikronacrtTextHash": "93c4442c84096b1b"
       }
     },
     "priprava-in-vodenje-proracuna": {
@@ -7502,14 +7511,14 @@
         }
       ],
       "mikronacrt": {
-        "status": "missing",
-        "title": null,
-        "url": null,
-        "fileId": null,
-        "label": "Ne obstaja",
-        "modifiedTime": null,
-        "textHash": null,
-        "cacheFile": null
+        "status": "exists",
+        "title": "99_Živa knjižnica z IOjem",
+        "url": "https://docs.google.com/document/d/19i9xm8_tLHNqSYWHrtbxZPMirwoDxzXDfbuUcJdsPrY/edit",
+        "fileId": "19i9xm8_tLHNqSYWHrtbxZPMirwoDxzXDfbuUcJdsPrY",
+        "label": "Odpri mikronačrt",
+        "modifiedTime": "2026-11-02T19:23:53.603Z",
+        "textHash": "5ef4fca727d52133",
+        "cacheFile": "ziva-knjiznica-z-io-jem.txt"
       },
       "occurrences": [
         {
@@ -7534,34 +7543,34 @@
       "sheetRows": [],
       "relatedFiles": [],
       "coverage": {
-        "status": "ni_mikronacrta",
+        "status": "potrebuje_dopolnitev",
         "items": [
           {
             "text": "obisk članov izvršnega odbora",
-            "status": "manjka",
-            "evidence": "Ni mikronačrta 2026."
+            "status": "vkljuceno",
+            "evidence": "Vsebina: prisotni člani IO-ja; Potek 1: predstavitev članov (20 min) in zaključna misel vsakega člana."
           },
           {
             "text": "možnost pogovora UU s poverjeniki in načelništvom",
-            "status": "manjka",
-            "evidence": "Ni mikronačrta 2026."
+            "status": "vkljuceno",
+            "evidence": "Potek 1 in 4: vprašanja UU za člane IO-ja (nabiralnik, tabela) + vprašanja (20 min); IO ostane še na večerji in zabavnem večeru."
           },
           {
             "text": "odpiranje aktualnih tematik",
-            "status": "manjka",
-            "evidence": "Ni mikronačrta 2026."
+            "status": "delno",
+            "evidence": "Poslanstvo (30 min) in vprašanja iz škatle odpirajo teme, a aktualne tematike niso izrecno navedene v Poteku."
           }
         ],
         "counts": {
-          "vkljuceno": 0,
-          "delno": 0,
-          "manjka": 3,
+          "vkljuceno": 2,
+          "delno": 1,
+          "manjka": 0,
           "total": 3
         },
-        "judgedAt": null,
+        "judgedAt": "2026-11-03T07:30:00+01:00",
         "contentsHash": "3f8a032bf5a431c3",
-        "mikronacrtModifiedTime": null,
-        "mikronacrtTextHash": null
+        "mikronacrtModifiedTime": "2026-11-02T19:23:53.603Z",
+        "mikronacrtTextHash": "5ef4fca727d52133"
       }
     },
     "zacetki-skavtstva-v-sloveniji": {
@@ -7898,10 +7907,10 @@
       "slug": "retorika",
       "title": "Retorika",
       "category": "izbirna",
-      "status": "potrebuje_dopolnitev",
+      "status": "pripravljeno",
       "counts": {
-        "vkljuceno": 0,
-        "delno": 2,
+        "vkljuceno": 2,
+        "delno": 0,
         "manjka": 0,
         "total": 2
       },
@@ -7949,14 +7958,14 @@
       "slug": "ziva-knjiznica-z-io-jem",
       "title": "Živa knjižnica z IO-jem",
       "category": "dodatna",
-      "status": "ni_mikronacrta",
+      "status": "potrebuje_dopolnitev",
       "counts": {
-        "vkljuceno": 0,
-        "delno": 0,
-        "manjka": 3,
+        "vkljuceno": 2,
+        "delno": 1,
+        "manjka": 0,
         "total": 3
       },
-      "hasMikronacrt": false,
+      "hasMikronacrt": true,
       "duration": "1,5h+",
       "durationMinutes": 90,
       "parts": 1,
