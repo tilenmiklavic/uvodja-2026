@@ -28,11 +28,6 @@
      "photo": "assets/os/matija-drolc.webp"
     },
     {
-     "name": "Nika Ravnikar",
-     "steg": "Zagorje 1",
-     "photo": "assets/os/nika-ravnikar.webp"
-    },
-    {
      "name": "Tina Brezovnik",
      "steg": "Velenje 1",
      "photo": "assets/os/tina-brezovnik.webp"
@@ -218,6 +213,11 @@
      "name": "Neža Mauko",
      "steg": "Radovljica 1",
      "photo": "assets/os/neza-mauko.webp"
+    },
+    {
+     "name": "Nika Ravnikar",
+     "steg": "Zagorje 1",
+     "photo": "assets/os/nika-ravnikar.webp"
     },
     {
      "name": "Val Bajc",
