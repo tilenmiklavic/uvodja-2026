@@ -3904,17 +3904,17 @@ async function renderPreverbe(sub = null) {
   if (sub === "teme") renderPvTeme(teme); else if (sub === "generalno") renderPvGeneral(gen); else renderPvSvod(svod);
   renderPvPeek(sub);
 }
-/* Admin only (real role, also while simulating UU/SVOD): optionally list the hidden preverbe – upcoming and closed Teme forms, upcoming SVOD days – below the regular ones */
+/* Admin only (effective role, so not while simulating UU/SVOD): optionally list the hidden preverbe – upcoming and closed Teme forms, upcoming SVOD days – below the regular ones */
 const pvPeekOn = () => { try { return localStorage.getItem("uvodja.pv.peek") === "1"; } catch { return false; } };
 function renderPvPeek(sub) {
   const bar = $("#pv-peek-bar"), pt = $("#pv-peek-teme"), ps = $("#pv-peek-svod");
   if (!bar) return;
-  const admin = roleOf(state.user?.email) === "admin", on = admin && pvPeekOn();
+  const admin = effectiveRole(state.user?.email) === "admin", on = admin && pvPeekOn();
   bar.hidden = !admin || !["teme", "svod"].includes(sub);
   pt.hidden = !on || sub !== "teme"; ps.hidden = !on || sub !== "svod";
   if (!admin) { pt.innerHTML = ps.innerHTML = bar.innerHTML = ""; return; }
-  if (!bar.innerHTML) bar.innerHTML = `<label class="pv-anon"><input type="checkbox" data-pv-peek /> Admin: pokaži skrite (prihodnje) preverbe</label>`;
-  $("[data-pv-peek]", bar).checked = on;
+  if (!bar.innerHTML) bar.innerHTML = `<div class="pv-peek-row"><span id="pv-peek-lbl">Admin: pokaži skrite (prihodnje) preverbe</span><button type="button" class="switch" role="switch" data-pv-peek aria-labelledby="pv-peek-lbl" aria-checked="false"><span class="switch-knob"></span></button></div>`;
+  $("[data-pv-peek]", bar).setAttribute("aria-checked", String(on));
   if (!on) return;
   const now = ljNow(), today = now.date;
   const card = (title, meta, formId, tag) => `<details class="card pv-form pv-form-hidden" data-form-id="${esc(formId)}">
@@ -3941,9 +3941,10 @@ function renderPvPeek(sub) {
     ps.innerHTML = `<h3 class="pv-sub-h">Prihodnje preverbe SVODa</h3>` + (up.length ? up.map((f) => card(f.title, dm(f.date), f.formId, "prihodnja")).join("") : `<p class="muted-text">Ni prihodnjih preverb SVODa.</p>`);
   }
 }
-document.addEventListener("change", (e) => {
-  if (!e.target.matches?.("[data-pv-peek]")) return;
-  try { localStorage.setItem("uvodja.pv.peek", e.target.checked ? "1" : "0"); } catch {}
+document.addEventListener("click", (e) => {
+  const sw = e.target.closest?.("[data-pv-peek]");
+  if (!sw) return;
+  try { localStorage.setItem("uvodja.pv.peek", pvPeekOn() ? "0" : "1"); } catch {}
   renderPvPeek(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || pvTabsFor(effectiveRole(state.user?.email))[0]);
 });
 /* Preverba SVODa: today's day form open; earlier days collapsed below (for filling in late) */
