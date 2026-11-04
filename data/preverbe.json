@@ -1,6 +1,6 @@
 {
   "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas) ali – če ni teme (npr. Izbirne teme) – s termini časovnice (»sessions« = id-ji sej v data.json days, »name« = prikazano ime). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin). »split« = skupen obrazec več tem (Izbirne teme): odgovori so po vprašanju »Katere teme si se udeležil?« (»option«) razdeljeni v ločene zavihke (»responsesTab«) in pripisani »odgovorni« (slugi oseb) namesto odgovornim teme.",
-  "fetched": "2026-10-25",
+  "fetched": "2026-11-04",
   "temaForms": [
     {
       "tema": "jaz-vodja",
@@ -24,19 +24,19 @@
       "tema": "skavtska-pot",
       "title": "Preverba teme Skavtska pot",
       "formId": "1j8wmyvr_em29Yd1Q4XdusTLf6-hSk_nG0MPdabrR8Hk",
-      "responsesTab": "4"
+      "responsesTab": "4 Sk pot"
     },
     {
       "tema": "vodenje-voditeljev",
       "title": "Preverba teme Vodenje voditeljev",
       "formId": "1KuBklIUYymxS9Z_XXvW1spOkXGPTXS2_eptUiLwpJ3Y",
-      "responsesTab": "5"
+      "responsesTab": "5 Vodenje vod"
     },
     {
       "tema": "skavti-v-mladinskem-delu",
       "title": "Preverba teme Skavti v mladinskem delu",
       "formId": "1pUUJ8wdtg0KIDzDc_B47yXxChKNHSa2mHA-sJy8FarA",
-      "responsesTab": "6"
+      "responsesTab": "6 Sk v mlad delu"
     },
     {
       "sessions": [
@@ -74,10 +74,68 @@
       ]
     },
     {
+      "tema": "osebno-spremljanje-voditeljev",
+      "title": "Preverba teme OS voditeljev",
+      "formId": "1dO0mcjs0x7N2EdJQ0nxmGzh-3ruDGqRf3gJ_seeWovY",
+      "responsesTab": "8 OS voditeljev"
+    },
+    {
       "tema": "krizno-komuniciranje-in-stiske",
       "title": "Preverba teme Krizno komuniciranje in stiske",
       "formId": "1_c3WxKSaqDGc9ZSJTIR8ONT41xc_L-HX9TMW0cgYEAg",
       "responsesTab": "9 Krizno"
+    },
+    {
+      "tema": "upravljanje-in-spremljanje-sprememb",
+      "title": "Preverba teme Upravljanje in spremljanje sprememb",
+      "formId": "1XSBjb1sjZdEvUFUzZLqfYqQ8XxKCY6mRyQbuW9fcYtM",
+      "responsesTab": "10 Upr in spr sprememb"
+    },
+    {
+      "tema": "vodenje-procesov",
+      "title": "Preverba teme Vodenje procesov",
+      "formId": "1E9OOwTWBFLpEWSwP64DzqH2b-8gr-1I7vGp4X6HD_hQ",
+      "responsesTab": "11 Vodenje proc"
+    },
+    {
+      "tema": "odnosi-z-javnostmi",
+      "title": "Preverba teme Odnosi z javnostmi",
+      "formId": "1E6eZdEeH-_g5f23nsRRe6yDJx7pAA2vLwqX-NZJYBog",
+      "responsesTab": "12 Odnosi z J"
+    },
+    {
+      "sessions": [
+        "vikend2-sobota-izbirne-teme-2-sklop-1600"
+      ],
+      "name": "Izbirne teme 2",
+      "title": "Preverba teme Izbirne teme 2",
+      "formId": "1pqcoUbqTJMru3uu5xTQqlsNQ68YWigEwBl5_3bxKRgo",
+      "split": [
+        {
+          "tema": "priprava-in-vodenje-proracuna",
+          "option": "Proračun",
+          "responsesTab": "13a Proračun",
+          "odgovorni": [
+            "klemen-sauperl"
+          ]
+        },
+        {
+          "tema": "retorika",
+          "option": "Retorika",
+          "responsesTab": "13b Retorika",
+          "odgovorni": [
+            "jakob-gostisa"
+          ]
+        },
+        {
+          "tema": "administrativno-vodenje-stega",
+          "option": "Administracija stega",
+          "responsesTab": "13c Administativno",
+          "odgovorni": [
+            "petra-zupan"
+          ]
+        }
+      ]
     }
   ],
   "general": [
