@@ -1955,3 +1955,7 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .pp-help { margin: 0; font-size: .8rem; text-align: center; }
 .pp-save { margin: 0; font-size: .85rem; text-align: center; color: #f5a3a3; }
 .pp-save[hidden] { display: none; }
+.pv-peek-bar { margin: 0 0 .8rem; }
+.pv-peek { margin-top: 1rem; }
+.pv-form-hidden { border-style: dashed; opacity: .92; }
+.pv-tag { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: .15rem .5rem; border-radius: 999px; background: rgba(255,255,255,0.1); color: var(--gold-soft); white-space: nowrap; }

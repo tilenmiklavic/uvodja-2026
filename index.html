@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="U Vodja" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
-  <link rel="stylesheet" href="css/styles.css?v=100" />
+  <link rel="stylesheet" href="css/styles.css?v=101" />
   <script src="https://accounts.google.com/gsi/client" async></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -320,9 +320,12 @@
           <a role="tab" class="pv-tab pv-ftab" href="#preverbe/svod" data-pv-tab="svod" aria-selected="false" aria-controls="pv-svod" hidden>Preverba SVODa</a>
         </div>
         <div class="pv-fpanel">
+          <div id="pv-peek-bar" class="pv-peek-bar" hidden></div>
           <div id="pv-teme" role="tabpanel"></div>
+          <div id="pv-peek-teme" class="pv-peek" hidden></div>
           <div id="pv-generalno" role="tabpanel" hidden></div>
           <div id="pv-svod" role="tabpanel" hidden></div>
+          <div id="pv-peek-svod" class="pv-peek" hidden></div>
         </div>
       </div>
     </section>
@@ -390,6 +393,6 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=112" type="module"></script>
+  <script src="js/app.js?v=113" type="module"></script>
 </body>
 </html>

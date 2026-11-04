@@ -2677,7 +2677,7 @@ document.addEventListener("visibilitychange", ppKeepFresh);
 async function init() {
   await loadData();
   state.mobileDay = upcomingDayId() || ttDays()[0]?.id;
-  setInterval(() => { placeNowLine(); placeUuNow(); const t = $("#pv-teme"); if (t && !t.hidden && currentTab === "preverbe") renderPvTeme(t); }, 60000);
+  setInterval(() => { placeNowLine(); placeUuNow(); const t = $("#pv-teme"); if (t && !t.hidden && currentTab === "preverbe") { renderPvTeme(t); renderPvPeek("teme"); } }, 60000);
   window.addEventListener("resize", () => { placeNowLine(); placeUuNow(); });
   state.user = loadUser();
   try { state.simRole = sessionStorage.getItem("uvodja.simRole"); } catch { state.simRole = null; }
@@ -3902,7 +3902,50 @@ async function renderPreverbe(sub = null) {
     try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; }
   }
   if (sub === "teme") renderPvTeme(teme); else if (sub === "generalno") renderPvGeneral(gen); else renderPvSvod(svod);
+  renderPvPeek(sub);
 }
+/* Admin only (real role, also while simulating UU/SVOD): optionally list the hidden preverbe – upcoming and closed Teme forms, upcoming SVOD days – below the regular ones */
+const pvPeekOn = () => { try { return localStorage.getItem("uvodja.pv.peek") === "1"; } catch { return false; } };
+function renderPvPeek(sub) {
+  const bar = $("#pv-peek-bar"), pt = $("#pv-peek-teme"), ps = $("#pv-peek-svod");
+  if (!bar) return;
+  const admin = roleOf(state.user?.email) === "admin", on = admin && pvPeekOn();
+  bar.hidden = !admin || !["teme", "svod"].includes(sub);
+  pt.hidden = !on || sub !== "teme"; ps.hidden = !on || sub !== "svod";
+  if (!admin) { pt.innerHTML = ps.innerHTML = bar.innerHTML = ""; return; }
+  if (!bar.innerHTML) bar.innerHTML = `<label class="pv-anon"><input type="checkbox" data-pv-peek /> Admin: pokaži skrite (prihodnje) preverbe</label>`;
+  $("[data-pv-peek]", bar).checked = on;
+  if (!on) return;
+  const now = ljNow(), today = now.date;
+  const card = (title, meta, formId, tag) => `<details class="card pv-form pv-form-hidden" data-form-id="${esc(formId)}">
+      <summary><span class="pv-form-title">${esc(title)}</span><span class="muted-text">${esc(meta)}</span><span class="pv-tag">${esc(tag)}</span></summary>
+      <iframe src="https://docs.google.com/forms/d/${encodeURIComponent(formId)}/viewform?embedded=true" title="${esc(title)}" loading="lazy">Nalagam …</iframe>
+      <p class="pv-open"><a href="https://docs.google.com/forms/d/${encodeURIComponent(formId)}/viewform" target="_blank" rel="noopener">Odpri obrazec v novem oknu ↗</a></p>
+    </details>`;
+  const dm = (d) => `${Number(d.slice(8))}. ${Number(d.slice(5, 7))}.`;
+  if (sub === "teme") {
+    const rows = (pvData?.temaForms || []).flatMap((f) => {
+      const occs = pvFormOccs(f).slice().sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+      if (!occs.length) return [{ f, key: "9999", meta: "brez termina v časovnici", tag: "ni termina" }];
+      // the occurrence day that decides the state: today if any, else the next upcoming, else the last one
+      const day = occs.some((o) => o.date === today) ? today : (occs.find((o) => o.date > today)?.date || occs[occs.length - 1].date);
+      const ds = occs.filter((o) => o.date === day), start = ds[0].start, end = ds.map((o) => o.end).sort().pop();
+      const open = day === today && toMin(start) <= now.min && now.min < toMin(end) + PV_GRACE;
+      if (open) return [];
+      const state_ = day > today ? "prihodnja" : day === today && now.min < toMin(start) ? "danes, še ne" : "zaprta";
+      return [{ f, key: day + start, meta: `${dm(day)} ${start}–${end}`, tag: state_ }];
+    }).sort((a, b) => a.key.localeCompare(b.key));
+    pt.innerHTML = `<h3 class="pv-sub-h">Skrite preverbe tem</h3>` + (rows.length ? rows.map((r) => card(pvFormName(r.f), r.meta, r.f.formId, r.tag)).join("") : `<p class="muted-text">Vse preverbe tem so trenutno odprte.</p>`);
+  } else {
+    const up = (pvData?.svodForms || []).filter((f) => f.date > today);
+    ps.innerHTML = `<h3 class="pv-sub-h">Prihodnje preverbe SVODa</h3>` + (up.length ? up.map((f) => card(f.title, dm(f.date), f.formId, "prihodnja")).join("") : `<p class="muted-text">Ni prihodnjih preverb SVODa.</p>`);
+  }
+}
+document.addEventListener("change", (e) => {
+  if (!e.target.matches?.("[data-pv-peek]")) return;
+  try { localStorage.setItem("uvodja.pv.peek", e.target.checked ? "1" : "0"); } catch {}
+  renderPvPeek(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || pvTabsFor(effectiveRole(state.user?.email))[0]);
+});
 /* Preverba SVODa: today's day form open; earlier days collapsed below (for filling in late) */
 function renderPvSvod(box) {
   const today = ljNow().date, forms = pvData?.svodForms || [];
