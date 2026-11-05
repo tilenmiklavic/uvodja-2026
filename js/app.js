@@ -405,14 +405,16 @@ function setTab(name) {
   if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
   if (name === "teme") decorateTemeScores();
   if (name === "vprasanja") renderVprasanja();
-  const zbm = /^zabava\/(wordle|stavnica|papiga)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
+  const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   state.papigaActive = name === "zabava" && zb === "papiga";
+  if (state.bumbarActive && !(name === "zabava" && zb === "bumbar")) bbLeave();
+  state.bumbarActive = name === "zabava" && zb === "bumbar";
   updateInstallUI();
   if (name === "zabava") {
     $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
-    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga";
-    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga();
+    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga"; $("#bumbar").hidden = zb !== "bumbar";
+    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga(); else if (zb === "bumbar") renderBumbar();
     if (zb) window.scrollTo(0, 0);
   }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
@@ -1698,7 +1700,7 @@ function applyHash() {
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno|svod)$/.test(hash)) { setTab("preverbe"); return; }
   if (/^analitika\/(obiski|svod|teme|wordle|papiga)$/.test(hash)) { setTab("analitika"); return; }
-  if (/^zabava\/(wordle|papiga|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
+  if (/^zabava\/(wordle|papiga|bumbar|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -2021,7 +2023,7 @@ function updateInstallUI() {
   $$("[data-install]").forEach((b) => { b.hidden = !canInstall(); });
   if (!bar) return;
   let snoozed = false; try { snoozed = !!localStorage.getItem(INSTALL_DISMISSED) || !!localStorage.getItem("uvodja.install.snooze"); } catch {} // old 7/14-day snooze counts as dismissed
-  bar.hidden = !state.user || !canInstall() || snoozed || !!state.wordleActive || !!state.papigaActive;
+  bar.hidden = !state.user || !canInstall() || snoozed || !!state.wordleActive || !!state.papigaActive || !!state.bumbarActive;
   if (!bar.hidden && !installEvt) {
     $("#install-sub").textContent = "Tapni Deli ⬆︎ in nato »Dodaj na začetni zaslon«.";
     $("#install-go").textContent = "V redu";
@@ -2083,6 +2085,14 @@ const SCRIPT_FETCH = {
     if ((j.results || []).some((r) => "guesses" in r)) throw new Error("server_old"); // Apps Script without papiga.gs answers with Wordle rows
     return j.results || [];
   },
+  bumbar: async () => {
+    const cfg = await wdConfig();
+    if (!cfg?.scriptUrl) throw new Error("config");
+    const j = await (await fetch(`${cfg.scriptUrl}${cfg.scriptUrl.includes("?") ? "&" : "?"}type=bumbar&t=${Date.now()}`)).json();
+    if (!j.ok) throw new Error(j.error || "napaka");
+    if ((j.results || []).some((r) => !("rounds" in r))) throw new Error("server_old"); // Apps Script without bumbar.gs answers with other rows
+    return j.results || [];
+  },
   ocene: () => scriptPost({ type: "ocene" }),
   vprasanja: () => scriptPost({ type: "vprasanja" }),
   analitika: () => scriptPost({ type: "analitika" }),
@@ -2091,7 +2101,7 @@ const SCRIPT_FETCH = {
 function prefetchScriptData() {
   if (!state.user) return;
   const want = [
-    ...(canSee("zabava") ? ["scores", "stavnica", "papiga"] : []),
+    ...(canSee("zabava") ? ["scores", "stavnica", "papiga", "bumbar"] : []),
     ...(canSeeOcene() ? ["ocene"] : []),
     ...(canSee("vprasanja") ? ["vprasanja"] : []),
     ...(canSee("analitika") ? ["analitika", "visitstats"] : []),
@@ -2673,6 +2683,258 @@ function ppKeepFresh() {
 }
 setInterval(ppKeepFresh, 30 * 1000);
 document.addEventListener("visibilitychange", ppKeepFresh);
+
+/* —— Zabava → Bum-Bar: whack-a-mole reaction game. Green parrots pop in and out of BB_HOLES holes in the deck; at a random
+   moment a red one pops out and the player taps the deck as fast as possible. BB_ROUNDS rounds, once per day; the score is
+   the sum of the reaction times + BB_EARLY_MS per tap before the red parrot was out. Times are measured here
+   (pointerdown timestamp − the frame the red parrot was drawn in); apps-script/bumbar.gs stores them (tab results-bumbar). —— */
+const BB_HOLES = 8, BB_ROUNDS = 3, BB_EARLY_MS = 1000, BB_MIN_MS = 60; // keep in sync with bumbar.gs
+const bb = { g: null, phase: "idle", timers: [], up: new Set(), red: -1, t0: 0, scores: undefined, scoreTab: "danes" };
+const bbKey = (date) => `uvodja.bumbar.${date}`;
+const BB_QUEUE = "uvodja.bumbar.queue";
+const bbTotal = (r) => r.rounds.reduce((a, v) => a + v, 0) + (r.early || 0) * BB_EARLY_MS;
+const bbMs = (ms) => `${Math.round(ms)} ms`;
+function bbMsg(t) { const m = $("#bb-msg"); if (m) m.textContent = t || ""; }
+function bbSave() { try { localStorage.setItem(bbKey(bb.g.date), JSON.stringify(bb.g)); } catch {} }
+function bbParrot(red) {
+  const body = red ? "#d4240b" : "#3f9a3a", side = red ? "#f1eb76" : "#b8de6a";
+  return `<svg viewBox="0 0 64 100" aria-hidden="true">
+    <rect x="12" y="20" width="36" height="84" rx="18" fill="${body}"/>
+    <path d="M12 48h7v56h-7z" fill="${side}"/>
+    <path d="M12 32a18 18 0 0 1 36 0v1H12z" fill="${body}"/>
+    <rect x="11" y="27" width="38" height="3.5" rx="1.5" fill="#3c3f8e"/><rect x="11" y="30.5" width="38" height="3.5" fill="#f1eb76"/><rect x="11" y="34" width="38" height="3" rx="1.5" fill="#7a9a3e"/>
+    <path d="M12 31l-9-5 2 8z" fill="#d4240b"/><path d="M12 33l-8 4 7 2z" fill="#3c3f8e"/><circle cx="12" cy="32" r="2.4" fill="#f9a61a"/>
+    <g class="bb-eye-o"><circle cx="30" cy="45" r="7" fill="#fff" stroke="#3a0613" stroke-width="1.5"/><circle cx="32" cy="45" r="3" fill="#3a0613"/></g>
+    <g class="bb-eye-x" stroke="#3a0613" stroke-width="2.6" stroke-linecap="round"><path d="M25 40l10 10M35 40l-10 10"/></g>
+    <path d="M44 38c10-1 17 5 16 15-.5 5-3 8-6 9 1-6-2-10-10-11z" fill="#fff" stroke="#3a0613" stroke-width="1.6" stroke-linejoin="round"/>
+  </svg>`;
+}
+function bbBuildDeck() {
+  const deck = $("#bb-deck");
+  if (!deck || deck.childElementCount) return;
+  deck.innerHTML = Array.from({ length: BB_HOLES }, (_, i) => `<div class="bb-hole" data-bb-hole="${i}"><div class="bb-pit"></div><div class="bb-win"><div class="bb-parrot">${bbParrot(false)}</div><div class="bb-parrot is-red">${bbParrot(true)}</div></div></div>`).join("");
+}
+function bbLater(fn, ms) { const t = setTimeout(() => { bb.timers = bb.timers.filter((x) => x !== t); fn(); }, ms); bb.timers.push(t); return t; }
+function bbStopAll() {
+  bb.timers.forEach(clearTimeout); bb.timers = [];
+  $$("#bb-deck .bb-parrot").forEach((p) => p.classList.remove("is-up", "is-bum"));
+  $$("#bb-deck .bb-hole").forEach((h) => h.classList.remove("is-bum"));
+  bb.up.clear(); bb.red = -1; bb.t0 = 0;
+}
+/* Leaving the page mid-round: the round is not counted and starts again next time */
+function bbLeave() { if (bb.phase === "wait" || bb.phase === "red" || bb.phase === "between") { bbStopAll(); bb.phase = "idle"; } }
+
+async function renderBumbar() {
+  bbBuildDeck();
+  loadBbScores();
+  const today = ljNow().date;
+  if (bb.g?.date !== today) {
+    bbStopAll(); bb.phase = "idle";
+    let g = null; try { g = JSON.parse(localStorage.getItem(bbKey(today))); } catch {}
+    bb.g = g && Array.isArray(g.rounds) ? g : { date: today, rounds: [], early: 0, done: false };
+  }
+  $("#bb-sub").textContent = wdFmtDate(today);
+  if (bb.phase === "idle" && !bb.g.done) bbMsg("");
+  bbDraw();
+}
+function bbDraw() {
+  const g = bb.g;
+  if (!g) return;
+  const playing = ["wait", "red", "between"].includes(bb.phase);
+  $("#bb-cover").hidden = playing;
+  $("#bb-stage").classList.toggle("is-playing", playing);
+  const start = $("#bb-start");
+  start.hidden = g.done;
+  start.textContent = g.rounds.length ? `Nadaljuj – krog ${g.rounds.length + 1}/${BB_ROUNDS} 🦜` : "Začni 🦜";
+  $("#bb-rules").innerHTML = g.done
+    ? `Današnja igra je odigrana – skupaj <strong>${bbMs(bbTotal(g))}</strong>. Jutri spet! 🦜`
+    : `Zelene papige pridejo ven in se skrijejo. Ko pokuka <strong>rdeča</strong>, čim hitreje tapni zaslon! ${BB_ROUNDS} krogi, šteje vsota časov. Vsak prezgoden tap doda ${BB_EARLY_MS / 1000} s.`;
+  const r = $("#bb-round");
+  r.hidden = !playing && !g.done;
+  r.classList.toggle("is-done", g.done);
+  r.textContent = g.done ? `Σ ${bbMs(bbTotal(g))}` : `Krog ${Math.min(g.rounds.length + 1, BB_ROUNDS)}/${BB_ROUNDS}`;
+  $("#bb-times").innerHTML = Array.from({ length: BB_ROUNDS }, (_, i) => `<li class="${g.rounds[i] != null ? "is-set" : ""}"><span>Krog ${i + 1}</span><strong>${g.rounds[i] != null ? bbMs(g.rounds[i]) : "–"}</strong></li>`).join("")
+    + `<li class="bb-sum${g.early ? " has-early" : ""}"><span>Skupaj${g.early ? ` <small>(${g.early}× prezgodaj, +${g.early * BB_EARLY_MS / 1000} s)</small>` : ""}</span><strong>${g.rounds.length ? bbMs(bbTotal(g)) : "–"}</strong></li>`;
+}
+function bbStart() {
+  const g = bb.g;
+  if (!g || g.done || bb.phase !== "idle") return;
+  if (!state.user) { bbMsg("Za igro se prijavi."); return; }
+  bbRound();
+}
+function bbRound() {
+  bbStopAll();
+  bb.phase = "wait";
+  bbMsg("Pazi na rdečo papigo …");
+  bbDraw();
+  const spawn = () => {
+    if (bb.phase !== "wait" && bb.phase !== "red") return;
+    const free = [...Array(BB_HOLES).keys()].filter((i) => !bb.up.has(i) && i !== bb.red);
+    if (free.length && bb.up.size < 4) {
+      const i = free[Math.floor(Math.random() * free.length)], el = $(`#bb-deck [data-bb-hole="${i}"] .bb-parrot:not(.is-red)`);
+      bb.up.add(i); el.classList.add("is-up");
+      bbLater(() => { el.classList.remove("is-up"); bbLater(() => bb.up.delete(i), 180); }, 450 + Math.random() * 700);
+    }
+    bbLater(spawn, 180 + Math.random() * 420);
+  };
+  bbLater(spawn, 250);
+  bbLater(bbShowRed, 2000 + Math.random() * 4500);
+}
+function bbShowRed() {
+  if (bb.phase !== "wait") return;
+  const free = [...Array(BB_HOLES).keys()].filter((i) => !bb.up.has(i));
+  const i = free.length ? free[Math.floor(Math.random() * free.length)] : Math.floor(Math.random() * BB_HOLES);
+  $(`#bb-deck [data-bb-hole="${i}"] .bb-parrot:not(.is-red)`).classList.remove("is-up");
+  bb.red = i; bb.phase = "red"; bb.t0 = 0;
+  $(`#bb-deck [data-bb-hole="${i}"] .bb-parrot.is-red`).classList.add("is-up"); // no rise animation: it is out at once
+  requestAnimationFrame(() => { if (bb.phase === "red" && bb.red === i) bb.t0 = performance.now(); }); // the frame it is drawn in
+}
+function bbEarly() {
+  bb.g.early++; bbSave(); bbDraw();
+  bbMsg(`Prezgodaj! +${BB_EARLY_MS / 1000} s 🙈`);
+  const f = $("#bb-flash"); f.classList.remove("is-on"); void f.offsetWidth; f.classList.add("is-on");
+}
+function bbTap(e) {
+  if (bb.phase === "wait" || (bb.phase === "red" && !bb.t0)) {
+    if (bb.phase === "wait") bbEarly(); // (red but not drawn yet: tapped in the same frame, ignored)
+    return;
+  }
+  if (bb.phase !== "red") return;
+  const ms = Math.max(0, (e.timeStamp > 1e12 ? performance.now() : e.timeStamp) - bb.t0);
+  if (ms < BB_MIN_MS) { bbEarly(); return; } // a guess, not a reaction
+  const g = bb.g, i = bb.red;
+  bb.phase = "between";
+  g.rounds.push(Math.round(ms)); bbSave();
+  bb.timers.forEach(clearTimeout); bb.timers = [];
+  $$("#bb-deck .bb-parrot:not(.is-red)").forEach((p) => p.classList.remove("is-up"));
+  const hole = $(`#bb-deck [data-bb-hole="${i}"]`);
+  $(".bb-parrot.is-red", hole).classList.add("is-bum");
+  hole.classList.add("is-bum"); hole.style.setProperty("--bb-ms", `"${Math.round(ms)} ms"`);
+  bbMsg(`BUM! ${bbMs(ms)} ⚡`);
+  bbDraw();
+  if (g.rounds.length >= BB_ROUNDS) { bbLater(bbFinish, 1400); return; }
+  bbLater(() => { if (bb.phase === "between") bbRound(); }, 1800);
+}
+function bbFinish() {
+  const g = bb.g, u = state.user;
+  bbStopAll(); bb.phase = "idle";
+  g.done = true; bbSave();
+  const item = { date: g.date, rounds: g.rounds, early: g.early };
+  bbSetQueue([...bbQueue().filter((x) => x.date !== g.date), item]);
+  if (u && Array.isArray(bb.scores)) {
+    bb.scores = [...bb.scores.filter((r) => !(r.date === g.date && r.email === u.email.toLowerCase())), { email: u.email.toLowerCase(), name: u.name || u.email, ...item }];
+    renderBbScores();
+  }
+  bbMsg(`Konec! Skupaj ${bbMs(bbTotal(g))} 🏁`);
+  bbDraw();
+  bbFlush(true);
+}
+/* Results: queued on the device and sent until the server has them (like Spot-A-Papiga) */
+function bbQueue() { try { return JSON.parse(localStorage.getItem(BB_QUEUE)) || []; } catch { return []; } }
+function bbSetQueue(q) { try { localStorage.setItem(BB_QUEUE, JSON.stringify(q)); } catch {} }
+function bbSaveNote(t) { const el = $("#bb-save"); if (el) { el.textContent = t; el.hidden = !t; } }
+async function bbFlush(interactive = false) {
+  const cfg = await wdConfig();
+  if (!cfg?.scriptUrl || !state.user || bb.flushing) return;
+  let q = bbQueue();
+  if (!q.length) { bbSaveNote(""); return; }
+  bb.flushing = true;
+  let sent = false, problem = "";
+  try {
+    const cred = interactive ? await wdFreshToken() : currentCred();
+    if (!cred) { bbSaveNote("Rezultat še ni shranjen – prijava je potekla (osveži jo v meniju)."); return; }
+    for (const item of [...q]) {
+      try {
+        const res = await wdPost(cfg.scriptUrl, { type: "bumbar", action: "result", ...item }, cred, true);
+        if (res.ok || ["bad_date", "future_date", "bad_rounds"].includes(res.error)) { q = q.filter((x) => x.date !== item.date); sent = sent || res.ok; }
+        if (!res.ok) problem = res.error || "napaka";
+      } catch (err) { problem = err?.kind === "offline" ? "ni povezave" : err?.message || "napaka"; }
+    }
+    bbSetQueue(q);
+  } finally { bb.flushing = false; }
+  bbSaveNote(q.length ? `Rezultat še ni shranjen (${problem}) – poskusim znova čez pol minute.` : problem ? `Rezultat ni bil sprejet (${problem}).` : "");
+  if (sent) loadBbScores(true);
+}
+/* Leaderboard (GET ?type=bumbar): Danes = today's totals, Najboljši = each player's best day */
+async function loadBbScores(force = false) {
+  const cfg = await wdConfig();
+  const box = $("#bb-score");
+  if (!box) return;
+  if (!cfg?.scriptUrl) { box.hidden = true; return; }
+  box.hidden = false;
+  if (osData === undefined) { try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; } }
+  if (bb.scores === undefined && scriptHas("bumbar")) bb.scores = scriptData.bumbar.data;
+  const stale = bb.scores === undefined || Date.now() - (scriptData.bumbar?.at || 0) > WD_SCORES_FRESH;
+  if (bb.scores !== undefined) renderBbScores(); else $("#bb-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
+  if (!force && !stale) return;
+  bb.scoresLoading = true; renderBbScoreMeta();
+  try { bb.scores = await scriptLoad("bumbar", true); } catch { if (bb.scores === undefined) bb.scores = null; }
+  bb.scoresLoading = false;
+  renderBbScores();
+  // Played on another device: show that result here too
+  const u = state.user, g = bb.g;
+  const mine = u && g && !g.done && bb.phase === "idle" && (bb.scores || []).find((r) => r.date === g.date && r.email === u.email.toLowerCase());
+  if (mine) { Object.assign(g, { rounds: mine.rounds, early: mine.early, done: true }); bbSave(); bbDraw(); }
+}
+function renderBbScoreMeta() {
+  const el = $("#bb-score-meta");
+  if (!el) return;
+  const at = scriptData.bumbar?.at;
+  const t = at ? new Date(at).toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" }) : "";
+  el.innerHTML = bb.scoresLoading ? `Osvežujem …` : `${t ? `Posodobljeno ob ${t} · ` : ""}<button type="button" class="link-btn" data-bb-refresh>Osveži</button>`;
+}
+function renderBbScores() {
+  const body = $("#bb-score-body");
+  if (!body) return;
+  renderBbScoreMeta();
+  if (!bb.scores) { body.innerHTML = `<p class="muted-text">Lestvice ni bilo mogoče naložiti.</p>`; return; }
+  const tab = bb.scoreTab;
+  $$(".bb-stab").forEach((b) => b.setAttribute("aria-selected", b.dataset.bbtab === tab ? "true" : "false"));
+  const today = ljNow().date;
+  let rows;
+  if (tab === "danes") rows = bb.scores.filter((r) => r.date === today);
+  else {
+    const best = {};
+    for (const r of bb.scores) if (!best[r.email] || bbTotal(r) < bbTotal(best[r.email])) best[r.email] = r;
+    rows = Object.values(best);
+  }
+  rows.sort((a, b) => bbTotal(a) - bbTotal(b));
+  body.innerHTML = rows.length ? `<ol class="wd-board-list${tab === "danes" ? "" : " total"}">${rows.map((r, i) => {
+    const w = wdWho(r.email, r.name), rank = ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
+    const detail = r.rounds.map((v) => Math.round(v)).join(" · ") + (r.early ? ` · +${r.early}× ✕` : "");
+    return `<li><span class="wd-rank${i < 3 ? " medal" : ""}">${rank}</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span><span class="wd-time muted-text bb-detail">${esc(detail)}${tab === "danes" ? "" : ` · ${esc(wdFmtDate(r.date).replace(/ \d{4}$/, ""))}`}</span><span class="wd-res">${bbMs(bbTotal(r))}</span></li>`;
+  }).join("")}</ol>` : `<p class="muted-text">${tab === "danes" ? "Danes še nihče ni igral." : "Še ni rezultatov."}</p>`;
+}
+(function bbBind() {
+  const st = $("#bb-stage");
+  if (!st) return;
+  st.addEventListener("pointerdown", (e) => {
+    if (!["wait", "red"].includes(bb.phase) || e.target.closest("#bb-cover")) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    bbTap(e);
+  });
+})();
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#bb-start")) bbStart();
+  const t = e.target.closest(".bb-stab");
+  if (t) { bb.scoreTab = t.dataset.bbtab; renderBbScores(); }
+  if (e.target.closest("[data-bb-refresh]")) loadBbScores(true);
+});
+document.addEventListener("keydown", (e) => {
+  if (!state.bumbarActive || e.repeat || e.ctrlKey || e.metaKey || e.altKey || !(e.key === " " || e.key === "Enter")) return;
+  if (["wait", "red"].includes(bb.phase)) { e.preventDefault(); bbTap(e); }
+});
+/* While the game is on screen: new day after midnight, retry unsent results, fresh leaderboard every ~1.5 min */
+function bbKeepFresh() {
+  if (!state.bumbarActive) return;
+  if (document.hidden) { bbLeave(); bbDraw(); bbMsg(""); return; }
+  if (bbQueue().length) bbFlush();
+  if (bb.phase === "idle" && bb.g?.date !== ljNow().date) { renderBumbar(); return; }
+  loadBbScores();
+}
+setInterval(bbKeepFresh, 30 * 1000);
+document.addEventListener("visibilitychange", bbKeepFresh);
 
 async function init() {
   await loadData();
