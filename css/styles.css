@@ -1972,9 +1972,9 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
     linear-gradient(180deg, #9a6236, #87532b);
   touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 .bb-stage.is-playing { cursor: pointer; }
-.bb-deck { display: flex; flex-wrap: wrap; justify-content: center; gap: 2% 3%; padding: 5% 4% 4%; }
-.bb-hole { position: relative; flex: 0 0 22%; aspect-ratio: 1 / 1.05; }
-@media (max-width: 560px) { .bb-deck { gap: 3% 5%; padding: 7% 5% 5%; } .bb-hole { flex-basis: 28%; } }
+.bb-stage { width: min(100%, 540px, 62svh); margin: 0 auto; }
+.bb-deck { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4% 8%; padding: 15% 8% 5%; }
+.bb-hole { position: relative; aspect-ratio: 1 / 1.05; }
 .bb-pit { position: absolute; left: 4%; right: 4%; bottom: 4%; height: 30%; border-radius: 50%;
   background: radial-gradient(ellipse at 50% 60%, #050302 45%, #1d0f06 70%); box-shadow: 0 0 0 4px #5b3519, 0 0 0 6px #b98250, inset 0 6px 10px rgba(0,0,0,.8); }
 .bb-win { position: absolute; left: -10%; right: -10%; top: -20%; bottom: 19%; overflow: hidden; pointer-events: none; }

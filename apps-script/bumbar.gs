@@ -1,5 +1,5 @@
 /**
- * Zabava → Bum-Bar: a whack-a-mole reaction game. Green parrots pop in and out of 8 holes in the deck; at a random moment a
+ * Zabava → Bum-Bar: a whack-a-mole reaction game. Green parrots pop in and out of 9 holes (3 × 3) in the deck; at a random moment a
  * red one appears and the player taps as fast as possible. 3 rounds, once per day; the score is the sum of the 3 reaction
  * times plus BUMBAR_EARLY_MS for every tap before the red parrot was out. Timing happens in the browser; this script
  * only checks the numbers are plausible and stores them.

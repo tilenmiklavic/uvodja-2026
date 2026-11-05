@@ -2688,7 +2688,7 @@ document.addEventListener("visibilitychange", ppKeepFresh);
    moment a red one pops out and the player taps the deck as fast as possible. BB_ROUNDS rounds, once per day; the score is
    the sum of the reaction times + BB_EARLY_MS per tap before the red parrot was out. Times are measured here
    (pointerdown timestamp − the frame the red parrot was drawn in); apps-script/bumbar.gs stores them (tab results-bumbar). —— */
-const BB_HOLES = 8, BB_ROUNDS = 3, BB_EARLY_MS = 1000, BB_MIN_MS = 60; // keep in sync with bumbar.gs
+const BB_HOLES = 9, BB_ROUNDS = 3, BB_EARLY_MS = 1000, BB_MIN_MS = 60; // keep in sync with bumbar.gs
 const bb = { g: null, phase: "idle", timers: [], up: new Set(), red: -1, t0: 0, scores: undefined, scoreTab: "danes" };
 const bbKey = (date) => `uvodja.bumbar.${date}`;
 const BB_QUEUE = "uvodja.bumbar.queue";
