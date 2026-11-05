@@ -421,7 +421,7 @@ function setTab(name) {
   closeNavMore();
   const hash = location.hash.replace(/^#/, "");
   logVisit(blocked ? "noaccess" : (/^(oseba|tema)-/.test(hash) ? hash.split("-")[0] : name));
-  if (name === "analitika") renderAnalitika(/^analitika\/(obiski|svod|teme|wordle|papiga)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "obiski");
+  if (name === "analitika") renderAnalitika(/^analitika\/(obiski|svod|teme|wordle|papiga|bumbar)$/.exec(location.hash.replace(/^#/, ""))?.[1] || "obiski");
   if (name === "preverbe") renderPreverbe(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "uu") renderUU(/^uu\/(.+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
   if (name === "os") renderOs(/^os\/(\d+)$/.exec(location.hash.replace(/^#/, ""))?.[1] || null);
@@ -1699,7 +1699,7 @@ function applyHash() {
   }
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno|svod)$/.test(hash)) { setTab("preverbe"); return; }
-  if (/^analitika\/(obiski|svod|teme|wordle|papiga)$/.test(hash)) { setTab("analitika"); return; }
+  if (/^analitika\/(obiski|svod|teme|wordle|papiga|bumbar)$/.test(hash)) { setTab("analitika"); return; }
   if (/^zabava\/(wordle|papiga|bumbar|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
@@ -3956,8 +3956,8 @@ function pvcTrend(days) {
 /* Analitika: folder tabs Obiski / Preverbe SVODa / Preverbe tem (#analitika/<tab>) */
 function renderAnalitika(sub) {
   $$("#tab-analitika [data-an-tab]").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.anTab === sub)));
-  ["obiski", "svod", "teme", "wordle", "papiga"].forEach((k) => { $(`#an-${k}`).hidden = k !== sub; });
-  if (sub === "obiski") renderVisits(); else if (sub === "wordle") renderWdAnalitika(); else if (sub === "papiga") renderPpAnalitika(); else renderPvCharts();
+  ["obiski", "svod", "teme", "wordle", "papiga", "bumbar"].forEach((k) => { $(`#an-${k}`).hidden = k !== sub; });
+  if (sub === "obiski") renderVisits(); else if (sub === "wordle") renderWdAnalitika(); else if (sub === "papiga") renderPpAnalitika(); else if (sub === "bumbar") renderBbAnalitika(); else renderPvCharts();
 }
 /* Analitika → Wordle: per puzzle day (up to today) players split into solved / not solved, and mean guesses of the solvers.
    Two charts on one shared day axis (two measures, two scales – never a dual axis) */
@@ -4100,6 +4100,82 @@ async function renderPpAnalitika(force = false) {
     <p class="muted-text pvc-note"><button type="button" class="link-btn" data-ppa-reload>Osveži</button></p>`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-ppa-reload]")) renderPpAnalitika(true); });
+/* Analitika → Bum-Bar: per played day players, the median total of the 3 rounds, the median single reaction and the
+   average number of too-early taps; same chart style as Spot-A-Papiga */
+async function renderBbAnalitika(force = false) {
+  const box = $("#bba-body");
+  if (!box) return;
+  let scores;
+  try { scores = await scriptLoad("bumbar", force); } catch { scores = null; }
+  if (!Array.isArray(scores)) { box.innerHTML = `<p class="muted-text">Rezultatov ni bilo mogoče naložiti.</p><button type="button" class="btn ghost" data-bba-reload>Poskusi znova</button>`; return; }
+  const median = (a) => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+  const today = ljNow().date;
+  const days = [...new Set(scores.map((r) => r.date).filter((d) => d && d <= today))].sort().map((date) => {
+    const rows = scores.filter((r) => r.date === date), sorted = [...rows].sort((a, b) => bbTotal(a) - bbTotal(b));
+    const reacts = rows.flatMap((r) => r.rounds.filter((v) => v > 0));
+    return { date, short: `${Number(date.slice(8))}. ${Number(date.slice(5, 7))}.`, played: rows.length, med: median(rows.map(bbTotal)),
+      react: median(reacts), fastest: reacts.length ? Math.min(...reacts) : null, early: mean(rows.map((r) => r.early || 0)), best: sorted[0] || null };
+  });
+  if (!days.length) { box.innerHTML = `<p class="muted-text">Še nihče ni igral.</p><p class="muted-text pvc-note"><button type="button" class="link-btn" data-bba-reload>Osveži</button></p>`; return; }
+  const valid = scores.filter((r) => days.some((d) => d.date === r.date));
+  const players = new Set(valid.map((r) => r.email)).size;
+  const allReact = median(valid.flatMap((r) => r.rounds.filter((v) => v > 0)));
+  const best = [...valid].sort((a, b) => bbTotal(a) - bbTotal(b))[0];
+  const todayRow = days.find((d) => d.date === today);
+  const fmt1 = (x) => (x == null ? "–" : x.toFixed(1).replace(".", ","));
+  const fmtT = (ms) => (ms == null ? "–" : bbMs(ms));
+  const L = 52, R = 12, T = 18, n = days.length, bw = Math.max(36, Math.min(64, ((box.clientWidth || 640) - L - R) / n)), W = L + R + bw * n;
+  const cx = (i) => L + bw * i + bw / 2;
+  const xLabels = (H, B) => days.map((d, i) => `<text class="pvc-tick pvt-x" x="${cx(i)}" y="${H - B + 16}" text-anchor="middle">${esc(d.short)}</text>`).join("");
+  const col = (i, H, B, tip, inner) => `<g class="pvc-candle pvt-col" tabindex="0" data-tip="${esc(tip)}"><rect class="pvc-hit" x="${cx(i) - bw / 2}" y="${T}" width="${bw}" height="${H - T - B}"/>${inner}</g>`;
+  const dayTip = (d) => `${wdFmtDate(d.date)}\nigralcev ${d.played} · mediana skupaj ${fmtT(d.med)}\nmediana reakcije ${fmtT(d.react)} · najhitrejša ${fmtT(d.fastest)}\npovp. prezgodnjih ${fmt1(d.early)}${d.best ? `\nzmagovalec: ${wdWho(d.best.email, d.best.name).label} (${fmtT(bbTotal(d.best))})` : ""}`;
+  const bar = (x, yTop, yBot, w, cls) => { const h = yBot - yTop; if (h <= 0) return ""; const r = Math.min(4, h, w / 2);
+    return `<path class="${cls}" d="M${x},${yBot}V${yTop + r}Q${x},${yTop} ${x + r},${yTop}H${x + w - r}Q${x + w},${yTop} ${x + w},${yTop + r}V${yBot}Z"/>`; };
+  const niceStep = (max, k = 5) => { const raw = max / k, p = 10 ** Math.floor(Math.log10(raw || 1)); return [1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw) || p * 10; };
+  // 1) players per day
+  const H1 = 190, B1 = 26, ymax = Math.max(1, ...days.map((d) => d.played)), stepY = ymax > 12 ? 5 : ymax > 6 ? 2 : 1, top = Math.ceil(ymax / stepY) * stepY;
+  const y1 = (v) => T + (1 - v / top) * (H1 - T - B1);
+  let grid1 = ""; for (let v = 0; v <= top; v += stepY) grid1 += `<line class="pvc-grid" x1="${L}" x2="${W - R}" y1="${y1(v)}" y2="${y1(v)}"/><text class="pvc-tick" x="${L - 7}" y="${y1(v) + 4}" text-anchor="end">${v}</text>`;
+  const bars = days.map((d, i) => {
+    const w = Math.min(26, bw * 0.55);
+    return col(i, H1, B1, dayTip(d), bar(cx(i) - w / 2, y1(d.played), y1(0), w, "wda-solved") + `<text class="wda-val" x="${cx(i)}" y="${y1(d.played) - 5}" text-anchor="middle">${d.played}</text>`);
+  }).join("");
+  // line chart: one value per day, broken on days without a value
+  const lineChart = (H, B, vals, tick, steps = null) => {
+    const vmax = Math.max(0, ...vals.filter((v) => v != null));
+    const step = steps ? steps.find((s) => s >= (vmax || 1) / 4) || steps[steps.length - 1] : niceStep(vmax || 1, 4), topV = Math.max(step, Math.ceil(vmax / step) * step);
+    const y = (v) => T + (1 - v / topV) * (H - T - B);
+    let grid = ""; for (let v = 0; v <= topV + 1e-9; v += step) grid += `<line class="pvc-grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="pvc-tick" x="${L - 7}" y="${y(v) + 4}" text-anchor="end">${tick(v)}</text>`;
+    const segs = []; let cur = [];
+    vals.forEach((v, i) => { if (v != null) cur.push(`${cx(i)},${y(v)}`); else if (cur.length) { segs.push(cur); cur = []; } });
+    if (cur.length) segs.push(cur);
+    const line = segs.filter((sg) => sg.length > 1).map((sg) => `<path class="pvt-line" d="M${sg.join("L")}"/>`).join("");
+    const dots = days.map((d, i) => col(i, H, B, dayTip(d), vals[i] != null ? `<line class="pvt-cross" x1="${cx(i)}" x2="${cx(i)}" y1="${T}" y2="${H - B}"/><circle class="pvt-dot" cx="${cx(i)}" cy="${y(vals[i])}" r="4.5"/>` : "")).join("");
+    return grid + line + dots + xLabels(H, B);
+  };
+  const H2 = 170, B2 = 26, msSteps = [50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000];
+  const msTick = (v) => (v >= 1000 ? `${(v / 1000).toString().replace(".", ",")} s` : `${v}`);
+  const svg = (H, label, body) => `<div class="pvc-scroll"><svg class="pvc-svg wda-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(label)}">${body}</svg></div>`;
+  box.innerHTML = `<div class="wda-tiles">
+      <div class="wda-tile"><span class="wda-tile-n">${todayRow?.played || 0}</span><span class="muted-text">igralcev danes</span></div>
+      <div class="wda-tile"><span class="wda-tile-n">${players}</span><span class="muted-text">različnih igralcev</span></div>
+      <div class="wda-tile"><span class="wda-tile-n">${fmtT(allReact)}</span><span class="muted-text">mediana reakcije (en krog)</span></div>
+      <div class="wda-tile"><span class="wda-tile-n">${fmtT(best ? bbTotal(best) : null)}</span><span class="muted-text">rekord${best ? ` · ${esc(wdWho(best.email, best.name).label)}` : ""}</span></div>
+    </div>
+    <section class="pvc-block"><h4>Igralci po dnevih</h4>
+      ${svg(H1, `Igralci po dnevih: ${days.map((d) => `${d.short} ${d.played}`).join(", ")}`, grid1 + bars + xLabels(H1, B1))}</section>
+    <section class="pvc-block"><h4>Mediana skupnega časa <span class="muted-text">· vsota 3 krogov s kaznimi, ms</span></h4>
+      ${svg(H2, `Mediana skupnega časa po dnevih: ${days.map((d) => `${d.short} ${fmtT(d.med)}`).join(", ")}`, lineChart(H2, B2, days.map((d) => d.med), msTick, msSteps))}</section>
+    <section class="pvc-block"><h4>Mediana reakcije <span class="muted-text">· en krog, brez kazni, ms</span></h4>
+      ${svg(H2, `Mediana reakcije po dnevih: ${days.map((d) => `${d.short} ${fmtT(d.react)}`).join(", ")}`, lineChart(H2, B2, days.map((d) => d.react), msTick, msSteps))}</section>
+    <section class="pvc-block"><h4>Povprečno prezgodnjih tapov <span class="muted-text">· na igralca</span></h4>
+      ${svg(H2, `Povprečno prezgodnjih po dnevih: ${days.map((d) => `${d.short} ${fmt1(d.early)}`).join(", ")}`, lineChart(H2, B2, days.map((d) => d.early), (v) => fmt1(v).replace(",0", "")))}</section>
+    <details class="pvc-table"><summary>Tabela</summary><table><thead><tr><th>Dan</th><th>igralcev</th><th>mediana skupaj</th><th>mediana reakcije</th><th>najhitrejša reakcija</th><th>povp. prezgodnjih</th><th>zmagovalec</th></tr></thead>
+      <tbody>${days.map((d) => `<tr><td>${esc(wdFmtDate(d.date))}</td><td>${d.played}</td><td>${fmtT(d.med)}</td><td>${fmtT(d.react)}</td><td>${fmtT(d.fastest)}</td><td>${fmt1(d.early)}</td><td>${d.best ? `${esc(wdWho(d.best.email, d.best.name).label)} (${fmtT(bbTotal(d.best))})` : "–"}</td></tr>`).join("")}</tbody></table></details>
+    <p class="muted-text pvc-note"><button type="button" class="link-btn" data-bba-reload>Osveži</button></p>`;
+}
+document.addEventListener("click", (e) => { if (e.target.closest("[data-bba-reload]")) renderBbAnalitika(true); });
 async function renderPvCharts(force = false) {
   const boxSvod = $("#pvc-svod"), boxTeme = $("#pvc-teme");
   if (!boxSvod || !canSee("analitika")) return;
