@@ -53,6 +53,9 @@ function handleStavnica(body) {
         sh.appendRow([new Date(), q.question, String(body.option), amount, tok.name || body.name || "", me]);
         SpreadsheetApp.flush();
       } finally { lock.releaseLock(); }
+      const opt = { yes: "Da", no: "Ne" }[String(body.option).toLowerCase()] || String(body.option);
+      pushNotify_("stavnica", { title: "Stavnica 🎲", body: (tok.name || body.name || me) + ": " + Math.floor(Number(body.amount)) + " 🪙 na »" + opt + "« – " + body.question,
+        url: "./#zabava/stavnica/pregled" }, me); // push.gs: admins' devices, not the bettor's own
     }
     if (body.action === "adjust") {
       if (siteRole_(me) !== "admin") return out({ ok: false, error: "ni dostopa" });

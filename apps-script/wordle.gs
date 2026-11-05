@@ -1,4 +1,4 @@
-// SCRIPT_VERSION: v8 (2026-11-02) - Spot-A-Papiga (papiga.gs)
+// SCRIPT_VERSION: v9 (2026-11-05) - Bum-Bar (bumbar.gs), admin push notifications (push.gs)
 /**
  * U Vodja 2026 – Wordle rezultati (Google Apps Script, bound to the results Sheet).
  * Sheet tab "rezultati", header row: Timestamp | Email | Name | Date | Guesses | Solved | Ms
@@ -15,6 +15,7 @@
  * Stats: doPost {type:'visitstats', credential} → aggregates only, ONLY for a valid token in STATS_ADMINS
  *        (else {ok:false}); byDay = the same per day for the last 14 days. doGet?type=visits is disabled.
  *
+ * Push: doPost {type:'push', …} → push.gs (admin notifications; a finished Wordle notifies admins via pushNotify_).
  * Needs common.gs (and the other handler files) in the same project.
  * Deploy: Deploy → New deployment → Web app, Execute as: Me, Who has access: Anyone.
  */
@@ -81,6 +82,8 @@ function doPost(e) {
     if (body.type === 'visit') return logVisit_(body);
     if (body.type === 'wordle-guess') return logGuess_(body);
     if (body.type === 'papiga') return handlePapiga(body);
+    if (body.type === 'bumbar') return handleBumbar(body);
+    if (body.type === 'push') return handlePush(body);
     if (body.type === 'visitstats') return visitStatsAuth_(body);
     if (body.type === 'preverba') return handlePreverba(body);
     if (body.type === 'stavnica') return handleStavnica(body);
@@ -115,6 +118,9 @@ function doPost(e) {
     } finally {
       lock.releaseLock();
     }
+    var mmss = ms ? ' · ' + Math.floor(ms / 60000) + ':' + ('0' + Math.floor(ms / 1000) % 60).slice(-2) : '';
+    pushNotify_('wordle', { title: 'Wordle ' + (solved ? '🟩' : '⬛'), body: who.name + ': ' + (solved ? 'rešeno v ' + guesses + '/6' + mmss : 'ni rešeno'),
+      url: './#zabava/wordle', tag: 'wordle-' + date + '-' + who.email }, who.email);
     return json_({ ok: true });
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) });
@@ -123,7 +129,8 @@ function doPost(e) {
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.type === 'papiga') return papigaResults_(e.parameter.callback);
-  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v8' });
+  if (e && e.parameter && e.parameter.type === 'bumbar') return bumbarResults_(e.parameter.callback);
+  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v9' });
   var cb = e && e.parameter && e.parameter.callback;
   if (e && e.parameter && e.parameter.type === 'visits') return json_({ ok: false, error: 'use_post' }, cb);
   try {
