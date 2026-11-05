@@ -373,11 +373,12 @@ function applyAuth() {
       ${roleOf(u.email) === "admin" ? `<div class="sim-switch" role="group" aria-label="Pogled kot"><span class="sim-label">Pogled kot</span>${SIM_ROLES.map((r) =>
         `<button type="button" class="sim-opt" data-sim-role="${r}" aria-pressed="${effectiveRole(u.email) === r}">${r.toUpperCase()}</button>`).join("")}</div>` : ""}
       <div class="tok-box"><p class="tok-line" id="tok-line"></p><button type="button" class="user-menu-item" id="tok-refresh" data-tok-refresh>Osveži prijavo</button><div id="tok-gsi" class="tok-gsi"></div></div>
-      ${own}<button type="button" class="user-menu-item" data-install hidden>Namesti aplikacijo</button><button type="button" class="user-menu-item user-signout" data-signout>Odjava</button>
+      ${own}<button type="button" class="user-menu-item" data-push hidden></button><button type="button" class="user-menu-item" data-install hidden>Namesti aplikacijo</button><button type="button" class="user-menu-item user-signout" data-signout>Odjava</button>
     </div>`;
   ar.hidden = false;
   prefetchScriptData();
   setTimeout(updateInstallUI, 0);
+  setTimeout(pushRender, 0);
   const who = person && state.allowed.has("ekipa")
     ? `<a href="#oseba-${esc(person.slug)}">${esc(u.name)}</a>` : esc(u.name);
   setTimeout(tokRender, 0);
@@ -2045,6 +2046,63 @@ document.addEventListener("click", (e) => {
   else if (e.target.closest("#install-x")) { installDismiss(); updateInstallUI(); }
 });
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+
+/* —— Admin push notifications (Web Push): menu toggle subscribes this device; Apps Script (apps-script/push.gs) stores it
+   and, through the Cloudflare Worker in push-worker/, notifies admins when someone else finishes Wordle or bets in
+   Stavnica. sw.js shows the notification. Only the real role counts (not the "Pogled kot" simulation). —— */
+const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const pushIsAdmin = () => !!state.user && roleOf(state.user.email) === "admin";
+const pushKeyBytes = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+const pushDevice = () => `${isIos() ? "iPhone/iPad" : /android/i.test(navigator.userAgent) ? "Android" : navigator.userAgentData?.platform || navigator.platform || "naprava"}${isStandalone() ? " · aplikacija" : " · brskalnik"}`;
+async function pushCurrent() {
+  if (!pushSupported()) return null;
+  try { const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch { return null; }
+}
+let pushSynced = false;
+async function pushRender() {
+  const b = $("[data-push]");
+  if (!b) return;
+  if (!pushIsAdmin()) { b.hidden = true; return; }
+  b.hidden = false;
+  if (!pushSupported()) { b.dataset.push = "na"; b.textContent = isIos() && !isStandalone() ? "🔔 Obvestila (le v nameščeni aplikaciji)" : "🔔 Obvestila niso podprta"; return; }
+  const sub = Notification.permission === "granted" ? await pushCurrent() : null;
+  b.dataset.push = sub ? "on" : "off";
+  b.textContent = sub ? "🔕 Izklopi obvestila" : "🔔 Vklopi obvestila";
+  // Re-register a working subscription once per visit (quietly), in case the server dropped it
+  if (sub && !pushSynced) { pushSynced = true; scriptPost({ type: "push", action: "subscribe", subscription: sub.toJSON(), device: pushDevice(), silent: true }).catch(() => {}); }
+}
+async function pushToggle(b) {
+  const mode = b.dataset.push;
+  if (mode === "na") {
+    alert(isIos() ? "Na iPhonu/iPadu obvestila delujejo le v nameščeni aplikaciji: v Safariju tapni Deli ⬆︎ → »Dodaj na začetni zaslon«, odpri stran z ikone na začetnem zaslonu in tu vklopi obvestila."
+      : "Ta brskalnik ne podpira obvestil.");
+    return;
+  }
+  // Ask for permission first, while still inside the tap (Safari requires it)
+  const perm = mode === "off" ? Notification.requestPermission() : null;
+  b.disabled = true; b.textContent = mode === "off" ? "Vklapljam …" : "Izklapljam …";
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (mode === "on") {
+      if (sub) { await scriptPost({ type: "push", action: "unsubscribe", endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); }
+    } else {
+      if ((await perm) !== "granted") throw new Error("Obvestila so za to stran v brskalniku blokirana – dovoli jih v nastavitvah strani in poskusi znova.");
+      const { publicKey } = await scriptPost({ type: "push", action: "key" });
+      if (sub) await sub.unsubscribe(); // e.g. made with an older key
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pushKeyBytes(publicKey) });
+      const res = await scriptPost({ type: "push", action: "subscribe", subscription: sub.toJSON(), device: pushDevice() });
+      pushSynced = true;
+      if (!(res.test >= 200 && res.test < 300)) alert(`Naprava je prijavljena, a testnega obvestila ni bilo mogoče poslati (${res.testError || res.test || "Worker ni nastavljen"}).`);
+    }
+  } catch (err) {
+    alert(err?.message === "push_not_configured" ? "Obvestila na strežniku še niso nastavljena (glej apps-script/push.gs)." : `Ni uspelo: ${err?.message || err}`);
+  } finally {
+    b.disabled = false;
+    pushRender();
+  }
+}
+document.addEventListener("click", (e) => { const b = e.target.closest("[data-push]"); if (b && !b.disabled) pushToggle(b); });
 
 /* —— Apps Script data for the whole session: on load (any page) everything the signed-in user may see is requested at once
    and kept until reload/sign-out; a page awaits the request still in flight or, if it failed, retries it —— */
