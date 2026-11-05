@@ -2687,15 +2687,17 @@ document.addEventListener("visibilitychange", ppKeepFresh);
 /* —— Zabava → Bum-Bar: whack-a-mole reaction game. Green parrots pop in and out of BB_HOLES holes in the deck; at a random
    moment a red one pops out and the player taps the deck as fast as possible. BB_ROUNDS rounds, once per day; the score is
    the sum of the reaction times + BB_EARLY_MS per tap before the red parrot was out. Times are measured here
-   (pointerdown timestamp − the frame the red parrot was drawn in); apps-script/bumbar.gs stores them (tab results-bumbar). —— */
+   (pointerdown timestamp − the frame the red parrot was drawn in); apps-script/bumbar.gs stores them (tab results-bumbar).
+   After the day's game the player can replay for fun (bb.fun): same rounds, but nothing is saved, queued or ranked. —— */
 const BB_HOLES = 9, BB_ROUNDS = 3, BB_EARLY_MS = 1000, BB_MIN_MS = 60; // keep in sync with bumbar.gs
-const bb = { g: null, phase: "idle", timers: [], up: new Set(), red: -1, t0: 0, scores: undefined, scoreTab: "danes" };
+const bb = { g: null, fun: null, phase: "idle", timers: [], up: new Set(), red: -1, t0: 0, scores: undefined, scoreTab: "danes" };
 const bbKey = (date) => `uvodja.bumbar.${date}`;
 const BB_QUEUE = "uvodja.bumbar.queue";
 const bbTotal = (r) => r.rounds.reduce((a, v) => a + v, 0) + (r.early || 0) * BB_EARLY_MS;
 const bbMs = (ms) => `${Math.round(ms)} ms`;
 function bbMsg(t) { const m = $("#bb-msg"); if (m) m.textContent = t || ""; }
-function bbSave() { try { localStorage.setItem(bbKey(bb.g.date), JSON.stringify(bb.g)); } catch {} }
+const bbCur = () => bb.fun || bb.g; // the game on screen: today's scored one, or a replay for fun
+function bbSave() { if (bb.fun) return; try { localStorage.setItem(bbKey(bb.g.date), JSON.stringify(bb.g)); } catch {} }
 function bbParrot(red) {
   const body = red ? "#d4240b" : "#3f9a3a", side = red ? "#f1eb76" : "#b8de6a";
   return `<svg viewBox="0 0 64 100" aria-hidden="true">
@@ -2729,37 +2731,41 @@ async function renderBumbar() {
   loadBbScores();
   const today = ljNow().date;
   if (bb.g?.date !== today) {
-    bbStopAll(); bb.phase = "idle";
+    bbStopAll(); bb.phase = "idle"; bb.fun = null;
     let g = null; try { g = JSON.parse(localStorage.getItem(bbKey(today))); } catch {}
     bb.g = g && Array.isArray(g.rounds) ? g : { date: today, rounds: [], early: 0, done: false };
   }
   $("#bb-sub").textContent = wdFmtDate(today);
-  if (bb.phase === "idle" && !bb.g.done) bbMsg("");
+  if (bb.phase === "idle" && !bbCur().done) bbMsg("");
   bbDraw();
 }
 function bbDraw() {
-  const g = bb.g;
+  const g = bbCur(), fun = !!bb.fun;
   if (!g) return;
   const playing = ["wait", "red", "between"].includes(bb.phase);
   $("#bb-cover").hidden = playing;
   $("#bb-stage").classList.toggle("is-playing", playing);
   const start = $("#bb-start");
-  start.hidden = g.done;
-  start.textContent = g.rounds.length ? `Nadaljuj – krog ${g.rounds.length + 1}/${BB_ROUNDS} 🦜` : "Začni 🦜";
-  $("#bb-rules").innerHTML = g.done
-    ? `Današnja igra je odigrana – skupaj <strong>${bbMs(bbTotal(g))}</strong>. Jutri spet! 🦜`
+  start.hidden = false;
+  start.textContent = g.done ? "Igraj še enkrat – za zabavo 🎉"
+    : g.rounds.length ? `Nadaljuj – krog ${g.rounds.length + 1}/${BB_ROUNDS} 🦜` : fun ? "Začni – za zabavo 🎉" : "Začni 🦜";
+  const official = `Današnja igra je odigrana – skupaj <strong>${bbMs(bbTotal(bb.g))}</strong>. Jutri spet!`;
+  $("#bb-rules").innerHTML = fun
+    ? (g.done ? `Igra za zabavo – skupaj <strong>${bbMs(bbTotal(g))}</strong>. ${official} Igre za zabavo ne štejejo za lestvico.`
+      : `${official} Igre za zabavo ne štejejo za lestvico. 🦜`)
+    : g.done ? `${official} Lahko pa igraš še za zabavo – ne šteje za lestvico. 🦜`
     : "Na krovu imamo slepega potnika! Pod palubo se je naselila tujerodna rdeča papiga. Takoj ko pokuka iz luknje v palubi, jo udari po glavi.";
   const r = $("#bb-round");
   r.hidden = !playing && !g.done;
   r.classList.toggle("is-done", g.done);
-  r.textContent = g.done ? `Σ ${bbMs(bbTotal(g))}` : `Krog ${Math.min(g.rounds.length + 1, BB_ROUNDS)}/${BB_ROUNDS}`;
+  r.textContent = (g.done ? `Σ ${bbMs(bbTotal(g))}` : `Krog ${Math.min(g.rounds.length + 1, BB_ROUNDS)}/${BB_ROUNDS}`) + (fun ? " · za zabavo" : "");
   $("#bb-times").innerHTML = Array.from({ length: BB_ROUNDS }, (_, i) => `<li class="${g.rounds[i] != null ? "is-set" : ""}"><span>Krog ${i + 1}</span><strong>${g.rounds[i] != null ? bbMs(g.rounds[i]) : "–"}</strong></li>`).join("")
     + `<li class="bb-sum${g.early ? " has-early" : ""}"><span>Skupaj${g.early ? ` <small>(${g.early}× prezgodaj, +${g.early * BB_EARLY_MS / 1000} s)</small>` : ""}</span><strong>${g.rounds.length ? bbMs(bbTotal(g)) : "–"}</strong></li>`;
 }
 function bbStart() {
-  const g = bb.g;
-  if (!g || g.done || bb.phase !== "idle") return;
+  if (!bb.g || bb.phase !== "idle") return;
   if (!state.user) { bbMsg("Za igro se prijavi."); return; }
+  if (bb.g.done && (!bb.fun || bb.fun.done)) bb.fun = { date: bb.g.date, rounds: [], early: 0, done: false }; // replay for fun
   bbRound();
 }
 function bbRound() {
@@ -2790,7 +2796,7 @@ function bbShowRed() {
   requestAnimationFrame(() => { if (bb.phase === "red" && bb.red === i) bb.t0 = performance.now(); }); // the frame it is drawn in
 }
 function bbEarly() {
-  bb.g.early++; bbSave(); bbDraw();
+  bbCur().early++; bbSave(); bbDraw();
   bbMsg(`Prezgodaj! +${BB_EARLY_MS / 1000} s 🙈`);
   const f = $("#bb-flash"); f.classList.remove("is-on"); void f.offsetWidth; f.classList.add("is-on");
 }
@@ -2802,7 +2808,7 @@ function bbTap(e) {
   if (bb.phase !== "red") return;
   const ms = Math.max(0, (e.timeStamp > 1e12 ? performance.now() : e.timeStamp) - bb.t0);
   if (ms < BB_MIN_MS) { bbEarly(); return; } // a guess, not a reaction
-  const g = bb.g, i = bb.red;
+  const g = bbCur(), i = bb.red;
   bb.phase = "between";
   g.rounds.push(Math.round(ms)); bbSave();
   bb.timers.forEach(clearTimeout); bb.timers = [];
@@ -2816,9 +2822,11 @@ function bbTap(e) {
   bbLater(() => { if (bb.phase === "between") bbRound(); }, 1800);
 }
 function bbFinish() {
-  const g = bb.g, u = state.user;
+  const g = bbCur(), u = state.user;
   bbStopAll(); bb.phase = "idle";
-  g.done = true; bbSave();
+  g.done = true;
+  if (bb.fun) { bbMsg(`Konec! Za zabavo: ${bbMs(bbTotal(g))} 🎉`); bbDraw(); return; } // not saved, not sent, not ranked
+  bbSave();
   const item = { date: g.date, rounds: g.rounds, early: g.early };
   bbSetQueue([...bbQueue().filter((x) => x.date !== g.date), item]);
   if (u && Array.isArray(bb.scores)) {
