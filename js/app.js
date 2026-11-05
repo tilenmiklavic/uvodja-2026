@@ -3947,11 +3947,12 @@ document.addEventListener("click", (e) => {
   try { localStorage.setItem("uvodja.pv.peek", pvPeekOn() ? "0" : "1"); } catch {}
   renderPvPeek(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || pvTabsFor(effectiveRole(state.user?.email))[0]);
 });
-/* Preverba SVODa: today's day form open; earlier days collapsed below (for filling in late) */
+/* Preverba SVODa: today's day form open; earlier days collapsed below for admin only (SVOD sees just today) */
 function renderPvSvod(box) {
   const today = ljNow().date, forms = pvData?.svodForms || [];
-  const cur = forms.find((f) => f.date === today), past = forms.filter((f) => f.date < today).reverse();
-  const key = today + forms.map((f) => f.formId).join();
+  const hidePast = effectiveRole(state.user?.email) === "svod"; // SVOD sees only today's preverba; admin still gets earlier days
+  const cur = forms.find((f) => f.date === today), past = hidePast ? [] : forms.filter((f) => f.date < today).reverse();
+  const key = today + hidePast + forms.map((f) => f.formId).join();
   if (box.dataset.key === key) return; // keep iframes (and half-filled answers)
   box.dataset.key = key;
   const card = (f, open) => `<details class="card pv-form" data-form-id="${esc(f.formId)}"${open ? " open" : ""}>
