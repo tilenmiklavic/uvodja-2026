@@ -2748,7 +2748,7 @@ function bbDraw() {
   start.textContent = g.rounds.length ? `Nadaljuj – krog ${g.rounds.length + 1}/${BB_ROUNDS} 🦜` : "Začni 🦜";
   $("#bb-rules").innerHTML = g.done
     ? `Današnja igra je odigrana – skupaj <strong>${bbMs(bbTotal(g))}</strong>. Jutri spet! 🦜`
-    : `Zelene papige pridejo ven in se skrijejo. Ko pokuka <strong>rdeča</strong>, čim hitreje tapni zaslon! ${BB_ROUNDS} krogi, šteje vsota časov. Vsak prezgoden tap doda ${BB_EARLY_MS / 1000} s.`;
+    : "Na krovu imamo slepega potnika! Pod palubo se je naselila tujerodna rdeča papiga. Takoj ko pokuka iz luknje v palubi, jo udari po glavi.";
   const r = $("#bb-round");
   r.hidden = !playing && !g.done;
   r.classList.toggle("is-done", g.done);
