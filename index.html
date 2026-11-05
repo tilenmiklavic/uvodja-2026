@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="U Vodja" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
-  <link rel="stylesheet" href="css/styles.css?v=102" />
+  <link rel="stylesheet" href="css/styles.css?v=103" />
   <script src="https://accounts.google.com/gsi/client" async></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -334,6 +334,7 @@
         <a class="zb-choice" href="#zabava/wordle"><img src="assets/zabava/wordle.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Dnevni Wordle</span></a>
         <a class="zb-choice" href="#zabava/stavnica"><img src="assets/zabava/stavnica.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Piratska stavnica</span></a>
         <a class="zb-choice zb-wide" href="#zabava/papiga"><img src="assets/zabava/papiga.webp" alt="" width="1400" height="480" /><span class="zb-choice-label">Spot-A-Papiga</span></a>
+        <a class="zb-choice zb-wide" href="#zabava/bumbar"><img src="assets/zabava/bumbar.webp" alt="" width="1400" height="480" /><span class="zb-choice-label">Bum-Bar</span></a>
       </nav>
       <p class="person-back zb-back" id="zb-back" hidden><a href="#zabava">← Nazaj na Zabavo</a></p>
       <div class="stavnica" id="stavnica" hidden></div>
@@ -367,6 +368,32 @@
           <p class="wd-score-meta muted-text" id="pp-score-meta"></p>
         </section>
       </div>
+      <div class="bumbar" id="bumbar" hidden>
+        <div class="wd-head">
+          <h2>Bum-Bar</h2>
+          <p class="muted-text wd-sub" id="bb-sub"></p>
+          <p class="wd-timer" id="bb-round" hidden></p>
+        </div>
+        <p class="wd-msg" id="bb-msg" role="status" aria-live="polite"></p>
+        <div class="bb-stage" id="bb-stage">
+          <div class="bb-deck" id="bb-deck" aria-label="Krov ladje z luknjami"></div>
+          <div class="bb-flash" id="bb-flash" aria-hidden="true"></div>
+          <div class="bb-cover" id="bb-cover">
+            <button type="button" class="btn primary bb-start" id="bb-start">Začni 🦜</button>
+            <p id="bb-rules">Zelene papige pridejo ven in se skrijejo. Ko pokuka <strong>rdeča</strong>, čim hitreje tapni zaslon! 3 krogi, šteje vsota časov. Vsak prezgoden tap doda 1 s.</p>
+          </div>
+        </div>
+        <ol class="bb-times" id="bb-times" aria-label="Časi po krogih"></ol>
+        <p class="pp-save" id="bb-save" role="status" hidden></p>
+        <section class="wd-score" id="bb-score" hidden>
+          <div class="wd-score-tabs" role="tablist">
+            <button type="button" role="tab" class="wd-stab bb-stab" data-bbtab="danes" aria-selected="true">Danes</button>
+            <button type="button" role="tab" class="wd-stab bb-stab" data-bbtab="najboljsi" aria-selected="false">Najboljši</button>
+          </div>
+          <div id="bb-score-body" class="wd-score-body"></div>
+          <p class="wd-score-meta muted-text" id="bb-score-meta"></p>
+        </section>
+      </div>
       <div class="wordle" id="wordle">
         <div class="wd-head">
           <h2>Wordle</h2>
@@ -393,6 +420,6 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=114" type="module"></script>
+  <script src="js/app.js?v=115" type="module"></script>
 </body>
 </html>
