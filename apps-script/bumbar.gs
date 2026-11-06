@@ -1,16 +1,18 @@
 /**
  * Zabava → Bum-Bar: a whack-a-mole reaction game. Green parrots pop in and out of 9 holes (3 × 3) in the deck; at a random moment a
- * red one appears and the player taps as fast as possible. 3 rounds, once per day; the score is the sum of the 3 reaction
- * times plus BUMBAR_EARLY_MS for every tap before the red parrot was out. Timing happens in the browser; this script
+ * red one appears and the player taps as fast as possible. A game is 3 rounds; the score is the sum of the 3 reaction
+ * times plus BUMBAR_EARLY_MS for every tap before the red parrot was out. Players may retry as often as they like:
+ * every finished game is stored (one row per attempt) and the site ranks each player's best game of the day. Timing happens in the browser; this script
  * only checks the numbers are plausible and stores them.
  *
  * Results go into Drive wordle/results (BUMBAR_RESULTS_ID, the same sheet as Wordle and Spot-A-Papiga):
- *   tab "results-bumbar" Čas | Email | Ime | Datum | Krog 1 (ms) | Krog 2 (ms) | Krog 3 (ms) | Prezgodnji | Skupaj (ms)
- *   (the tab is created on the first result)
+ *   tab "results-bumbar" Čas | Email | Ime | Datum | Krog 1 (ms) | Krog 2 (ms) | Krog 3 (ms) | Prezgodnji | Skupaj (ms) | Poskus | ID
+ *   (the tab is created on the first result; the last two columns are added to an existing tab automatically)
  *
- * doPost {type:'bumbar', action:'result', credential, date, rounds:[ms, ms, ms], early}
- *        → one row per player and day (first one wins)
- * doGet ?type=bumbar → {ok, results:[{email,name,date,rounds,early,total}]}  (?callback=fn for JSONP)
+ * doPost {type:'bumbar', action:'result', credential, date, rounds:[ms, ms, ms], early, id, attempt}
+ *        → one row per finished game; id (made by the site) makes resending the same game harmless.
+ *          Without an id (an old cached page) it is still one row per player and day.
+ * doGet ?type=bumbar → {ok, results:[{email,name,date,rounds,early,total,attempt}]}  (?callback=fn for JSONP)
  *
  * Hook it into Code.gs (needs Code.gs helpers verifyToken_, json_, cellDate_, TZ – the same ones papiga.gs uses):
  *   doPost, with the other handlers:   if (body.type === 'bumbar') return handleBumbar(body);
@@ -28,8 +30,10 @@ function bumbarResultsSheet_() {
   var ss = SpreadsheetApp.openById(BUMBAR_RESULTS_ID), sh = ss.getSheetByName(BUMBAR_RESULTS);
   if (!sh) {
     sh = ss.insertSheet(BUMBAR_RESULTS);
-    sh.appendRow(['Čas', 'Email', 'Ime', 'Datum', 'Krog 1 (ms)', 'Krog 2 (ms)', 'Krog 3 (ms)', 'Prezgodnji', 'Skupaj (ms)']);
+    sh.appendRow(['Čas', 'Email', 'Ime', 'Datum', 'Krog 1 (ms)', 'Krog 2 (ms)', 'Krog 3 (ms)', 'Prezgodnji', 'Skupaj (ms)', 'Poskus', 'ID']);
     sh.setFrozenRows(1);
+  } else if (!sh.getRange(1, 11).getValue()) {
+    sh.getRange(1, 10, 1, 2).setValues([['Poskus', 'ID']]);
   }
   return sh;
 }
@@ -46,15 +50,20 @@ function handleBumbar(body) {
     var early = Math.floor(Number(body.early));
     if (!(early >= 0 && early < 10000)) early = 0;
     var total = rounds.reduce(function (a, v) { return a + v; }, 0) + early * BUMBAR_EARLY_MS;
+    var id = String(body.id || '').replace(/[^\w-]/g, '').slice(0, 40);
+    var attempt = Math.floor(Number(body.attempt));
+    if (!(attempt >= 1 && attempt < 10000)) attempt = '';
 
     var lock = LockService.getScriptLock();
     lock.waitLock(10000);
     try {
       var sh = bumbarResultsSheet_(), rows = sh.getDataRange().getValues();
       for (var i = 1; i < rows.length; i++) {
-        if (String(rows[i][1]).toLowerCase() === who.email && cellDate_(rows[i][3]) === date) return json_({ ok: true, duplicate: true });
+        var same = id ? String(rows[i][10]) === id // the same game sent again
+          : String(rows[i][1]).toLowerCase() === who.email && cellDate_(rows[i][3]) === date; // old page: one per day
+        if (same) return json_({ ok: true, duplicate: true });
       }
-      sh.appendRow([new Date(), who.email, who.name, "'" + date, rounds[0], rounds[1], rounds[2], early, total]);
+      sh.appendRow([new Date(), who.email, who.name, "'" + date, rounds[0], rounds[1], rounds[2], early, total, attempt, id ? "'" + id : '']);
     } finally {
       lock.releaseLock();
     }
@@ -72,7 +81,7 @@ function bumbarResults_(cb) {
       var r = rows[i];
       if (!r[1]) continue;
       out.push({ email: String(r[1]).toLowerCase(), name: String(r[2]), date: cellDate_(r[3]),
-        rounds: [Number(r[4]) || 0, Number(r[5]) || 0, Number(r[6]) || 0], early: Number(r[7]) || 0, total: Number(r[8]) || 0 });
+        rounds: [Number(r[4]) || 0, Number(r[5]) || 0, Number(r[6]) || 0], early: Number(r[7]) || 0, total: Number(r[8]) || 0, attempt: Number(r[9]) || 1 });
     }
     return json_({ ok: true, results: out }, cb);
   } catch (err) {

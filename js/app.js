@@ -2743,19 +2743,33 @@ setInterval(ppKeepFresh, 30 * 1000);
 document.addEventListener("visibilitychange", ppKeepFresh);
 
 /* —— Zabava → Bum-Bar: whack-a-mole reaction game. Green parrots pop in and out of BB_HOLES holes in the deck; at a random
-   moment a red one pops out and the player taps the deck as fast as possible. BB_ROUNDS rounds, once per day; the score is
+   moment a red one pops out and the player taps the deck as fast as possible. A game is BB_ROUNDS rounds; the score is
    the sum of the reaction times + BB_EARLY_MS per tap before the red parrot was out. Times are measured here
-   (pointerdown timestamp − the frame the red parrot was drawn in); apps-script/bumbar.gs stores them (tab results-bumbar).
-   After the day's game the player can replay for fun (bb.fun): same rounds, but nothing is saved, queued or ranked. —— */
+   (pointerdown timestamp − the frame the red parrot was drawn in); apps-script/bumbar.gs stores every finished game
+   (tab results-bumbar, one row per attempt). Players may retry as often as they like: their best game of the day counts. —— */
 const BB_HOLES = 9, BB_ROUNDS = 3, BB_EARLY_MS = 1000, BB_MIN_MS = 60; // keep in sync with bumbar.gs
-const bb = { g: null, fun: null, phase: "idle", timers: [], up: new Set(), red: -1, t0: 0, scores: undefined, scoreTab: "danes" };
+const bb = { day: null, phase: "idle", timers: [], up: new Set(), red: -1, t0: 0, scores: undefined, scoreTab: "danes" };
 const bbKey = (date) => `uvodja.bumbar.${date}`;
 const BB_QUEUE = "uvodja.bumbar.queue";
 const bbTotal = (r) => r.rounds.reduce((a, v) => a + v, 0) + (r.early || 0) * BB_EARLY_MS;
 const bbMs = (ms) => `${Math.round(ms)} ms`;
 function bbMsg(t) { const m = $("#bb-msg"); if (m) m.textContent = t || ""; }
-const bbCur = () => bb.fun || bb.g; // the game on screen: today's scored one, or a replay for fun
-function bbSave() { if (bb.fun) return; try { localStorage.setItem(bbKey(bb.g.date), JSON.stringify(bb.g)); } catch {} }
+/* bb.day = { date, tries (finished games), best: {rounds, early} | null, cur: the game on screen {id, attempt, rounds, early, done} } */
+const bbCur = () => bb.day?.cur;
+const bbNewGame = (day) => ({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`, attempt: day.tries + 1, rounds: [], early: 0, done: false });
+const bbTries = (n) => `${n} ${n % 100 === 1 ? "poskus" : n % 100 === 2 ? "poskusa" : n % 100 === 3 || n % 100 === 4 ? "poskusi" : "poskusov"}`;
+function bbSave() { try { localStorage.setItem(bbKey(bb.day.date), JSON.stringify(bb.day)); } catch {} }
+function bbLoadDay(date) {
+  let d = null; try { d = JSON.parse(localStorage.getItem(bbKey(date))); } catch {}
+  if (d && d.cur) return d;
+  const day = { date, tries: 0, best: null, cur: null };
+  if (d && Array.isArray(d.rounds)) { // saved by the once-a-day version: { rounds, early, done }
+    if (d.done) { day.tries = 1; day.best = { rounds: d.rounds, early: d.early || 0 }; day.cur = { ...bbNewGame(day), attempt: 1, rounds: d.rounds, early: d.early || 0, done: true }; }
+    else day.cur = { ...bbNewGame(day), rounds: d.rounds, early: d.early || 0 };
+  }
+  day.cur ||= bbNewGame(day);
+  return day;
+}
 function bbParrot(red) {
   const body = red ? "#d4240b" : "#3f9a3a", side = red ? "#f1eb76" : "#b8de6a";
   return `<svg viewBox="0 0 64 100" aria-hidden="true">
@@ -2788,42 +2802,34 @@ async function renderBumbar() {
   bbBuildDeck();
   loadBbScores();
   const today = ljNow().date;
-  if (bb.g?.date !== today) {
-    bbStopAll(); bb.phase = "idle"; bb.fun = null;
-    let g = null; try { g = JSON.parse(localStorage.getItem(bbKey(today))); } catch {}
-    bb.g = g && Array.isArray(g.rounds) ? g : { date: today, rounds: [], early: 0, done: false };
-  }
+  if (bb.day?.date !== today) { bbStopAll(); bb.phase = "idle"; bb.day = bbLoadDay(today); }
   $("#bb-sub").textContent = wdFmtDate(today);
   if (bb.phase === "idle" && !bbCur().done) bbMsg("");
   bbDraw();
 }
 function bbDraw() {
-  const g = bbCur(), fun = !!bb.fun;
+  const day = bb.day, g = bbCur();
   if (!g) return;
   const playing = ["wait", "red", "between"].includes(bb.phase);
   $("#bb-cover").hidden = playing;
   $("#bb-stage").classList.toggle("is-playing", playing);
   const start = $("#bb-start");
   start.hidden = false;
-  start.textContent = g.done ? "Igraj še enkrat – za zabavo 🎉"
-    : g.rounds.length ? `Nadaljuj – krog ${g.rounds.length + 1}/${BB_ROUNDS} 🦜` : fun ? "Začni – za zabavo 🎉" : "Začni 🦜";
-  const official = `Današnja igra je odigrana – skupaj <strong>${bbMs(bbTotal(bb.g))}</strong>. Jutri spet!`;
-  $("#bb-rules").innerHTML = fun
-    ? (g.done ? `Igra za zabavo – skupaj <strong>${bbMs(bbTotal(g))}</strong>. ${official} Igre za zabavo ne štejejo za lestvico.`
-      : `${official} Igre za zabavo ne štejejo za lestvico. 🦜`)
-    : g.done ? `${official} Lahko pa igraš še za zabavo – ne šteje za lestvico. 🦜`
+  start.textContent = g.done ? "Poskusi znova 🔁" : g.rounds.length ? `Nadaljuj – krog ${g.rounds.length + 1}/${BB_ROUNDS} 🦜` : day.tries ? "Poskusi znova 🔁" : "Začni 🦜";
+  $("#bb-rules").innerHTML = day.best
+    ? `Tvoj najboljši rezultat danes: <strong>${bbMs(bbTotal(day.best))}</strong> (${bbTries(day.tries)}). Za lestvico šteje najboljša igra dneva – poskusi ga izboljšati! 🦜`
     : "Na krovu imamo slepega potnika! Pod palubo se je naselila tujerodna rdeča papiga. Takoj ko pokuka iz luknje v palubi, jo udari po glavi.";
   const r = $("#bb-round");
-  r.hidden = !playing && !g.done;
-  r.classList.toggle("is-done", g.done);
-  r.textContent = (g.done ? `Σ ${bbMs(bbTotal(g))}` : `Krog ${Math.min(g.rounds.length + 1, BB_ROUNDS)}/${BB_ROUNDS}`) + (fun ? " · za zabavo" : "");
+  r.hidden = !playing && !day.best;
+  r.classList.toggle("is-done", !playing);
+  r.textContent = playing ? `Krog ${Math.min(g.rounds.length + 1, BB_ROUNDS)}/${BB_ROUNDS}${g.attempt > 1 ? ` · poskus ${g.attempt}` : ""}` : day.best ? `🏆 ${bbMs(bbTotal(day.best))}` : "";
   $("#bb-times").innerHTML = Array.from({ length: BB_ROUNDS }, (_, i) => `<li class="${g.rounds[i] != null ? "is-set" : ""}"><span>Krog ${i + 1}</span><strong>${g.rounds[i] != null ? bbMs(g.rounds[i]) : "–"}</strong></li>`).join("")
     + `<li class="bb-sum${g.early ? " has-early" : ""}"><span>Skupaj${g.early ? ` <small>(${g.early}× prezgodaj, +${g.early * BB_EARLY_MS / 1000} s)</small>` : ""}</span><strong>${g.rounds.length ? bbMs(bbTotal(g)) : "–"}</strong></li>`;
 }
 function bbStart() {
-  if (!bb.g || bb.phase !== "idle") return;
+  if (!bb.day || bb.phase !== "idle") return;
   if (!state.user) { bbMsg("Za igro se prijavi."); return; }
-  if (bb.g.done && (!bb.fun || bb.fun.done)) bb.fun = { date: bb.g.date, rounds: [], early: 0, done: false }; // replay for fun
+  if (bb.day.cur.done) { bb.day.cur = bbNewGame(bb.day); bbSave(); } // a new attempt
   bbRound();
 }
 function bbRound() {
@@ -2880,18 +2886,17 @@ function bbTap(e) {
   bbLater(() => { if (bb.phase === "between") bbRound(); }, 1800);
 }
 function bbFinish() {
-  const g = bbCur(), u = state.user;
+  const day = bb.day, g = day.cur, u = state.user;
   bbStopAll(); bb.phase = "idle";
-  g.done = true;
-  if (bb.fun) { bbMsg(`Konec! Za zabavo: ${bbMs(bbTotal(g))} 🎉`); bbDraw(); return; } // not saved, not sent, not ranked
+  g.done = true; day.tries = Math.max(day.tries + 1, g.attempt);
+  const prev = day.best, better = !prev || bbTotal(g) < bbTotal(prev);
+  if (better) day.best = { rounds: g.rounds, early: g.early };
   bbSave();
-  const item = { date: g.date, rounds: g.rounds, early: g.early };
-  bbSetQueue([...bbQueue().filter((x) => x.date !== g.date), item]);
-  if (u && Array.isArray(bb.scores)) {
-    bb.scores = [...bb.scores.filter((r) => !(r.date === g.date && r.email === u.email.toLowerCase())), { email: u.email.toLowerCase(), name: u.name || u.email, ...item }];
-    renderBbScores();
-  }
-  bbMsg(`Konec! Skupaj ${bbMs(bbTotal(g))} 🏁`);
+  const item = { id: g.id, attempt: g.attempt, date: day.date, rounds: g.rounds, early: g.early };
+  bbSetQueue([...bbQueue().filter((x) => x.id !== g.id), item]);
+  if (u && Array.isArray(bb.scores)) { bb.scores = [...bb.scores, { email: u.email.toLowerCase(), name: u.name || u.email, ...item }]; renderBbScores(); }
+  bbMsg(!prev ? `Konec! Skupaj ${bbMs(bbTotal(g))} 🏁` : better ? `Nov dnevni rekord! ${bbMs(bbTotal(g))} 🏆 (prej ${bbMs(bbTotal(prev))})`
+    : `Konec! ${bbMs(bbTotal(g))} – tvoj najboljši danes ostaja ${bbMs(bbTotal(day.best))}.`);
   bbDraw();
   bbFlush(true);
 }
@@ -2912,7 +2917,7 @@ async function bbFlush(interactive = false) {
     for (const item of [...q]) {
       try {
         const res = await wdPost(cfg.scriptUrl, { type: "bumbar", action: "result", ...item }, cred, true);
-        if (res.ok || ["bad_date", "future_date", "bad_rounds"].includes(res.error)) { q = q.filter((x) => x.date !== item.date); sent = sent || res.ok; }
+        if (res.ok || ["bad_date", "future_date", "bad_rounds"].includes(res.error)) { q = q.filter((x) => x !== item); sent = sent || res.ok; }
         if (!res.ok) problem = res.error || "napaka";
       } catch (err) { problem = err?.kind === "offline" ? "ni povezave" : err?.message || "napaka"; }
     }
@@ -2921,7 +2926,17 @@ async function bbFlush(interactive = false) {
   bbSaveNote(q.length ? `Rezultat še ni shranjen (${problem}) – poskusim znova čez pol minute.` : problem ? `Rezultat ni bil sprejet (${problem}).` : "");
   if (sent) loadBbScores(true);
 }
-/* Leaderboard (GET ?type=bumbar): Danes = today's totals, Najboljši = each player's best day */
+/* Each player's best game per day (rows = every attempt), with the number of attempts that day */
+function bbBestPerDay(rows) {
+  const m = {};
+  for (const r of rows) {
+    const k = `${r.email}|${r.date}`, cur = m[k];
+    if (!cur) m[k] = { ...r, tries: 1 };
+    else { cur.tries++; if (bbTotal(r) < bbTotal(cur)) Object.assign(cur, { ...r, tries: cur.tries }); }
+  }
+  return Object.values(m);
+}
+/* Leaderboard (GET ?type=bumbar): Danes = each player's best game today, Najboljši = each player's best game ever */
 async function loadBbScores(force = false) {
   const cfg = await wdConfig();
   const box = $("#bb-score");
@@ -2937,10 +2952,16 @@ async function loadBbScores(force = false) {
   try { bb.scores = await scriptLoad("bumbar", true); } catch { if (bb.scores === undefined) bb.scores = null; }
   bb.scoresLoading = false;
   renderBbScores();
-  // Played on another device: show that result here too
-  const u = state.user, g = bb.g;
-  const mine = u && g && !g.done && bb.phase === "idle" && (bb.scores || []).find((r) => r.date === g.date && r.email === u.email.toLowerCase());
-  if (mine) { Object.assign(g, { rounds: mine.rounds, early: mine.early, done: true }); bbSave(); bbDraw(); }
+  // Played on another device too: take over a better best and the number of attempts
+  const u = state.user, day = bb.day;
+  const mine = u && day && bb.phase === "idle" ? (bb.scores || []).filter((r) => r.date === day.date && r.email === u.email.toLowerCase()) : [];
+  if (mine.length) {
+    const top = mine.reduce((a, r) => (bbTotal(r) < bbTotal(a) ? r : a));
+    let changed = false;
+    if (!day.best || bbTotal(top) < bbTotal(day.best)) { day.best = { rounds: top.rounds, early: top.early || 0 }; changed = true; }
+    if (mine.length > day.tries) { day.tries = mine.length; if (!day.cur.rounds.length) day.cur.attempt = day.tries + 1; changed = true; }
+    if (changed) { bbSave(); bbDraw(); }
+  }
 }
 function renderBbScoreMeta() {
   const el = $("#bb-score-meta");
@@ -2958,16 +2979,16 @@ function renderBbScores() {
   $$(".bb-stab").forEach((b) => b.setAttribute("aria-selected", b.dataset.bbtab === tab ? "true" : "false"));
   const today = ljNow().date;
   let rows;
-  if (tab === "danes") rows = bb.scores.filter((r) => r.date === today);
+  if (tab === "danes") rows = bbBestPerDay(bb.scores.filter((r) => r.date === today));
   else {
     const best = {};
-    for (const r of bb.scores) if (!best[r.email] || bbTotal(r) < bbTotal(best[r.email])) best[r.email] = r;
+    for (const r of bbBestPerDay(bb.scores)) if (!best[r.email] || bbTotal(r) < bbTotal(best[r.email])) best[r.email] = r;
     rows = Object.values(best);
   }
   rows.sort((a, b) => bbTotal(a) - bbTotal(b));
   body.innerHTML = rows.length ? `<ol class="wd-board-list${tab === "danes" ? "" : " total"}">${rows.map((r, i) => {
     const w = wdWho(r.email, r.name), rank = ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
-    const detail = r.rounds.map((v) => Math.round(v)).join(" · ") + (r.early ? ` · +${r.early}× ✕` : "");
+    const detail = r.rounds.map((v) => Math.round(v)).join(" · ") + (r.early ? ` · +${r.early}× ✕` : "") + (tab === "danes" && r.tries > 1 ? ` · ${bbTries(r.tries)}` : "");
     return `<li><span class="wd-rank${i < 3 ? " medal" : ""}">${rank}</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span><span class="wd-time muted-text bb-detail">${esc(detail)}${tab === "danes" ? "" : ` · ${esc(wdFmtDate(r.date).replace(/ \d{4}$/, ""))}`}</span><span class="wd-res">${bbMs(bbTotal(r))}</span></li>`;
   }).join("")}</ol>` : `<p class="muted-text">${tab === "danes" ? "Danes še nihče ni igral." : "Še ni rezultatov."}</p>`;
 }
@@ -2996,7 +3017,7 @@ function bbKeepFresh() {
   if (!state.bumbarActive) return;
   if (document.hidden) { bbLeave(); bbDraw(); bbMsg(""); return; }
   if (bbQueue().length) bbFlush();
-  if (bb.phase === "idle" && bb.g?.date !== ljNow().date) { renderBumbar(); return; }
+  if (bb.phase === "idle" && bb.day?.date !== ljNow().date) { renderBumbar(); return; }
   loadBbScores();
 }
 setInterval(bbKeepFresh, 30 * 1000);
@@ -4178,10 +4199,10 @@ async function renderBbAnalitika(force = false) {
   const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
   const today = ljNow().date;
   const days = [...new Set(scores.map((r) => r.date).filter((d) => d && d <= today))].sort().map((date) => {
-    const rows = scores.filter((r) => r.date === date), sorted = [...rows].sort((a, b) => bbTotal(a) - bbTotal(b));
-    const reacts = rows.flatMap((r) => r.rounds.filter((v) => v > 0));
-    return { date, short: `${Number(date.slice(8))}. ${Number(date.slice(5, 7))}.`, played: rows.length, med: median(rows.map(bbTotal)),
-      react: median(reacts), fastest: reacts.length ? Math.min(...reacts) : null, early: mean(rows.map((r) => r.early || 0)), best: sorted[0] || null };
+    const all = scores.filter((r) => r.date === date), rows = bbBestPerDay(all), sorted = [...rows].sort((a, b) => bbTotal(a) - bbTotal(b));
+    const reacts = all.flatMap((r) => r.rounds.filter((v) => v > 0)); // every round of every attempt
+    return { date, short: `${Number(date.slice(8))}. ${Number(date.slice(5, 7))}.`, played: rows.length, games: all.length, med: median(rows.map(bbTotal)),
+      react: median(reacts), fastest: reacts.length ? Math.min(...reacts) : null, early: mean(all.map((r) => r.early || 0)), best: sorted[0] || null };
   });
   if (!days.length) { box.innerHTML = `<p class="muted-text">Še nihče ni igral.</p><p class="muted-text pvc-note"><button type="button" class="link-btn" data-bba-reload>Osveži</button></p>`; return; }
   const valid = scores.filter((r) => days.some((d) => d.date === r.date));
@@ -4195,7 +4216,7 @@ async function renderBbAnalitika(force = false) {
   const cx = (i) => L + bw * i + bw / 2;
   const xLabels = (H, B) => days.map((d, i) => `<text class="pvc-tick pvt-x" x="${cx(i)}" y="${H - B + 16}" text-anchor="middle">${esc(d.short)}</text>`).join("");
   const col = (i, H, B, tip, inner) => `<g class="pvc-candle pvt-col" tabindex="0" data-tip="${esc(tip)}"><rect class="pvc-hit" x="${cx(i) - bw / 2}" y="${T}" width="${bw}" height="${H - T - B}"/>${inner}</g>`;
-  const dayTip = (d) => `${wdFmtDate(d.date)}\nigralcev ${d.played} · mediana skupaj ${fmtT(d.med)}\nmediana reakcije ${fmtT(d.react)} · najhitrejša ${fmtT(d.fastest)}\npovp. prezgodnjih ${fmt1(d.early)}${d.best ? `\nzmagovalec: ${wdWho(d.best.email, d.best.name).label} (${fmtT(bbTotal(d.best))})` : ""}`;
+  const dayTip = (d) => `${wdFmtDate(d.date)}\nigralcev ${d.played} · iger ${d.games} · mediana najboljših ${fmtT(d.med)}\nmediana reakcije ${fmtT(d.react)} · najhitrejša ${fmtT(d.fastest)}\npovp. prezgodnjih ${fmt1(d.early)}${d.best ? `\nzmagovalec: ${wdWho(d.best.email, d.best.name).label} (${fmtT(bbTotal(d.best))})` : ""}`;
   const bar = (x, yTop, yBot, w, cls) => { const h = yBot - yTop; if (h <= 0) return ""; const r = Math.min(4, h, w / 2);
     return `<path class="${cls}" d="M${x},${yBot}V${yTop + r}Q${x},${yTop} ${x + r},${yTop}H${x + w - r}Q${x + w},${yTop} ${x + w},${yTop + r}V${yBot}Z"/>`; };
   const niceStep = (max, k = 5) => { const raw = max / k, p = 10 ** Math.floor(Math.log10(raw || 1)); return [1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw) || p * 10; };
@@ -4224,21 +4245,21 @@ async function renderBbAnalitika(force = false) {
   const msTick = (v) => (v >= 1000 ? `${(v / 1000).toString().replace(".", ",")} s` : `${v}`);
   const svg = (H, label, body) => `<div class="pvc-scroll"><svg class="pvc-svg wda-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(label)}">${body}</svg></div>`;
   box.innerHTML = `<div class="wda-tiles">
-      <div class="wda-tile"><span class="wda-tile-n">${todayRow?.played || 0}</span><span class="muted-text">igralcev danes</span></div>
+      <div class="wda-tile"><span class="wda-tile-n">${todayRow?.played || 0}</span><span class="muted-text">igralcev danes${todayRow && todayRow.games > todayRow.played ? ` · ${todayRow.games} iger` : ""}</span></div>
       <div class="wda-tile"><span class="wda-tile-n">${players}</span><span class="muted-text">različnih igralcev</span></div>
       <div class="wda-tile"><span class="wda-tile-n">${fmtT(allReact)}</span><span class="muted-text">mediana reakcije (en krog)</span></div>
       <div class="wda-tile"><span class="wda-tile-n">${fmtT(best ? bbTotal(best) : null)}</span><span class="muted-text">rekord${best ? ` · ${esc(wdWho(best.email, best.name).label)}` : ""}</span></div>
     </div>
     <section class="pvc-block"><h4>Igralci po dnevih</h4>
       ${svg(H1, `Igralci po dnevih: ${days.map((d) => `${d.short} ${d.played}`).join(", ")}`, grid1 + bars + xLabels(H1, B1))}</section>
-    <section class="pvc-block"><h4>Mediana skupnega časa <span class="muted-text">· vsota 3 krogov s kaznimi, ms</span></h4>
+    <section class="pvc-block"><h4>Mediana skupnega časa <span class="muted-text">· najboljša igra dneva vsakega igralca, vsota 3 krogov s kaznimi</span></h4>
       ${svg(H2, `Mediana skupnega časa po dnevih: ${days.map((d) => `${d.short} ${fmtT(d.med)}`).join(", ")}`, lineChart(H2, B2, days.map((d) => d.med), msTick, msSteps))}</section>
-    <section class="pvc-block"><h4>Mediana reakcije <span class="muted-text">· en krog, brez kazni, ms</span></h4>
+    <section class="pvc-block"><h4>Mediana reakcije <span class="muted-text">· en krog, vsi poskusi, brez kazni, ms</span></h4>
       ${svg(H2, `Mediana reakcije po dnevih: ${days.map((d) => `${d.short} ${fmtT(d.react)}`).join(", ")}`, lineChart(H2, B2, days.map((d) => d.react), msTick, msSteps))}</section>
-    <section class="pvc-block"><h4>Povprečno prezgodnjih tapov <span class="muted-text">· na igralca</span></h4>
+    <section class="pvc-block"><h4>Povprečno prezgodnjih tapov <span class="muted-text">· na igro</span></h4>
       ${svg(H2, `Povprečno prezgodnjih po dnevih: ${days.map((d) => `${d.short} ${fmt1(d.early)}`).join(", ")}`, lineChart(H2, B2, days.map((d) => d.early), (v) => fmt1(v).replace(",0", "")))}</section>
-    <details class="pvc-table"><summary>Tabela</summary><table><thead><tr><th>Dan</th><th>igralcev</th><th>mediana skupaj</th><th>mediana reakcije</th><th>najhitrejša reakcija</th><th>povp. prezgodnjih</th><th>zmagovalec</th></tr></thead>
-      <tbody>${days.map((d) => `<tr><td>${esc(wdFmtDate(d.date))}</td><td>${d.played}</td><td>${fmtT(d.med)}</td><td>${fmtT(d.react)}</td><td>${fmtT(d.fastest)}</td><td>${fmt1(d.early)}</td><td>${d.best ? `${esc(wdWho(d.best.email, d.best.name).label)} (${fmtT(bbTotal(d.best))})` : "–"}</td></tr>`).join("")}</tbody></table></details>
+    <details class="pvc-table"><summary>Tabela</summary><table><thead><tr><th>Dan</th><th>igralcev</th><th>iger</th><th>mediana skupaj</th><th>mediana reakcije</th><th>najhitrejša reakcija</th><th>povp. prezgodnjih</th><th>zmagovalec</th></tr></thead>
+      <tbody>${days.map((d) => `<tr><td>${esc(wdFmtDate(d.date))}</td><td>${d.played}</td><td>${d.games}</td><td>${fmtT(d.med)}</td><td>${fmtT(d.react)}</td><td>${fmtT(d.fastest)}</td><td>${fmt1(d.early)}</td><td>${d.best ? `${esc(wdWho(d.best.email, d.best.name).label)} (${fmtT(bbTotal(d.best))})` : "–"}</td></tr>`).join("")}</tbody></table></details>
     <p class="muted-text pvc-note"><button type="button" class="link-btn" data-bba-reload>Osveži</button></p>`;
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-bba-reload]")) renderBbAnalitika(true); });
