@@ -4308,16 +4308,16 @@ async function renderPreverbe(sub = null) {
   if (sub === "teme") renderPvTeme(teme); else if (sub === "generalno") renderPvGeneral(gen); else renderPvSvod(svod);
   renderPvPeek(sub);
 }
-/* Admin only (effective role, so not while simulating UU/SVOD): optionally list the hidden preverbe – upcoming and closed Teme forms, upcoming SVOD days – below the regular ones */
+/* Admin only (effective role, so not while simulating UU/SVOD): optionally list the hidden Teme preverbe – upcoming and closed – below the regular ones */
 const pvPeekOn = () => { try { return localStorage.getItem("uvodja.pv.peek") === "1"; } catch { return false; } };
 function renderPvPeek(sub) {
   const bar = $("#pv-peek-bar"), pt = $("#pv-peek-teme"), ps = $("#pv-peek-svod");
   if (!bar) return;
   const admin = effectiveRole(state.user?.email) === "admin", on = admin && pvPeekOn();
-  bar.hidden = !admin || !["teme", "svod"].includes(sub);
-  pt.hidden = !on || sub !== "teme"; ps.hidden = !on || sub !== "svod";
+  bar.hidden = !admin || sub !== "teme"; // SVOD days (past and future) are always listed in renderPvSvod
+  pt.hidden = !on || sub !== "teme"; ps.hidden = true;
   if (!admin) { pt.innerHTML = ps.innerHTML = bar.innerHTML = ""; return; }
-  if (!bar.innerHTML) bar.innerHTML = `<div class="pv-peek-row"><span id="pv-peek-lbl">Admin: pokaži skrite (prihodnje) preverbe</span><button type="button" class="switch" role="switch" data-pv-peek aria-labelledby="pv-peek-lbl" aria-checked="false"><span class="switch-knob"></span></button></div>`;
+  if (!bar.innerHTML) bar.innerHTML = `<div class="pv-peek-row"><span id="pv-peek-lbl">Admin: pokaži skrite (prihodnje in zaprte) preverbe tem</span><button type="button" class="switch" role="switch" data-pv-peek aria-labelledby="pv-peek-lbl" aria-checked="false"><span class="switch-knob"></span></button></div>`;
   $("[data-pv-peek]", bar).setAttribute("aria-checked", String(on));
   if (!on) return;
   const now = ljNow(), today = now.date;
@@ -4340,9 +4340,6 @@ function renderPvPeek(sub) {
       return [{ f, key: day + start, meta: `${dm(day)} ${start}–${end}`, tag: state_ }];
     }).sort((a, b) => a.key.localeCompare(b.key));
     pt.innerHTML = `<h3 class="pv-sub-h">Skrite preverbe tem</h3>` + (rows.length ? rows.map((r) => card(pvFormName(r.f), r.meta, r.f.formId, r.tag)).join("") : `<p class="muted-text">Vse preverbe tem so trenutno odprte.</p>`);
-  } else {
-    const up = (pvData?.svodForms || []).filter((f) => f.date > today);
-    ps.innerHTML = `<h3 class="pv-sub-h">Prihodnje preverbe SVODa</h3>` + (up.length ? up.map((f) => card(f.title, dm(f.date), f.formId, "prihodnja")).join("") : `<p class="muted-text">Ni prihodnjih preverb SVODa.</p>`);
   }
 }
 document.addEventListener("click", (e) => {
@@ -4351,23 +4348,26 @@ document.addEventListener("click", (e) => {
   try { localStorage.setItem("uvodja.pv.peek", pvPeekOn() ? "0" : "1"); } catch {}
   renderPvPeek(/^preverbe\/(teme|generalno|svod)$/.exec(location.hash.replace(/^#/, ""))?.[1] || pvTabsFor(effectiveRole(state.user?.email))[0]);
 });
-/* Preverba SVODa: today's day form open; earlier days collapsed below for admin only (SVOD sees just today) */
+/* Preverba SVODa: today's day form open on top; past days (newest first) and future days (soonest first) collapsed below,
+   on dashed cards with a coloured tag and a note, so they are not mistaken for today's */
 function renderPvSvod(box) {
   const today = ljNow().date, forms = pvData?.svodForms || [];
-  const hidePast = effectiveRole(state.user?.email) === "svod"; // SVOD sees only today's preverba; admin still gets earlier days
-  const cur = forms.find((f) => f.date === today), past = hidePast ? [] : forms.filter((f) => f.date < today).reverse();
-  const key = today + hidePast + forms.map((f) => f.formId).join();
+  const cur = forms.find((f) => f.date === today);
+  const past = forms.filter((f) => f.date < today).reverse(), future = forms.filter((f) => f.date > today);
+  const key = today + forms.map((f) => f.formId).join();
   if (box.dataset.key === key) return; // keep iframes (and half-filled answers)
   box.dataset.key = key;
-  const card = (f, open) => `<details class="card pv-form" data-form-id="${esc(f.formId)}"${open ? " open" : ""}>
-      <summary><span class="pv-form-title">${esc(f.title)}</span><span class="muted-text">${f.date === today ? "danes" : ""}</span></summary>
+  const dm = (d) => `${Number(d.slice(8))}. ${Number(d.slice(5, 7))}.`;
+  const card = (f, kind) => `<details class="card pv-form${kind === "today" ? "" : ` pv-form-hidden pv-form-${kind}`}" data-form-id="${esc(f.formId)}"${kind === "today" ? " open" : ""}>
+      <summary><span class="pv-form-title">${esc(f.title)}</span>${kind === "today" ? `<span class="pv-tag pv-tag-today">danes</span>` : `<span class="pv-tag pv-tag-${kind}">${kind === "past" ? "pretekla" : "prihodnja"}</span>`}</summary>
+      ${kind === "future" ? `<p class="pv-form-note">⏳ Ta preverba je za <strong>${esc(dm(f.date))}</strong> – izpolni jo šele tisti dan.</p>` : kind === "past" ? `<p class="pv-form-note">↩︎ Preverba za <strong>${esc(dm(f.date))}</strong> – izpolni jo le, če je tisti dan nisi.</p>` : ""}
       <iframe src="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform?embedded=true" title="Preverba SVODa – ${esc(f.title)}" loading="lazy">Nalagam …</iframe>
       <p class="pv-open"><a href="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform" target="_blank" rel="noopener">Odpri obrazec v novem oknu ↗</a></p>
     </details>`;
-  const next = forms.find((f) => f.date > today);
-  box.innerHTML = (cur ? `<p class="muted-text pv-lede">Dnevna preverba SVODa za danes.</p>${card(cur, true)}`
-      : `<div class="card pv-empty"><p>Za danes ni preverbe SVODa.</p>${next ? `<p class="muted-text">Naslednja: ${esc(next.title)}.</p>` : ""}</div>`)
-    + (past.length ? `<h3 class="pv-sub-h">Prejšnji dnevi</h3>${past.map((f) => card(f, false)).join("")}` : "");
+  box.innerHTML = (cur ? `<p class="muted-text pv-lede">Dnevna preverba SVODa za danes.</p>${card(cur, "today")}`
+      : `<div class="card pv-empty"><p>Za danes ni preverbe SVODa.</p>${future[0] ? `<p class="muted-text">Naslednja: ${esc(future[0].title)}.</p>` : ""}</div>`)
+    + (past.length ? `<h3 class="pv-sub-h">Pretekli dnevi</h3>${past.map((f) => card(f, "past")).join("")}` : "")
+    + (future.length ? `<h3 class="pv-sub-h">Prihodnji dnevi</h3>${future.map((f) => card(f, "future")).join("")}` : "");
 }
 /* Only temas that started today and ended less than PV_GRACE minutes ago (per the timeline); checked every minute,
    forms are added/removed in place so open ones keep their answers */
