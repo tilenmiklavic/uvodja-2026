@@ -2006,3 +2006,12 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .bb-times li.has-early small { display: block; color: #f5a3a3; font-size: .68rem; }
 .bb-detail { font-size: .72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 @media (max-width: 420px) { .bb-detail { display: none; } }
+
+/* Preverba SVODa: past / future days, clearly apart from today's */
+.pv-tag-today { background: rgba(111,191,103,.2); color: #8fd987; }
+.pv-tag-past { background: rgba(255,255,255,.1); color: var(--ink-muted); }
+.pv-tag-future { background: rgba(110,160,255,.18); color: #a9c4ff; }
+.pv-form-past summary .pv-form-title, .pv-form-future summary .pv-form-title { color: var(--ink-muted); }
+.pv-form-future { border-color: rgba(110,160,255,.45); }
+.pv-form-note { margin: 0; padding: .6rem 1.2rem; font-size: .88rem; border-top: 1px solid var(--line); background: rgba(255,255,255,.04); }
+.pv-form-future .pv-form-note { background: rgba(110,160,255,.1); }
