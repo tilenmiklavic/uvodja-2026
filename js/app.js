@@ -406,16 +406,18 @@ function setTab(name) {
   if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
   if (name === "teme") decorateTemeScores();
   if (name === "vprasanja") renderVprasanja();
-  const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
+  const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar|rutke)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   state.papigaActive = name === "zabava" && zb === "papiga";
   if (state.bumbarActive && !(name === "zabava" && zb === "bumbar")) bbLeave();
   state.bumbarActive = name === "zabava" && zb === "bumbar";
+  if (state.rutkeActive && !(name === "zabava" && zb === "rutke")) rkFlush();
+  state.rutkeActive = name === "zabava" && zb === "rutke";
   updateInstallUI();
   if (name === "zabava") {
     $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
-    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga"; $("#bumbar").hidden = zb !== "bumbar";
-    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga(); else if (zb === "bumbar") renderBumbar();
+    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga"; $("#bumbar").hidden = zb !== "bumbar"; $("#rutke").hidden = zb !== "rutke";
+    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga(); else if (zb === "bumbar") renderBumbar(); else if (zb === "rutke") renderRutke();
     if (zb) window.scrollTo(0, 0);
   }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
@@ -1701,7 +1703,7 @@ function applyHash() {
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno|svod)$/.test(hash)) { setTab("preverbe"); return; }
   if (/^analitika\/(obiski|svod|teme|wordle|papiga|bumbar)$/.test(hash)) { setTab("analitika"); return; }
-  if (/^zabava\/(wordle|papiga|bumbar|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
+  if (/^zabava\/(wordle|papiga|bumbar|rutke|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -2024,7 +2026,7 @@ function updateInstallUI() {
   $$("[data-install]").forEach((b) => { b.hidden = !canInstall(); });
   if (!bar) return;
   let snoozed = false; try { snoozed = !!localStorage.getItem(INSTALL_DISMISSED) || !!localStorage.getItem("uvodja.install.snooze"); } catch {} // old 7/14-day snooze counts as dismissed
-  bar.hidden = !state.user || !canInstall() || snoozed || !!state.wordleActive || !!state.papigaActive || !!state.bumbarActive;
+  bar.hidden = !state.user || !canInstall() || snoozed || !!state.wordleActive || !!state.papigaActive || !!state.bumbarActive || !!state.rutkeActive;
   if (!bar.hidden && !installEvt) {
     $("#install-sub").textContent = "Tapni Deli ⬆︎ in nato »Dodaj na začetni zaslon«.";
     $("#install-go").textContent = "V redu";
@@ -2151,6 +2153,14 @@ const SCRIPT_FETCH = {
     if ((j.results || []).some((r) => !("rounds" in r))) throw new Error("server_old"); // Apps Script without bumbar.gs answers with other rows
     return j.results || [];
   },
+  rutke: async () => {
+    const cfg = await wdConfig();
+    if (!cfg?.scriptUrl) throw new Error("config");
+    const j = await (await fetch(`${cfg.scriptUrl}${cfg.scriptUrl.includes("?") ? "&" : "?"}type=rutke&t=${Date.now()}`)).json();
+    if (!j.ok) throw new Error(j.error || "napaka");
+    if (!j.stegs) throw new Error("server_old"); // Apps Script without rutke.gs answers with other data
+    return j;
+  },
   ocene: () => scriptPost({ type: "ocene" }),
   vprasanja: () => scriptPost({ type: "vprasanja" }),
   analitika: () => scriptPost({ type: "analitika" }),
@@ -2159,7 +2169,7 @@ const SCRIPT_FETCH = {
 function prefetchScriptData() {
   if (!state.user) return;
   const want = [
-    ...(canSee("zabava") ? ["scores", "stavnica", "papiga", "bumbar"] : []),
+    ...(canSee("zabava") ? ["scores", "stavnica", "papiga", "bumbar", "rutke"] : []),
     ...(canSeeOcene() ? ["ocene"] : []),
     ...(canSee("vprasanja") ? ["vprasanja"] : []),
     ...(canSee("analitika") ? ["analitika", "visitstats"] : []),
@@ -3022,6 +3032,160 @@ function bbKeepFresh() {
 }
 setInterval(bbKeepFresh, 30 * 1000);
 document.addEventListener("visibilitychange", bbKeepFresh);
+
+/* —— Zabava → Rutka proti rutki: two scout scarves (data/rutke.json, one per steg, images straight from Drive), the player
+   taps the nicer one, the steg names are revealed and the next pair comes. Picks are queued on the device and sent in
+   batches to apps-script/rutke.gs (tab results-rutke); the steg leaderboard is the share of duels won, where each
+   player's latest pick per pair counts. Pairs not yet judged by this player (on this device) and scarves seen least come first. —— */
+const RK_QUEUE = "uvodja.rutke.queue", RK_SEEN = "uvodja.rutke.seen", RK_N = "uvodja.rutke.n";
+const rk = { data: null, pair: null, next: null, busy: false, shown: {}, scores: undefined, flushT: 0 };
+const rkImg = (id, w = 600) => `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w${w}-h${w}`;
+const rkImgFallback = (id, w = 600) => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${w}`;
+const rkPairKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+function rkGet(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
+function rkSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+function rkMsg(t) { const m = $("#rk-msg"); if (m) m.textContent = t || ""; }
+async function rkLoadData() {
+  if (!rk.data) { try { const r = await fetch("data/rutke.json", { cache: "no-store" }); rk.data = r.ok ? await r.json() : null; } catch { rk.data = null; } }
+  return rk.data;
+}
+/* Next pair: the least-seen scarf (global duels + shown here) against a random partner, skipping pairs this player already judged */
+function rkPickPair() {
+  const list = rk.data?.scarves || [];
+  if (list.length < 2) return null;
+  const seen = new Set(rkGet(RK_SEEN, [])), st = rk.scores?.stegs || {};
+  const weight = (s) => (st[s.steg] ? st[s.steg][0] + st[s.steg][1] : 0) / 4 + (rk.shown[s.steg] || 0) + Math.random() * 2;
+  const order = [...list].sort((a, b) => weight(a) - weight(b));
+  const avoid = new Set([rk.pair?.[0]?.steg, rk.pair?.[1]?.steg]);
+  for (const a of order.slice(0, 12)) {
+    if (avoid.has(a.steg)) continue;
+    const partners = list.filter((b) => b !== a && !avoid.has(b.steg) && !seen.has(rkPairKey(a.steg, b.steg)));
+    if (partners.length) { const b = partners[Math.floor(Math.random() * partners.length)]; return Math.random() < 0.5 ? [a, b] : [b, a]; }
+  }
+  const a = order[0], rest = list.filter((b) => b !== a); // every pair judged: allow repeats (the latest pick counts)
+  return [a, rest[Math.floor(Math.random() * rest.length)]];
+}
+function rkPreload(pair) { (pair || []).forEach((s) => { const i = new Image(); i.referrerPolicy = "no-referrer"; i.src = rkImg(s.id); }); }
+async function renderRutke() {
+  await rkLoadData();
+  loadRkScores();
+  if (!rk.data) { rkMsg("Igre ni bilo mogoče naložiti."); return; }
+  if (!rk.pair) { rk.pair = rkPickPair(); rk.next = null; rkDrawPair(); }
+  rkCount();
+}
+function rkCount() {
+  const n = rkGet(RK_N, 0), sub = $("#rk-sub");
+  if (sub) sub.textContent = n ? `Tvojih izbir: ${n}` : `${rk.data?.scarves?.length || 0} rutk`;
+}
+function rkDrawPair() {
+  const box = $("#rk-pair");
+  if (!box || !rk.pair) return;
+  rk.pair.forEach((s) => { rk.shown[s.steg] = (rk.shown[s.steg] || 0) + 1; });
+  box.innerHTML = rk.pair.map((s, i) => `<button type="button" class="rk-card" data-rk-pick="${i}" aria-label="Izberi to rutko">
+      <span class="rk-img"><img src="${esc(rkImg(s.id))}" data-fb="${esc(rkImgFallback(s.id))}" alt="Rutka" referrerpolicy="no-referrer" draggable="false" /></span>
+      <span class="rk-name">${esc(s.steg)}</span></button>`).join("") + `<span class="rk-vs" aria-hidden="true">VS</span>`;
+  $$("img", box).forEach((img) => { img.onerror = () => { if (img.dataset.fb) { img.src = img.dataset.fb; img.dataset.fb = ""; } else { img.closest(".rk-card")?.classList.add("is-broken"); rkBroken(); } }; });
+  rk.next = rkPickPair(); rkPreload(rk.next);
+}
+/* Images come from Drive: if they can't be loaded (folder not shared with "anyone with the link"), say so once */
+function rkBroken() { rkMsg("Slik rutk ni mogoče naložiti – mapa z rutkami na Drive še ni javno deljena."); }
+function rkPick(i) {
+  if (rk.busy || !rk.pair) return;
+  if (!state.user) { rkMsg("Za glasovanje se prijavi."); return; }
+  const w = rk.pair[i], l = rk.pair[1 - i];
+  rk.busy = true;
+  const vote = { w: w.steg, l: l.steg, id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}` };
+  rkSet(RK_QUEUE, [...rkGet(RK_QUEUE, []), vote]);
+  const seen = rkGet(RK_SEEN, []); const k = rkPairKey(w.steg, l.steg); if (!seen.includes(k)) { seen.push(k); rkSet(RK_SEEN, seen); }
+  rkSet(RK_N, rkGet(RK_N, 0) + 1);
+  const box = $("#rk-pair");
+  box.classList.add("is-reveal");
+  $$(".rk-card", box).forEach((c, j) => c.classList.add(j === i ? "is-win" : "is-lose"));
+  rkCount(); renderRkScores();
+  clearTimeout(rk.flushT); rk.flushT = setTimeout(rkFlush, 4000);
+  setTimeout(() => {
+    rk.pair = rk.next || rkPickPair(); box.classList.remove("is-reveal");
+    rkDrawPair(); rk.busy = false;
+  }, 900);
+}
+/* Picks are sent in batches (up to 50) a few seconds after the last tap, when leaving the game and every 30 s */
+async function rkFlush(interactive = false) {
+  const cfg = await wdConfig();
+  if (!cfg?.scriptUrl || !state.user || rk.flushing) return;
+  let q = rkGet(RK_QUEUE, []);
+  if (!q.length) { rkSaveNote(""); return; }
+  rk.flushing = true;
+  let sent = false, problem = "";
+  try {
+    const cred = interactive ? await wdFreshToken() : currentCred();
+    if (!cred) { rkSaveNote("Izbire še niso shranjene – prijava je potekla (osveži jo v meniju)."); return; }
+    while (q.length) {
+      const batch = q.slice(0, 50);
+      try {
+        const res = await wdPost(cfg.scriptUrl, { type: "rutke", action: "votes", votes: batch }, cred, true);
+        if (res.ok || ["no_votes", "not_allowed"].includes(res.error)) {
+          const ids = new Set(batch.map((v) => v.id));
+          q = rkGet(RK_QUEUE, []).filter((v) => !ids.has(v.id)); rkSet(RK_QUEUE, q); sent = sent || res.ok;
+          if (!res.ok) { problem = res.error; break; }
+        } else { problem = res.error || "napaka"; break; }
+      } catch (err) { problem = err?.kind === "offline" ? "ni povezave" : err?.message || "napaka"; break; }
+    }
+  } finally { rk.flushing = false; }
+  rkSaveNote(rkGet(RK_QUEUE, []).length ? `Nekaj izbir še ni shranjenih (${problem}) – poskusim znova.` : problem ? `Izbire niso bile sprejete (${problem}).` : "");
+  if (sent) loadRkScores(true);
+}
+function rkSaveNote(t) { const el = $("#rk-save"); if (el) { el.textContent = t; el.hidden = !t; } }
+/* Steg leaderboard (GET ?type=rutke → wins/losses per steg), with this device's unsent picks added */
+async function loadRkScores(force = false) {
+  const cfg = await wdConfig();
+  const box = $("#rk-score");
+  if (!box) return;
+  if (!cfg?.scriptUrl) { box.hidden = true; return; }
+  box.hidden = false;
+  if (rk.scores === undefined && scriptHas("rutke")) rk.scores = scriptData.rutke.data;
+  const stale = rk.scores === undefined || Date.now() - (scriptData.rutke?.at || 0) > WD_SCORES_FRESH;
+  if (rk.scores !== undefined) renderRkScores(); else $("#rk-score-body").innerHTML = `<p class="muted-text">Nalagam lestvico …</p>`;
+  if (!force && !stale) return;
+  rk.scoresLoading = true; renderRkScoreMeta();
+  try { rk.scores = await scriptLoad("rutke", true); } catch { if (rk.scores === undefined) rk.scores = null; }
+  rk.scoresLoading = false;
+  renderRkScores();
+}
+function renderRkScoreMeta() {
+  const el = $("#rk-score-meta");
+  if (!el) return;
+  const at = scriptData.rutke?.at, s = rk.scores;
+  const t = at ? new Date(at).toLocaleTimeString("sl-SI", { hour: "2-digit", minute: "2-digit" }) : "";
+  el.innerHTML = rk.scoresLoading ? `Osvežujem …` : `${s ? `${s.votes} dvobojev · ${s.voters} glasovalcev · ` : ""}${t ? `posodobljeno ob ${t} · ` : ""}<button type="button" class="link-btn" data-rk-refresh>Osveži</button>`;
+}
+function renderRkScores() {
+  const body = $("#rk-score-body");
+  if (!body || !rk.data) return;
+  renderRkScoreMeta();
+  if (rk.scores === null) { body.innerHTML = `<p class="muted-text">Lestvice ni bilo mogoče naložiti.</p>`; return; }
+  if (rk.scores === undefined) return;
+  const t = {};
+  for (const [k, v] of Object.entries(rk.scores.stegs || {})) t[k] = [v[0], v[1]];
+  for (const v of rkGet(RK_QUEUE, [])) { (t[v.w] ||= [0, 0])[0]++; (t[v.l] ||= [0, 0])[1]++; } // not sent yet
+  const rows = rk.data.scarves.map((s) => { const [w, l] = t[s.steg] || [0, 0]; return { ...s, w, l, n: w + l, score: (w + 1) / (w + l + 2) }; })
+    .sort((a, b) => (b.n > 0) - (a.n > 0) || b.score - a.score || b.w - a.w || a.steg.localeCompare(b.steg, "sl"));
+  body.innerHTML = `<ol class="wd-board-list rk-board">${rows.map((r, i) => {
+    const rank = r.n ? ["🥇", "🥈", "🥉"][i] || `${i + 1}.` : "–";
+    return `<li><span class="wd-rank${r.n && i < 3 ? " medal" : ""}">${rank}</span><img class="rk-thumb" src="${esc(rkImg(r.id, 96))}" alt="" loading="lazy" referrerpolicy="no-referrer" /><span class="wd-name">${esc(r.steg)}</span>`
+      + `<span class="wd-time muted-text rk-wl">${r.n ? `${r.w} : ${r.l}` : ""}</span><span class="wd-res">${r.n ? `${Math.round((r.w / r.n) * 100)} %` : "–"}</span></li>`;
+  }).join("")}</ol>`;
+}
+document.addEventListener("click", (e) => {
+  const c = e.target.closest("[data-rk-pick]");
+  if (c) { rkPick(Number(c.dataset.rkPick)); return; }
+  if (e.target.closest("[data-rk-refresh]")) loadRkScores(true);
+});
+document.addEventListener("keydown", (e) => {
+  if (!state.rutkeActive || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.("input, textarea")) return;
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); rkPick(e.key === "ArrowLeft" ? 0 : 1); }
+});
+setInterval(() => { if (state.rutkeActive && !document.hidden) { rkFlush(); loadRkScores(); } }, 30 * 1000);
+document.addEventListener("visibilitychange", () => { if (document.hidden && rkGet(RK_QUEUE, []).length) rkFlush(); });
 
 async function init() {
   await loadData();

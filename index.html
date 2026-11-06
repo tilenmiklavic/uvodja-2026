@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="U Vodja" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
-  <link rel="stylesheet" href="css/styles.css?v=105" />
+  <link rel="stylesheet" href="css/styles.css?v=106" />
   <script src="https://accounts.google.com/gsi/client" async></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -340,6 +340,7 @@
         <a class="zb-choice" href="#zabava/stavnica"><img src="assets/zabava/stavnica.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Piratska stavnica</span></a>
         <a class="zb-choice zb-wide" href="#zabava/papiga"><img src="assets/zabava/papiga.webp" alt="" width="1400" height="480" /><span class="zb-choice-label">Spot-A-Papiga</span></a>
         <a class="zb-choice zb-wide" href="#zabava/bumbar"><img src="assets/zabava/bumbar.webp" alt="" width="1400" height="480" /><span class="zb-choice-label">Bum-Bar</span></a>
+        <a class="zb-choice zb-wide" href="#zabava/rutke"><img src="assets/zabava/rutke.webp" alt="" width="1400" height="480" /><span class="zb-choice-label">Rutka proti rutki</span></a>
       </nav>
       <p class="person-back zb-back" id="zb-back" hidden><a href="#zabava">← Nazaj na Zabavo</a></p>
       <div class="stavnica" id="stavnica" hidden></div>
@@ -371,6 +372,22 @@
           </div>
           <div id="pp-score-body" class="wd-score-body"></div>
           <p class="wd-score-meta muted-text" id="pp-score-meta"></p>
+        </section>
+      </div>
+      <div class="rutke" id="rutke" hidden>
+        <div class="wd-head">
+          <h2>Rutka proti rutki</h2>
+          <p class="muted-text wd-sub" id="rk-sub"></p>
+        </div>
+        <p class="rk-lede">Katera rutka je lepša? Tapni nanjo – ime stega se pokaže šele po izbiri.</p>
+        <div class="rk-pair" id="rk-pair" aria-live="polite"></div>
+        <p class="wd-msg" id="rk-msg" role="status" aria-live="polite"></p>
+        <p class="pp-save" id="rk-save" role="status" hidden></p>
+        <section class="wd-score rk-score" id="rk-score" hidden>
+          <h3 class="rk-score-h">Lestvica stegov</h3>
+          <p class="muted-text rk-score-note">Delež zmag v dvobojih. Če isti par oceniš večkrat, šteje zadnja izbira.</p>
+          <div id="rk-score-body" class="wd-score-body"></div>
+          <p class="wd-score-meta muted-text" id="rk-score-meta"></p>
         </section>
       </div>
       <div class="bumbar" id="bumbar" hidden>
@@ -425,6 +442,6 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=121" type="module"></script>
+  <script src="js/app.js?v=122" type="module"></script>
 </body>
 </html>

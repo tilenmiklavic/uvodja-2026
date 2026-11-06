@@ -2015,3 +2015,31 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .pv-form-future { border-color: rgba(110,160,255,.45); }
 .pv-form-note { margin: 0; padding: .6rem 1.2rem; font-size: .88rem; border-top: 1px solid var(--line); background: rgba(255,255,255,.04); }
 .pv-form-future .pv-form-note { background: rgba(110,160,255,.1); }
+
+/* —— Zabava → Rutka proti rutki —— */
+.rutke { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: .6rem; }
+.rutke[hidden] { display: none; }
+.rk-lede { margin: 0; font-size: .92rem; color: var(--ink-muted); text-align: center; }
+.rk-pair { position: relative; width: 100%; max-width: 620px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.6rem, 3vw, 1.4rem); }
+.rk-card { position: relative; display: flex; flex-direction: column; padding: 0; border: 3px solid transparent; border-radius: var(--radius); background: #f1e4d3; color: #690b22; font: inherit; cursor: pointer; overflow: hidden; box-shadow: var(--shadow); transition: transform .15s ease, border-color .15s ease, opacity .25s ease; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.rk-card:hover, .rk-card:focus-visible { transform: translateY(-3px); border-color: var(--gold); outline: none; }
+.rk-img { display: block; aspect-ratio: 1; padding: 6%; }
+.rk-img img { display: block; width: 100%; height: 100%; object-fit: contain; -webkit-user-drag: none; user-select: none; }
+.rk-card.is-broken .rk-img { background: repeating-linear-gradient(45deg, rgba(105,11,34,.06) 0 10px, transparent 10px 20px); }
+.rk-card.is-broken img { visibility: hidden; }
+.rk-name { display: block; padding: .55rem .6rem .7rem; font-weight: 800; font-size: clamp(.85rem, 3.4vw, 1.05rem); text-align: center; visibility: hidden; }
+.rk-pair.is-reveal .rk-name { visibility: visible; animation: rkname .25s ease-out 1; }
+@keyframes rkname { from { opacity: 0; transform: translateY(6px); } }
+.rk-pair.is-reveal .rk-card { cursor: default; transform: none; }
+.rk-card.is-win { border-color: #6fbf67; box-shadow: 0 0 0 3px rgba(111,191,103,.35), var(--shadow); }
+.rk-card.is-win::after { content: "✓"; position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: 50%; background: #3f9a3a; color: #fff; font-weight: 900; }
+.rk-card.is-lose { opacity: .45; }
+.rk-vs { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) rotate(-6deg); z-index: 1; padding: .35rem .6rem; border-radius: 999px; border: 3px solid #690b22; background: #f1eb76; color: #690b22; font-weight: 900; font-size: clamp(.8rem, 3vw, 1.05rem); pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+.rk-score-h { margin: 0 0 .2rem; font-size: 1.05rem; }
+.rk-score-note { margin: 0 0 .6rem; font-size: .8rem; }
+.rk-thumb { width: 36px; height: 36px; flex: none; border-radius: 8px; object-fit: contain; background: #f1e4d3; }
+.rk-board .wd-res { min-width: 3.2em; text-align: right; flex: none; }
+.rk-board li { gap: .45rem; }
+.rk-board .wd-rank { flex: none; }
+.rk-wl { flex: none; font-size: .75rem; font-variant-numeric: tabular-nums; }
+.rk-board .wd-res:not(:empty) { color: var(--gold-soft); }

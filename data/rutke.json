@@ -1,0 +1,275 @@
+{
+  "_help": "Zabava → Rutke: slike rutk iz Drive 'rutke' (mapa 1QdfVktHNgu7fA69MDIO40rpzdrEN6KOn), ena na steg; »steg« = ime datoteke brez .png, »id« = Drive ID. Stran jih naloži z Drive (lh3.googleusercontent.com), zato mora biti mapa deljena »Vsak, ki ima povezavo – bralec«. Glasovi gredo v Apps Script (apps-script/rutke.gs, zavihek results-rutke).",
+  "folder": "1QdfVktHNgu7fA69MDIO40rpzdrEN6KOn",
+  "fetched": "2026-11-06",
+  "scarves": [
+    {
+      "steg": "Ajdovščina - Šturje 1",
+      "id": "1kIR3mzE70AEs8Zh9xPDEjp58UEW6K3hL"
+    },
+    {
+      "steg": "Ankaran 1",
+      "id": "1MeZnYP6XLkRKRsP1FuEtBShCygeh18Rs"
+    },
+    {
+      "steg": "Bovec 1",
+      "id": "10HI0O5SaRMmjY-3cS5vrOJ5Y7pQSRVoK"
+    },
+    {
+      "steg": "Breznica 1",
+      "id": "19WbjyyKM8F6hBS75jVfm1E6OHb7UWg8i"
+    },
+    {
+      "steg": "Brezovica 1",
+      "id": "1F9uTY0IbLy19bzmhzH4uiKYNcbOQKSQa"
+    },
+    {
+      "steg": "Celje 2",
+      "id": "1wIyBU4zJmfX-ALMSZtLHvvU0SY4KeaK4"
+    },
+    {
+      "steg": "Cerknica 1",
+      "id": "13qPu8CH3ecZCIo8Joa4b9rE4vg9-mJ5k"
+    },
+    {
+      "steg": "Cerkno 1",
+      "id": "17cFf-HuHoUqJxDIca8JSKjrA2e3lHb1e"
+    },
+    {
+      "steg": "Dol - Dolsko 1",
+      "id": "1tSvQwD_EbuUw3Pf9x5pGQT6TU2fM5CDQ"
+    },
+    {
+      "steg": "Domžale 1",
+      "id": "1bEQDn-kfq4KVya6V3KTw5iwfa5_J8RhI"
+    },
+    {
+      "steg": "Dornberk 1",
+      "id": "1R1e6kBrgmzEat6kgoQdMqHm9M2PX2MIL"
+    },
+    {
+      "steg": "Gornja Radgona 1",
+      "id": "143pE8V1nK4ja0keIBjm0_XcmDH1Vxa6R"
+    },
+    {
+      "steg": "Grosuplje 1",
+      "id": "1godFzg9P4QEQ6tFAqflsiZGmhKtoka3x"
+    },
+    {
+      "steg": "Homec 1",
+      "id": "1TqYeSHFMOUYHhc78t8xZxDynJluS4UCO"
+    },
+    {
+      "steg": "Idrija 1",
+      "id": "1uzl01yGiRaN0r-IhkhB4eoO7EuLNbJfF"
+    },
+    {
+      "steg": "Kamnik 1",
+      "id": "1b5bvxWIwuNIZl2a1vaaMcmyZU8dEGiqa"
+    },
+    {
+      "steg": "Komenda 1",
+      "id": "1AWegFlYx5xCZDCkbv8A_mS5gkCxrWI9I"
+    },
+    {
+      "steg": "Koroška 1",
+      "id": "1bNicwRLeY2ewcJNTJGH61sL6NtjrBldN"
+    },
+    {
+      "steg": "Koroška 2",
+      "id": "1MuzKPnIqEOBHKjrXZNm8G1QMyXk18Z7h"
+    },
+    {
+      "steg": "Kranj 1",
+      "id": "1Z6l2KqIH_y_nAHs5ZHoPkmerqHVDK6OB"
+    },
+    {
+      "steg": "Kranj 2",
+      "id": "1UiRyMGPZkW-sXbqSyoYNjMb9x_XedHFW"
+    },
+    {
+      "steg": "Krško 1",
+      "id": "17J8VPEFuqm9pbTXOY7kjI3d8cZhAQFJr"
+    },
+    {
+      "steg": "Litija 1",
+      "id": "1CzbNkU82H5P1-u-FmZ6SF6U5y_ojJfc0"
+    },
+    {
+      "steg": "Ljubljana 1",
+      "id": "1VzgywWOSWZ9K17dW_WIgMfWF3Zj4daOY"
+    },
+    {
+      "steg": "Ljubljana 2",
+      "id": "1hWtIXDOogqPnBNjLkpkbXjpXTTXFSq1O"
+    },
+    {
+      "steg": "Ljubljana 3",
+      "id": "1HwoKk8MNGwonsEXP2pDiMkqugSgFL9NN"
+    },
+    {
+      "steg": "Ljubljana 4",
+      "id": "14XgZs00aXuQYClnDmojcVC_jd3Qxr80h"
+    },
+    {
+      "steg": "Ljubljana 5",
+      "id": "10wKqQAo83lIAnQWKbkymsqR-AInWHGrA"
+    },
+    {
+      "steg": "Ljubljana 6",
+      "id": "1rGD-s7asbDXbHbp8E3b1auYnBBeluU-0"
+    },
+    {
+      "steg": "Logatec 1",
+      "id": "1DBeGct0UNQXZrgUvndts8m9KsKVTPgYk"
+    },
+    {
+      "steg": "Maribor 1",
+      "id": "1zafDtW-lv2bGzlslNaEYa7moNwSr-D2R"
+    },
+    {
+      "steg": "Maribor 2",
+      "id": "1HGYgHOFxoCtfyYOA0A8VO5QoxYKjZrG6"
+    },
+    {
+      "steg": "Moravče 1",
+      "id": "17ISBqTr-axXAqsigAiD-eX1sz6r8WfS2"
+    },
+    {
+      "steg": "Mozirje 1",
+      "id": "1safzexes0rXKjLZkyJzV4Nhjip8v22JD"
+    },
+    {
+      "steg": "Nova Gorica 1",
+      "id": "11Lf-rZmjn__xQO4Fa4nV9GfBijYX-XrG"
+    },
+    {
+      "steg": "Novo mesto 1",
+      "id": "1NLFbDIKv05WCZTbJ-jGSLUugTjMqubjD"
+    },
+    {
+      "steg": "Novo mesto 2",
+      "id": "1dpzjRdtl6R84zqUGF27UbsTzrkfuk1GK"
+    },
+    {
+      "steg": "Poljanska dolina 1",
+      "id": "1E4zhAS-iy9lzStnIB4SSj2cCRBMAGBC8"
+    },
+    {
+      "steg": "Postojna 1",
+      "id": "19AyPlqbYPBKb-lbweYlAj0-hvh8Bn6cf"
+    },
+    {
+      "steg": "Prebold - Polzela 1",
+      "id": "1uI14_v5GgvUA3F60JpGEeBKGHNpzwsO6"
+    },
+    {
+      "steg": "Preddvor 1",
+      "id": "10XJdoNxaATa44u21gJXOTXRcgEY42xl1"
+    },
+    {
+      "steg": "Preska 1",
+      "id": "1LysWEuN9lOchLMGfb_aS7v4gXsxESS4s"
+    },
+    {
+      "steg": "Ptuj 1",
+      "id": "1OMhlU2YJHsPrKCRGIUgu4n5L0xMtheBX"
+    },
+    {
+      "steg": "Radovljica 1",
+      "id": "1O9MUsxwFUuTMt-mtFv-edY0bm8suHRns"
+    },
+    {
+      "steg": "Rakova Steza 1",
+      "id": "167FJ8wxx1TiVuJF2phw6RQy6N6b1I-wD"
+    },
+    {
+      "steg": "Ribnica 1",
+      "id": "1WAPzaS16ZcPocTpSfM9UaGs0mejczOQp"
+    },
+    {
+      "steg": "Sežana 1",
+      "id": "1f33QzIZm5BP539qZpc92AIntYfmeP7WJ"
+    },
+    {
+      "steg": "Slovenska Bistrica 1",
+      "id": "10Pe7Q3LaBYD-FTyWhDBwazPMFfFJ_9hu"
+    },
+    {
+      "steg": "Slovenske Konjice 1",
+      "id": "1wQIau3gfkEJXspyU-5HfOXBuX1LLT2Wv"
+    },
+    {
+      "steg": "Slovenske gorice 1",
+      "id": "1lZLXRPiy_J_y9x0Ugt7bBywjBI-DJF6_"
+    },
+    {
+      "steg": "Tolmin 1",
+      "id": "1s5UCA7c9lR-NXf68pBEDNslnf24vV8_-"
+    },
+    {
+      "steg": "Tržišče 1",
+      "id": "1Hbx85VxWLqjgqJHx0ILVCXisW39c4x7l"
+    },
+    {
+      "steg": "Velenje 1",
+      "id": "1CAdnzageILw2U3xFoN8WuG4nUKrtm366"
+    },
+    {
+      "steg": "Vrhnika 1",
+      "id": "1N7jxEPbL_kNVwphqxoSBAQH4QiG2g2bB"
+    },
+    {
+      "steg": "Zagorje 1",
+      "id": "13FkkIIwKTOa3OhG8GaZTE7kuN2dkFqNE"
+    },
+    {
+      "steg": "Zreče 1",
+      "id": "1W1epsGVCN8ao2a03PA9nquxs3Gj2fS5e"
+    },
+    {
+      "steg": "Črenšovci 1",
+      "id": "1WPkWC1xPaiWC07IEtSyiVmy-C0wF2_zq"
+    },
+    {
+      "steg": "Črnomelj 1",
+      "id": "1L7iHzFhnr7j9yI321P-zRP3ZZuZAK7Bw"
+    },
+    {
+      "steg": "Šentilj 1",
+      "id": "1PQcY08x5Q18jIRyf2_FDRSUQWPusmppG"
+    },
+    {
+      "steg": "Šentjernej 1",
+      "id": "1zALgUghZivbmxByVz9dSIXrrdylC36tE"
+    },
+    {
+      "steg": "Šentjur 1",
+      "id": "18mx_VmzRDrznF-_Uz_C-aW1L2LdklXT0"
+    },
+    {
+      "steg": "Škocjan - Turjak 1",
+      "id": "1V54GfK_2ENMPbXXtxIPTqMf7jT8nzRh3"
+    },
+    {
+      "steg": "Škofije 1",
+      "id": "1H5KVZYkrZNET3FOEKW-ARq8TqdKCjCAL"
+    },
+    {
+      "steg": "Škofja Loka 1",
+      "id": "1MdO4fZ4PE8cc3lAFhZlcLQqvnJoWUW7T"
+    },
+    {
+      "steg": "Škofljica 1",
+      "id": "1X2WyJ0dPu-XWnGEo1u_-oOj4LS1WhzLW"
+    },
+    {
+      "steg": "Železniki 1",
+      "id": "1bmteK9sfnUPm50rxLY9DCti6QUO_sgAT"
+    },
+    {
+      "steg": "Žiri 1",
+      "id": "1c_8_w_J4TpmTNQaOJgGpi3_2HIu8P17j"
+    }
+  ]
+}
