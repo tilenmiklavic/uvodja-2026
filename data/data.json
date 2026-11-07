@@ -24,7 +24,7 @@
       "programId": "10xDmjgoYQrPWPA_PTVzpI-o4Hxot0_urdb5xK4rtjx4",
       "folderId": "166EnwAANG6DbhPG8EwAfIYS7jc3rgz6i"
     },
-    "generatedAt": "2026-11-03",
+    "generatedAt": "2026-11-07",
     "matchStats": {
       "matched": 19,
       "unmatched_program": 9,
@@ -1667,8 +1667,8 @@
       "timekeeper": "Jakob G.",
       "sessions": [
         {
-          "id": "vikend2-sobota-bujenje-0700",
-          "title": "Bujenje",
+          "id": "vikend2-sobota-bujenje-duhovna-misel-0700",
+          "title": "Bujenje + duhovna misel",
           "start": "07:00",
           "end": "07:30",
           "kind": "logistics",
@@ -1685,8 +1685,8 @@
           "isTema": false
         },
         {
-          "id": "vikend2-sobota-zajtrk-os-0730",
-          "title": "Zajtrk + OS",
+          "id": "vikend2-sobota-zajtrk-0730",
+          "title": "Zajtrk",
           "start": "07:30",
           "end": "09:00",
           "kind": "logistics",
