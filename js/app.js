@@ -4557,8 +4557,9 @@ function renderPvSvod(box) {
 /* Only temas that started today and ended less than PV_GRACE minutes ago (per the timeline); checked every minute,
    forms are added/removed in place so open ones keep their answers */
 const PV_GRACE = 120;
-/* A form is tied to a tema (its timeline occurrences) or, for e.g. Izbirne teme, directly to timeline session ids */
+/* A form is tied to a tema (its timeline occurrences), for e.g. Izbirne teme directly to timeline session ids, or to a fixed »window« */
 function pvFormOccs(f) {
+  if (f.window) return [].concat(f.window); // fixed time window(s) {date, start, end}, e.g. the final evaluation
   if (f.tema) return state.data?.temas?.[f.tema]?.occurrences || [];
   const ids = [].concat(f.sessions || []);
   return (state.data?.days || []).flatMap((d) => d.sessions.filter((s) => ids.includes(s.id)).map((s) => ({ date: d.date, start: s.start, end: s.end })));
@@ -4595,7 +4596,7 @@ function renderPvTeme(box) {
   forms.forEach((f) => {
     if ($(`[data-form-id="${f.formId}"]`, list)) return;
     list.insertAdjacentHTML("beforeend", `<details class="card pv-form" data-form-id="${esc(f.formId)}"${forms.length === 1 ? " open" : ""}>
-      <summary><span class="pv-form-title">${esc(f.name)}</span><span class="muted-text">${esc(f.occ.start)}–${esc(f.occ.end)}</span></summary>
+      <summary><span class="pv-form-title">${esc(f.name)}</span><span class="muted-text">${f.window && f.occ.end >= "23:59" ? `od ${esc(f.occ.start)}` : `${esc(f.occ.start)}–${esc(f.occ.end)}`}</span></summary>
       <iframe src="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform?embedded=true" title="${esc(f.title)}" loading="lazy">Nalagam …</iframe>
       <p class="pv-open"><a href="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform" target="_blank" rel="noopener">Odpri obrazec v novem oknu ↗</a></p>
     </details>`);
