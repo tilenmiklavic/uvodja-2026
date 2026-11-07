@@ -2151,6 +2151,7 @@ const SCRIPT_FETCH = {
     const j = await (await fetch(`${cfg.scriptUrl}${cfg.scriptUrl.includes("?") ? "&" : "?"}type=bumbar&t=${Date.now()}`)).json();
     if (!j.ok) throw new Error(j.error || "napaka");
     if ((j.results || []).some((r) => !("rounds" in r))) throw new Error("server_old"); // Apps Script without bumbar.gs answers with other rows
+    bb.bans = new Map((j.bans || []).map((b) => [String(b.email).toLowerCase(), b])); // banned players (admin, tab bans-bumbar)
     return j.results || [];
   },
   rutke: async () => {
@@ -2762,6 +2763,11 @@ const bb = { day: null, phase: "idle", timers: [], up: new Set(), red: -1, t0: 0
 const bbKey = (date) => `uvodja.bumbar.${date}`;
 const BB_QUEUE = "uvodja.bumbar.queue";
 const bbTotal = (r) => r.rounds.reduce((a, v) => a + v, 0) + (r.early || 0) * BB_EARLY_MS;
+/* Banned players (bb.bans, from the server): BB_BAN_PENALTY_MS added to every game and always listed below everyone else */
+const BB_BAN_PENALTY_MS = 60000;
+const bbBanned = (email) => !!bb.bans?.has(String(email || "").toLowerCase());
+const bbRanked = (r) => bbTotal(r) + (bbBanned(r.email) ? BB_BAN_PENALTY_MS : 0);
+const bbCanBan = () => !!state.user && effectiveRole(state.user.email) === "admin";
 const bbMs = (ms) => `${Math.round(ms)} ms`;
 function bbMsg(t) { const m = $("#bb-msg"); if (m) m.textContent = t || ""; }
 /* bb.day = { date, tries (finished games), best: {rounds, early} | null, cur: the game on screen {id, attempt, rounds, early, done} } */
@@ -2826,9 +2832,9 @@ function bbDraw() {
   const start = $("#bb-start");
   start.hidden = false;
   start.textContent = g.done ? "Poskusi znova 🔁" : g.rounds.length ? `Nadaljuj – krog ${g.rounds.length + 1}/${BB_ROUNDS} 🦜` : day.tries ? "Poskusi znova 🔁" : "Začni 🦜";
-  $("#bb-rules").innerHTML = day.best
+  $("#bb-rules").innerHTML = (state.user && bbBanned(state.user.email) ? `<strong class="bb-ban-note">🚫 Tvoji rezultati so diskvalificirani – vsaka igra dobi +${BB_BAN_PENALTY_MS / 1000} s kazni.</strong> ` : "") + (day.best
     ? `Tvoj najboljši rezultat danes: <strong>${bbMs(bbTotal(day.best))}</strong> (${bbTries(day.tries)}). Za lestvico šteje najboljša igra dneva – poskusi ga izboljšati! 🦜`
-    : "Na krovu imamo slepega potnika! Pod palubo se je naselila tujerodna rdeča papiga. Takoj ko pokuka iz luknje v palubi, jo udari po glavi.";
+    : "Na krovu imamo slepega potnika! Pod palubo se je naselila tujerodna rdeča papiga. Takoj ko pokuka iz luknje v palubi, jo udari po glavi.");
   const r = $("#bb-round");
   r.hidden = !playing && !day.best;
   r.classList.toggle("is-done", !playing);
@@ -2995,11 +3001,14 @@ function renderBbScores() {
     for (const r of bbBestPerDay(bb.scores)) if (!best[r.email] || bbTotal(r) < bbTotal(best[r.email])) best[r.email] = r;
     rows = Object.values(best);
   }
-  rows.sort((a, b) => bbTotal(a) - bbTotal(b));
+  rows.sort((a, b) => bbBanned(a.email) - bbBanned(b.email) || bbRanked(a) - bbRanked(b));
+  const admin = bbCanBan();
   body.innerHTML = rows.length ? `<ol class="wd-board-list${tab === "danes" ? "" : " total"}">${rows.map((r, i) => {
-    const w = wdWho(r.email, r.name), rank = ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
-    const detail = r.rounds.map((v) => Math.round(v)).join(" · ") + (r.early ? ` · +${r.early}× ✕` : "") + (tab === "danes" && r.tries > 1 ? ` · ${bbTries(r.tries)}` : "");
-    return `<li><span class="wd-rank${i < 3 ? " medal" : ""}">${rank}</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span><span class="wd-time muted-text bb-detail">${esc(detail)}${tab === "danes" ? "" : ` · ${esc(wdFmtDate(r.date).replace(/ \d{4}$/, ""))}`}</span><span class="wd-res">${bbMs(bbTotal(r))}</span></li>`;
+    const w = wdWho(r.email, r.name), banned = bbBanned(r.email), rank = banned ? "🚫" : ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
+    const detail = banned ? `diskvalificiran · +${BB_BAN_PENALTY_MS / 1000} s kazni`
+      : r.rounds.map((v) => Math.round(v)).join(" · ") + (r.early ? ` · +${r.early}× ✕` : "") + (tab === "danes" && r.tries > 1 ? ` · ${bbTries(r.tries)}` : "");
+    const ban = admin ? `<button type="button" class="bb-ban" data-bb-ban="${esc(r.email)}" data-bb-name="${esc(w.title)}" data-bb-on="${banned ? "1" : ""}" title="${banned ? "Odstrani prepoved" : "Prepovej igralca (kazen in na dno lestvice)"}" aria-label="${banned ? `Odstrani prepoved: ${esc(w.title)}` : `Prepovej igralca ${esc(w.title)}`}">${banned ? "↩︎" : "🚫"}</button>` : "";
+    return `<li class="${banned ? "bb-banned" : ""}"><span class="wd-rank${!banned && i < 3 ? " medal" : ""}">${rank}</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span><span class="wd-time muted-text bb-detail">${esc(detail)}${tab === "danes" || banned ? "" : ` · ${esc(wdFmtDate(r.date).replace(/ \d{4}$/, ""))}`}</span><span class="wd-res${banned ? " fail" : ""}">${bbMs(bbRanked(r))}</span>${ban}</li>`;
   }).join("")}</ol>` : `<p class="muted-text">${tab === "danes" ? "Danes še nihče ni igral." : "Še ni rezultatov."}</p>`;
 }
 (function bbBind() {
@@ -3012,7 +3021,28 @@ function renderBbScores() {
     bbTap(e);
   });
 })();
+/* Admin: ban / unban from the leaderboard (apps-script/bumbar.gs, tab bans-bumbar) */
+async function bbBanToggle(btn) {
+  const email = btn.dataset.bbBan, name = btn.dataset.bbName, on = !!btn.dataset.bbOn;
+  let reason = "";
+  if (on) { if (!confirm(`Odstranim prepoved za ${name}? Njegovi/njeni rezultati spet štejejo normalno.`)) return; }
+  else {
+    reason = prompt(`Prepovem igralca ${name}?\nVsaka igra dobi +${BB_BAN_PENALTY_MS / 1000} s kazni, na lestvici bo vedno na dnu.\n\nRazlog (neobvezno):`, "goljufanje");
+    if (reason === null) return;
+  }
+  btn.disabled = true;
+  try {
+    await scriptPost({ type: "bumbar", action: on ? "unban" : "ban", email, name, reason });
+    await loadBbScores(true);
+    if (!$("#an-bumbar")?.hidden) renderBbAnalitika(true);
+  } catch (err) {
+    alert(`Ni uspelo: ${err?.message || err}`);
+    btn.disabled = false;
+  }
+}
 document.addEventListener("click", (e) => {
+  const banBtn = e.target.closest("[data-bb-ban]");
+  if (banBtn && !banBtn.disabled) { bbBanToggle(banBtn); return; }
   if (e.target.closest("#bb-start")) bbStart();
   const t = e.target.closest(".bb-stab");
   if (t) { bb.scoreTab = t.dataset.bbtab; renderBbScores(); }
@@ -4363,7 +4393,7 @@ async function renderBbAnalitika(force = false) {
   const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
   const today = ljNow().date;
   const days = [...new Set(scores.map((r) => r.date).filter((d) => d && d <= today))].sort().map((date) => {
-    const all = scores.filter((r) => r.date === date), rows = bbBestPerDay(all), sorted = [...rows].sort((a, b) => bbTotal(a) - bbTotal(b));
+    const all = scores.filter((r) => r.date === date), rows = bbBestPerDay(all), sorted = rows.filter((r) => !bbBanned(r.email)).sort((a, b) => bbTotal(a) - bbTotal(b));
     const reacts = all.flatMap((r) => r.rounds.filter((v) => v > 0)); // every round of every attempt
     return { date, short: `${Number(date.slice(8))}. ${Number(date.slice(5, 7))}.`, played: rows.length, games: all.length, med: median(rows.map(bbTotal)),
       react: median(reacts), fastest: reacts.length ? Math.min(...reacts) : null, early: mean(all.map((r) => r.early || 0)), best: sorted[0] || null };
@@ -4372,7 +4402,7 @@ async function renderBbAnalitika(force = false) {
   const valid = scores.filter((r) => days.some((d) => d.date === r.date));
   const players = new Set(valid.map((r) => r.email)).size;
   const allReact = median(valid.flatMap((r) => r.rounds.filter((v) => v > 0)));
-  const best = [...valid].sort((a, b) => bbTotal(a) - bbTotal(b))[0];
+  const best = valid.filter((r) => !bbBanned(r.email)).sort((a, b) => bbTotal(a) - bbTotal(b))[0]; // record: banned players don't count
   const todayRow = days.find((d) => d.date === today);
   const fmt1 = (x) => (x == null ? "–" : x.toFixed(1).replace(".", ","));
   const fmtT = (ms) => (ms == null ? "–" : bbMs(ms));

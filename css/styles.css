@@ -2043,3 +2043,11 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .rk-board .wd-rank { flex: none; }
 .rk-wl { flex: none; font-size: .75rem; font-variant-numeric: tabular-nums; }
 .rk-board .wd-res:not(:empty) { color: var(--gold-soft); }
+
+/* Bum-Bar: banned players (admin) */
+.bb-ban { flex: none; width: 32px; height: 32px; margin-left: .1rem; padding: 0; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.05); font-size: .9rem; line-height: 1; cursor: pointer; }
+.bb-ban:hover { border-color: #e5484d; }
+.bb-ban:disabled { opacity: .5; cursor: progress; }
+.wd-board-list li.bb-banned { opacity: .6; border-style: dashed; }
+.wd-board-list li.bb-banned .wd-name { text-decoration: line-through; text-decoration-color: rgba(229,72,77,.7); }
+.bb-ban-note { display: block; margin-bottom: .3rem; color: #ff8a8d; }
