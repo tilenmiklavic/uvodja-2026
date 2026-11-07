@@ -2043,10 +2043,64 @@
           "isTema": false
         },
         {
-          "id": "vikend2-nedelja-odnosi-z-javnostmi-2h-0900",
-          "title": "Odnosi z javnostmi",
+          "id": "vikend2-nedelja-pospravljanje-in-vprasanja-0900",
+          "title": "Pospravljanje in vprašanja",
           "start": "09:00",
+          "end": "10:00",
+          "kind": "logistics",
+          "trainers": [],
+          "matchedProgram": false,
+          "programKey": null,
+          "goals": [],
+          "contents": [],
+          "sources": [],
+          "notes": [],
+          "duration": null,
+          "category": "logistics",
+          "mikronacrt": null,
+          "isTema": false
+        },
+        {
+          "id": "vikend2-nedelja-sveta-masa-1000",
+          "title": "Sveta maša ✝️",
+          "start": "10:00",
           "end": "11:00",
+          "kind": "activity",
+          "trainers": [],
+          "matchedProgram": false,
+          "programKey": null,
+          "goals": [],
+          "contents": [],
+          "sources": [],
+          "notes": [],
+          "duration": null,
+          "category": "activity",
+          "mikronacrt": null,
+          "isTema": false
+        },
+        {
+          "id": "vikend2-nedelja-malica-1100",
+          "title": "Malica",
+          "start": "11:00",
+          "end": "11:30",
+          "kind": "logistics",
+          "trainers": [],
+          "matchedProgram": false,
+          "programKey": null,
+          "goals": [],
+          "contents": [],
+          "sources": [],
+          "notes": [],
+          "duration": null,
+          "category": "logistics",
+          "mikronacrt": null,
+          "isTema": false
+        },
+        {
+          "id": "vikend2-nedelja-odnosi-z-javnostmi-2h-1130",
+          "title": "Odnosi z javnostmi",
+          "start": "11:30",
+          "end": "13:30",
           "kind": "program",
           "trainers": [
             "Jakob S",
@@ -2095,46 +2149,10 @@
           "temaSlug": "odnosi-z-javnostmi"
         },
         {
-          "id": "vikend2-nedelja-malica-1100",
-          "title": "Malica",
-          "start": "11:00",
-          "end": "11:30",
-          "kind": "logistics",
-          "trainers": [],
-          "matchedProgram": false,
-          "programKey": null,
-          "goals": [],
-          "contents": [],
-          "sources": [],
-          "notes": [],
-          "duration": null,
-          "category": "logistics",
-          "mikronacrt": null,
-          "isTema": false
-        },
-        {
-          "id": "vikend2-nedelja-pospravljanje-os-1130",
-          "title": "Pospravljanje + OS",
-          "start": "11:30",
-          "end": "13:30",
-          "kind": "logistics",
-          "trainers": [],
-          "matchedProgram": false,
-          "programKey": null,
-          "goals": [],
-          "contents": [],
-          "sources": [],
-          "notes": [],
-          "duration": null,
-          "category": "logistics",
-          "mikronacrt": null,
-          "isTema": false
-        },
-        {
           "id": "vikend2-nedelja-kosilo-1330",
           "title": "Kosilo",
           "start": "13:30",
-          "end": "15:30",
+          "end": "15:00",
           "kind": "logistics",
           "trainers": [],
           "matchedProgram": false,
@@ -2149,11 +2167,11 @@
           "isTema": false
         },
         {
-          "id": "vikend2-nedelja-zakljucna-ceremonija-1530",
-          "title": "Zaključna ceremonija",
-          "start": "15:30",
-          "end": "16:30",
-          "kind": "activity",
+          "id": "vikend2-nedelja-pospravljanje-os-1500",
+          "title": "Pospravljanje + OS",
+          "start": "15:00",
+          "end": "17:00",
+          "kind": "logistics",
           "trainers": [],
           "matchedProgram": false,
           "programKey": null,
@@ -2162,15 +2180,15 @@
           "sources": [],
           "notes": [],
           "duration": null,
-          "category": "activity",
+          "category": "logistics",
           "mikronacrt": null,
           "isTema": false
         },
         {
-          "id": "vikend2-nedelja-sveta-masa-1630",
-          "title": "Sveta maša ✝️",
-          "start": "16:30",
-          "end": "16:30",
+          "id": "vikend2-nedelja-zakljucna-ceremonija-1700",
+          "title": "Zaključna ceremonija",
+          "start": "17:00",
+          "end": "17:00",
           "kind": "activity",
           "trainers": [],
           "matchedProgram": false,
@@ -3303,12 +3321,12 @@
               "end": "09:30"
             },
             {
-              "href": "#sid-vikend2-nedelja-sveta-masa-1630",
+              "href": "#sid-vikend2-nedelja-sveta-masa-1000",
               "dayLabel": "Nedelja, 8. 11. 2026",
               "weekday": "Nedelja",
               "date": "2026-11-08",
-              "start": "16:30",
-              "end": "16:30"
+              "start": "10:00",
+              "end": "11:00"
             }
           ],
           "source": "Zadolžitve",
@@ -3585,12 +3603,12 @@
               "end": "22:00"
             },
             {
-              "href": "#sid-vikend2-nedelja-zakljucna-ceremonija-1530",
+              "href": "#sid-vikend2-nedelja-zakljucna-ceremonija-1700",
               "dayLabel": "Nedelja, 8. 11. 2026",
               "weekday": "Nedelja",
               "date": "2026-11-08",
-              "start": "15:30",
-              "end": "16:30"
+              "start": "17:00",
+              "end": "17:00"
             }
           ],
           "source": "Zadolžitve",
@@ -3725,18 +3743,18 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend2-nedelja-odnosi-z-javnostmi-2h-0900",
+          "sessionId": "vikend2-nedelja-odnosi-z-javnostmi-2h-1130",
           "dayId": "vikend2-nedelja",
           "dayLabel": "Nedelja, 8. 11. 2026",
           "date": "2026-11-08",
-          "start": "09:00",
-          "end": "11:00",
+          "start": "11:30",
+          "end": "13:30",
           "title": "Odnosi z javnostmi",
           "category": "tema",
           "programKey": "odnosi z javnostmi",
-          "sortKey": "2026-11-08-09:00",
-          "href": "#sid-vikend2-nedelja-odnosi-z-javnostmi-2h-0900",
-          "label": "09:00–11:00 · Odnosi z javnostmi"
+          "sortKey": "2026-11-08-11:30",
+          "href": "#sid-vikend2-nedelja-odnosi-z-javnostmi-2h-1130",
+          "label": "11:30–13:30 · Odnosi z javnostmi"
         },
         {
           "type": "zadolzitev",
@@ -4222,18 +4240,18 @@
         {
           "type": "tema",
           "typeLabel": "Odgovorni za temo",
-          "sessionId": "vikend2-nedelja-odnosi-z-javnostmi-2h-0900",
+          "sessionId": "vikend2-nedelja-odnosi-z-javnostmi-2h-1130",
           "dayId": "vikend2-nedelja",
           "dayLabel": "Nedelja, 8. 11. 2026",
           "date": "2026-11-08",
-          "start": "09:00",
-          "end": "11:00",
+          "start": "11:30",
+          "end": "13:30",
           "title": "Odnosi z javnostmi",
           "category": "tema",
           "programKey": "odnosi z javnostmi",
-          "sortKey": "2026-11-08-09:00",
-          "href": "#sid-vikend2-nedelja-odnosi-z-javnostmi-2h-0900",
-          "label": "09:00–11:00 · Odnosi z javnostmi"
+          "sortKey": "2026-11-08-11:30",
+          "href": "#sid-vikend2-nedelja-odnosi-z-javnostmi-2h-1130",
+          "label": "11:30–13:30 · Odnosi z javnostmi"
         },
         {
           "type": "zadolzitev",
@@ -4300,12 +4318,12 @@
               "end": "22:00"
             },
             {
-              "href": "#sid-vikend2-nedelja-zakljucna-ceremonija-1530",
+              "href": "#sid-vikend2-nedelja-zakljucna-ceremonija-1700",
               "dayLabel": "Nedelja, 8. 11. 2026",
               "weekday": "Nedelja",
               "date": "2026-11-08",
-              "start": "15:30",
-              "end": "16:30"
+              "start": "17:00",
+              "end": "17:00"
             }
           ],
           "source": "Zadolžitve",
@@ -5313,13 +5331,13 @@
           "title": "Uvodna ceremonija"
         },
         {
-          "href": "#sid-vikend2-nedelja-zakljucna-ceremonija-1530",
+          "href": "#sid-vikend2-nedelja-zakljucna-ceremonija-1700",
           "dayId": "vikend2-nedelja",
           "dayLabel": "Nedelja, 8. 11. 2026",
           "date": "2026-11-08",
           "weekday": "Nedelja",
-          "start": "15:30",
-          "end": "16:30",
+          "start": "17:00",
+          "end": "17:00",
           "title": "Zaključna ceremonija"
         }
       ],
@@ -5348,13 +5366,13 @@
           "title": "Sveta maša ✝️"
         },
         {
-          "href": "#sid-vikend2-nedelja-sveta-masa-1630",
+          "href": "#sid-vikend2-nedelja-sveta-masa-1000",
           "dayId": "vikend2-nedelja",
           "dayLabel": "Nedelja, 8. 11. 2026",
           "date": "2026-11-08",
           "weekday": "Nedelja",
-          "start": "16:30",
-          "end": "16:30",
+          "start": "10:00",
+          "end": "11:00",
           "title": "Sveta maša ✝️"
         }
       ],
@@ -6835,16 +6853,16 @@
       },
       "occurrences": [
         {
-          "sessionId": "vikend2-nedelja-odnosi-z-javnostmi-2h-0900",
+          "sessionId": "vikend2-nedelja-odnosi-z-javnostmi-2h-1130",
           "dayId": "vikend2-nedelja",
           "dayLabel": "Nedelja, 8. 11. 2026",
           "date": "2026-11-08",
-          "start": "09:00",
-          "end": "11:00",
+          "start": "11:30",
+          "end": "13:30",
           "duration": "2h",
           "durationMinutes": 120,
           "title": "Odnosi z javnostmi",
-          "href": "#sid-vikend2-nedelja-odnosi-z-javnostmi-2h-0900",
+          "href": "#sid-vikend2-nedelja-odnosi-z-javnostmi-2h-1130",
           "trainers": [
             "Jakob S",
             "Nejka"
