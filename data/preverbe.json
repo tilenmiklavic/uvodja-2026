@@ -1,6 +1,6 @@
 {
-  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas) ali – če ni teme (npr. Izbirne teme) – s termini časovnice (»sessions« = id-ji sej v data.json days, »name« = prikazano ime). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin). »split« = skupen obrazec več tem (Izbirne teme): odgovori so po vprašanju »Katere teme si se udeležil?« (»option«) razdeljeni v ločene zavihke (»responsesTab«) in pripisani »odgovorni« (slugi oseb) namesto odgovornim teme.",
-  "fetched": "2026-11-05",
+  "_help": "Preverbe tem: obrazci iz Drive Preverbe/Preverbe tem (»Preverba teme <Tema>«), povezani s temo (slug v data.json temas) ali – če ni teme (npr. Izbirne teme) – s termini časovnice (»sessions« = id-ji sej v data.json days, »name« = prikazano ime) ali s fiksnim oknom (»window« = {date, start, end}, npr. končno vrednotenje). Zavihek Teme prikaže le obrazce tem, ki so na sporedu danes (Europe/Ljubljana). Generalno pošilja odgovore v Apps Script (wordle_config.json scriptUrl, type 'preverba') → listi v Preverbe/Vprašanja. »responsesTab« = zavihek v »0_Vsi odgovori preverb« z odgovori te teme (za lestvico ocen na strani Ekipa; prazno = ujemanje po zaporedni številki zavihka). »svodForms« = dnevne preverbe SVODa iz Drive Preverbe/Preverbe SVODa (zavihek Preverba SVODa; vidita ga SVOD in admin). »split« = skupen obrazec več tem (Izbirne teme): odgovori so po vprašanju »Katere teme si se udeležil?« (»option«) razdeljeni v ločene zavihke (»responsesTab«) in pripisani »odgovorni« (slugi oseb) namesto odgovornim teme.",
+  "fetched": "2026-11-07",
   "temaForms": [
     {
       "tema": "jaz-vodja",
@@ -144,6 +144,16 @@
       "name": "International evening",
       "title": "Preverba Mednarodnega večera",
       "formId": "1NFYaq8NHhstLGDVKizMs9mvGQqCInq1Z-RbMECper80"
+    },
+    {
+      "window": {
+        "date": "2026-11-08",
+        "start": "14:00",
+        "end": "23:59"
+      },
+      "name": "Vrednotenje U Vodja 2026",
+      "title": "Vrednotenje U Vodja 2026",
+      "formId": "1coV_Uf4cpgN2u559_BstLggbZJSn-y2M3FjoZpgQey0"
     }
   ],
   "general": [
