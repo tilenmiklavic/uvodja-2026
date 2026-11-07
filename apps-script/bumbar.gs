@@ -12,7 +12,11 @@
  * doPost {type:'bumbar', action:'result', credential, date, rounds:[ms, ms, ms], early, id, attempt}
  *        → one row per finished game; id (made by the site) makes resending the same game harmless.
  *          Without an id (an old cached page) it is still one row per player and day.
- * doGet ?type=bumbar → {ok, results:[{email,name,date,rounds,early,total,attempt}]}  (?callback=fn for JSONP)
+ * doGet ?type=bumbar → {ok, results:[{email,name,date,rounds,early,total,attempt}], bans:[{email,name,reason}]}  (?callback=fn for JSONP)
+ *
+ * Bans (admins only, from the site's leaderboard): tab "bans-bumbar" Email | Ime | Razlog | Čas | Admin (created on first ban).
+ *   doPost {type:'bumbar', action:'ban', credential, email, name?, reason?} / {…, action:'unban', email}
+ *   A banned player's games stay in the sheet; the site adds BB_BAN_PENALTY_MS to them and lists the player at the bottom.
  *
  * Hook it into Code.gs (needs Code.gs helpers verifyToken_, json_, cellDate_, TZ – the same ones papiga.gs uses):
  *   doPost, with the other handlers:   if (body.type === 'bumbar') return handleBumbar(body);
@@ -38,8 +42,41 @@ function bumbarResultsSheet_() {
   return sh;
 }
 
+function bumbarBansSheet_() {
+  var ss = SpreadsheetApp.openById(BUMBAR_RESULTS_ID), sh = ss.getSheetByName('bans-bumbar');
+  if (!sh) { sh = ss.insertSheet('bans-bumbar'); sh.appendRow(['Email', 'Ime', 'Razlog', 'Čas', 'Admin']); sh.setFrozenRows(1); }
+  return sh;
+}
+function bumbarBans_() {
+  var rows = bumbarBansSheet_().getDataRange().getValues(), out = [];
+  for (var i = 1; i < rows.length; i++) if (rows[i][0]) out.push({ email: String(rows[i][0]).toLowerCase(), name: String(rows[i][1] || ''), reason: String(rows[i][2] || '') });
+  return out;
+}
+function bumbarIsAdmin_(email) {
+  return (typeof STATS_ADMINS !== 'undefined' && STATS_ADMINS.indexOf(email) >= 0) || siteRole_(email) === 'admin';
+}
+/** Admin: ban or unban a player (one row per banned e-mail in bans-bumbar). */
+function bumbarBan_(body) {
+  var admin = tokenInfo_(body.credential); // admins' gmail addresses count too
+  if (!bumbarIsAdmin_(admin.email)) return json_({ ok: false, error: 'ni dostopa' });
+  var email = String(body.email || '').trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+$/.test(email)) return json_({ ok: false, error: 'bad_email' });
+  var clean = function (v, n) { v = String(v || '').replace(/[\r\n\t]/g, ' ').trim().slice(0, n); return /^[=+\-@]/.test(v) ? "'" + v : v; };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var sh = bumbarBansSheet_(), rows = sh.getDataRange().getValues();
+    for (var i = rows.length - 1; i >= 1; i--) if (String(rows[i][0]).toLowerCase() === email) sh.deleteRow(i + 1);
+    if (body.action === 'ban') sh.appendRow([email, clean(body.name, 100), clean(body.reason, 200), new Date(), admin.email]);
+  } finally {
+    lock.releaseLock();
+  }
+  return json_({ ok: true });
+}
+
 function handleBumbar(body) {
   try {
+    if (body.action === 'ban' || body.action === 'unban') return bumbarBan_(body);
     var who = verifyToken_(body.credential);
     if (String(body.action || '') !== 'result') return json_({ ok: false, error: 'bad_action' });
     var date = String(body.date || ''), today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
@@ -83,7 +120,7 @@ function bumbarResults_(cb) {
       out.push({ email: String(r[1]).toLowerCase(), name: String(r[2]), date: cellDate_(r[3]),
         rounds: [Number(r[4]) || 0, Number(r[5]) || 0, Number(r[6]) || 0], early: Number(r[7]) || 0, total: Number(r[8]) || 0, attempt: Number(r[9]) || 1 });
     }
-    return json_({ ok: true, results: out }, cb);
+    return json_({ ok: true, results: out, bans: bumbarBans_() }, cb);
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) }, cb);
   }
