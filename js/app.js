@@ -406,18 +406,19 @@ function setTab(name) {
   if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
   if (name === "teme") decorateTemeScores();
   if (name === "vprasanja") renderVprasanja();
-  const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar|rutke)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
+  const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar|rutke|kazino)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   state.papigaActive = name === "zabava" && zb === "papiga";
   if (state.bumbarActive && !(name === "zabava" && zb === "bumbar")) bbLeave();
   state.bumbarActive = name === "zabava" && zb === "bumbar";
   if (state.rutkeActive && !(name === "zabava" && zb === "rutke")) rkFlush();
   state.rutkeActive = name === "zabava" && zb === "rutke";
+  state.kazinoActive = name === "zabava" && zb === "kazino";
   updateInstallUI();
   if (name === "zabava") {
     $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
-    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga"; $("#bumbar").hidden = zb !== "bumbar"; $("#rutke").hidden = zb !== "rutke";
-    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga(); else if (zb === "bumbar") renderBumbar(); else if (zb === "rutke") renderRutke();
+    $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga"; $("#bumbar").hidden = zb !== "bumbar"; $("#rutke").hidden = zb !== "rutke"; $("#kazino").hidden = zb !== "kazino";
+    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga(); else if (zb === "bumbar") renderBumbar(); else if (zb === "rutke") renderRutke(); else if (zb === "kazino") { sv.czView = zbm[2] === "kocke" ? "kocke" : "ruleta"; renderKazino(); }
     if (zb) window.scrollTo(0, 0);
   }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
@@ -1703,7 +1704,9 @@ function applyHash() {
   if (/^uu\/.+$/.test(hash)) { setTab("uu"); return; }
   if (/^preverbe\/(teme|generalno|svod)$/.test(hash)) { setTab("preverbe"); return; }
   if (/^analitika\/(obiski|svod|teme|wordle|papiga|bumbar)$/.test(hash)) { setTab("analitika"); return; }
-  if (/^zabava\/(wordle|papiga|bumbar|rutke|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
+  const oldCz = /^zabava\/stavnica\/(ruleta|kocke)$/.exec(hash); // the casino used to be Stavnica tabs "🤫 1" / "🤫 2"
+  if (oldCz) { history.replaceState(null, "", `#zabava/kazino/${oldCz[1]}`); setTab("zabava"); return; }
+  if (/^zabava\/(wordle|papiga|bumbar|rutke|kazino(\/(ruleta|kocke))?|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -2211,7 +2214,7 @@ async function tokRefreshNow() {
   tokRender();
   return c;
 }
-document.addEventListener("click", (e) => { if (e.target.closest("[data-tok-refresh]")) { e.preventDefault(); tokRefreshNow().then((c) => { if (c && !$("#stavnica")?.hidden) renderStavnica(true); }); } });
+document.addEventListener("click", (e) => { if (e.target.closest("[data-tok-refresh]")) { e.preventDefault(); tokRefreshNow().then((c) => { if (c && !$("#stavnica")?.hidden) renderStavnica(true); if (c && state.kazinoActive) renderKazino(true); }); } });
 // Renew in the background ~5 min before expiry (and when the tab becomes visible); repaint the dot every 30 s
 /* —— Site session (apps-script/common.gs): after one Google sign-in the server issues its own signed token, valid
    60 days and renewed when it has under 30 days left, so the hourly Google refresh (One Tap) is only a fallback —— */
@@ -3217,7 +3220,8 @@ document.addEventListener("keydown", (e) => {
 setInterval(() => { if (state.rutkeActive && !document.hidden) { rkFlush(); loadRkScores(); } }, 30 * 1000);
 document.addEventListener("visibilitychange", () => { if (document.hidden && rkGet(RK_QUEUE, []).length) rkFlush(); });
 
-/* —— Stavnica → Kazino: "🤫 1" roulette (European, single 0) and "🤫 2" dice (two dice, bet on the total) for the Stavnica coins.
+/* —— Zabava → Piratski kazino (#zabava/kazino/ruleta|kocke): roulette (European, single 0) and dice (two dice, bet on the total)
+   for the Stavnica coins (same balance and state as Stavnica).
    Chips are placed here; the round is played by apps-script/stavnica.gs (action roulette / dice: balance check, random
    result, sheet "kazino"), which answers with the new state + the result; the wheel / dice then animate to it. —— */
 const CZ_RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
@@ -3296,24 +3300,47 @@ function svCasino(st, me, game) {
     <p class="muted-text cz-fine">Igra je samo za zlatnike iz Stavnice – izid določi strežnik, ne tvoja naprava.</p>
   </div>`;
 }
-const czGame = () => (sv.view === "kocke" ? "kocke" : "ruleta");
+const czGame = () => (sv.czView === "kocke" ? "kocke" : "ruleta");
+/* Piratski kazino page: Stavnica state (coins), tabs Ruleta / Kocke */
+async function renderKazino(force = false) {
+  const box = $("#kazino");
+  if (!box) return;
+  if (!sv.state && scriptHas("stavnica")) { sv.state = scriptData.stavnica.data; sv.fetchedAt = scriptData.stavnica.at; }
+  if (osData === undefined) { try { const r = await fetch("data/os.json", { cache: "no-store" }); osData = r.ok ? await r.json() : null; } catch { osData = null; } }
+  if (!sv.state) {
+    if (sv.loading) return;
+    sv.loading = true;
+    box.innerHTML = `<p class="muted-text sv-loading">Nalagam kazino …</p>`;
+    try { sv.state = await scriptLoad("stavnica", force); sv.error = null; sv.fetchedAt = Date.now(); } catch (err) { sv.error = err; }
+    sv.loading = false;
+  } else if (!sv.cz.busy && (force || Date.now() - (sv.fetchedAt || 0) > SV_FRESH)) svRefresh(force);
+  if (!state.kazinoActive) return;
+  if (!sv.state) { box.innerHTML = svErrorHtml(sv.error); return; }
+  const game = czGame(), me = sv.state.me || { balance: sv.state.budget, bets: [] };
+  box.innerHTML = `<div class="pv-folder"><div class="pv-ftabs" role="tablist" aria-label="Piratski kazino">
+      <a role="tab" class="pv-tab pv-ftab" href="#zabava/kazino/ruleta" aria-selected="${game === "ruleta"}">🎡 Ruleta</a>
+      <a role="tab" class="pv-tab pv-ftab" href="#zabava/kazino/kocke" aria-selected="${game === "kocke"}">🎲 Kocke</a>
+      <a class="pv-tab pv-ftab kz-sv" href="#zabava/stavnica/profil" title="Tvoje stanje (Stavnica)">${SV_COIN} ${me.balance}</a>
+    </div><div class="pv-fpanel sv-panel">${svCasino(sv.state, me, game)}</div></div>`;
+}
+const czRender = () => { if (state.kazinoActive) renderKazino(); };
 function czAdd(k) {
   const game = czGame(), me = sv.state?.me;
   if (sv.cz.busy || !me) return;
-  if (czStake(game) + sv.cz.chip > me.balance) { sv.cz.err = `Imaš le ${me.balance} zlatnikov.`; renderStavnica(); return; }
+  if (czStake(game) + sv.cz.chip > me.balance) { sv.cz.err = `Imaš le ${me.balance} zlatnikov.`; czRender(); return; }
   sv.cz.err = ""; sv.cz.last[game] = null;
   sv.cz.bets[game][k] = (sv.cz.bets[game][k] || 0) + sv.cz.chip;
   (sv.cz.stack ||= []).push([game, k, sv.cz.chip]);
-  renderStavnica();
+  czRender();
 }
 async function czPlay(game) {
   const bets = Object.entries(sv.cz.bets[game]).map(([k, a]) => ({ k, a }));
   if (!bets.length || sv.cz.busy) return;
   sv.cz.busy = true; sv.cz.err = ""; sv.cz.last[game] = null;
-  renderStavnica();
+  czRender();
   let res;
   try { res = await svCall({ action: game === "ruleta" ? "roulette" : "dice", bets }); }
-  catch (err) { sv.cz.busy = false; sv.cz.err = `Ni uspelo: ${err?.message || err}`; renderStavnica(); return; }
+  catch (err) { sv.cz.busy = false; sv.cz.err = `Ni uspelo: ${err?.message || err}`; czRender(); return; }
   const c = res.casino;
   if (game === "ruleta") {
     const a = 360 / 37, i = CZ_WHEEL.indexOf(c.n), cur = sv.cz.rot;
@@ -3335,25 +3362,25 @@ async function czPlay(game) {
   sv.state = res; sv.fetchedAt = Date.now();
   sv.cz.prev[game] = { ...sv.cz.bets[game] }; sv.cz.bets[game] = {}; sv.cz.stack = [];
   sv.cz.last[game] = c; sv.cz.busy = false;
-  renderStavnica();
+  czRender();
 }
 document.addEventListener("click", (e) => {
-  if (!e.target.closest?.("#stavnica .cz")) return;
+  if (!e.target.closest?.("#kazino .cz")) return;
   const chip = e.target.closest("[data-cz-chip]");
-  if (chip) { sv.cz.chip = Number(chip.dataset.czChip); renderStavnica(); return; }
+  if (chip) { sv.cz.chip = Number(chip.dataset.czChip); czRender(); return; }
   const bet = e.target.closest("[data-cz-bet]");
   if (bet) { czAdd(bet.dataset.czBet); return; }
   const game = czGame();
-  if (e.target.closest("[data-cz-clear]")) { sv.cz.bets[game] = {}; sv.cz.stack = []; sv.cz.err = ""; renderStavnica(); return; }
+  if (e.target.closest("[data-cz-clear]")) { sv.cz.bets[game] = {}; sv.cz.stack = []; sv.cz.err = ""; czRender(); return; }
   if (e.target.closest("[data-cz-undo]")) {
     const i = (sv.cz.stack || []).map((x) => x[0]).lastIndexOf(game);
     if (i >= 0) { const [, k, v] = sv.cz.stack.splice(i, 1)[0]; sv.cz.bets[game][k] -= v; if (sv.cz.bets[game][k] <= 0) delete sv.cz.bets[game][k]; }
-    sv.cz.err = ""; renderStavnica(); return;
+    sv.cz.err = ""; czRender(); return;
   }
   if (e.target.closest("[data-cz-repeat]")) {
     const p = sv.cz.prev[game], total = Object.values(p || {}).reduce((a, v) => a + v, 0);
-    if (total > (sv.state?.me?.balance || 0)) { sv.cz.err = "Za ponovitev stave nimaš dovolj zlatnikov."; renderStavnica(); return; }
-    sv.cz.bets[game] = { ...p }; sv.cz.last[game] = null; sv.cz.err = ""; renderStavnica(); return;
+    if (total > (sv.state?.me?.balance || 0)) { sv.cz.err = "Za ponovitev stave nimaš dovolj zlatnikov."; czRender(); return; }
+    sv.cz.bets[game] = { ...p }; sv.cz.last[game] = null; sv.cz.err = ""; czRender(); return;
   }
   const play = e.target.closest("[data-cz-play]");
   if (play && !play.disabled) czPlay(play.dataset.czPlay);
@@ -3570,7 +3597,7 @@ async function renderOsDays() {
 /* —— Zabava → Stavnica: fixed-odds bets with virtual zlatniki via Apps Script (apps-script/stavnica.gs) —— */
 /* Gold coin icon (the 🪙 emoji renders silver/grey on some devices) */
 const SV_COIN = `<svg class="sv-coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#f5b82e" stroke="#a8711a" stroke-width="1.6"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#a8711a" stroke-width="1.3" opacity=".8"/><path d="M9.2 8.4a5 5 0 0 1 4.4-1.2" stroke="#ffe7a3" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`;
-const sv = { state: null, loading: false, open: null, error: "", media: undefined, view: "", // view: "" = Stave, "profil", "ruleta", "kocke", or a question slug
+const sv = { state: null, loading: false, open: null, error: "", media: undefined, view: "", czView: "ruleta", // view: "" = Stave, "profil", or a question slug; czView: Piratski kazino tab
   cz: { chip: 1, bets: { ruleta: {}, kocke: {} }, prev: { ruleta: null, kocke: null }, last: { ruleta: null, kocke: null }, busy: false, rot: 0, err: "" } }; // 🤫 kazino
 async function svCall(extra = {}, onStage = () => {}) {
   const err = (kind, msg) => Object.assign(new Error(msg || kind), { kind });
@@ -3731,18 +3758,15 @@ async function renderStavnica(force = false) {
   const qi = st.questions.findIndex((q) => svSlug(q) === sv.view);
   const isAdminView = !!st.people && effectiveRole(state.user?.email) === "admin"; // overview only in the admin view (not when simulating)
   const playerSlug = isAdminView && /^igralec\//.test(sv.view) ? sv.view.slice(8) : null;
-  const tab = playerSlug ? "pregled" : ["profil", "pretekle", "ruleta", "kocke"].includes(sv.view) || (sv.view === "pregled" && isAdminView) ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
+  const tab = playerSlug ? "pregled" : ["profil", "pretekle"].includes(sv.view) || (sv.view === "pregled" && isAdminView) ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
   const tabs = `<div class="pv-ftabs" role="tablist" aria-label="Stavnica">
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica" aria-selected="${tab === "stave"}">Stave</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/pretekle" aria-selected="${tab === "pretekle"}">Pretekle stave</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/profil" aria-selected="${tab === "profil"}">Profil <span class="sv-tab-bal">${SV_COIN} ${me.balance}</span></a>
-      <a role="tab" class="pv-tab pv-ftab sv-ftab-cz" href="#zabava/stavnica/ruleta" aria-selected="${tab === "ruleta"}" title="Ruleta">🤫 1</a>
-      <a role="tab" class="pv-tab pv-ftab sv-ftab-cz" href="#zabava/stavnica/kocke" aria-selected="${tab === "kocke"}" title="Kocke">🤫 2</a>
       ${isAdminView ? `<a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/pregled" aria-selected="${tab === "pregled"}">Pregled</a>` : ""}
     </div>`;
   let body;
   if (tab === "profil") body = svProfile(st, me);
-  else if (tab === "ruleta" || tab === "kocke") body = svCasino(st, me, tab);
   else if (playerSlug) body = svPlayer(st, playerSlug);
   else if (tab === "pregled") body = svOverview(st);
   else if (qi >= 0) body = svDetail(st, me, qi);
@@ -4031,7 +4055,7 @@ function svProfile(st, me) {
       <div class="card"><span class="muted-text">Priigrano</span><strong>${me.won ?? done.reduce((a, b) => a + (b.payout || 0), 0)}</strong></div>
       <div class="card"><span class="muted-text">Možen dobitek</span><strong>${pending}</strong></div>
       ${me.adjusted ? `<div class="card sv-stat-adj"><span class="muted-text">Popravki admina</span><strong>${me.adjusted > 0 ? "+" : ""}${me.adjusted}</strong></div>` : ""}
-      ${me.casino?.count ? `<div class="card"><span class="muted-text">🤫 (${me.casino.count} iger)</span><strong>${me.casino.net > 0 ? "+" : ""}${me.casino.net}</strong></div>` : ""}
+      ${me.casino?.count ? `<div class="card"><span class="muted-text"><a href="#zabava/kazino">Kazino</a> (${me.casino.count} iger)</span><strong>${me.casino.net > 0 ? "+" : ""}${me.casino.net}</strong></div>` : ""}
     </div>
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
     <section class="sv-list"><h3>Moje stave</h3>${me.bets.length || me.adjustments?.length ? svSections(me.bets, me.adjustments) : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
@@ -4064,6 +4088,7 @@ async function svRefresh(force = false) {
     if (svSig(next) !== svSig(sv.state)) sv.dirty = true;
     sv.state = next; sv.fetchedAt = Date.now();
   }
+  if (state.kazinoActive && !sv.cz.busy) renderKazino();
   if (sv.dirty && !svBusy()) { sv.dirty = false; renderStavnica(); } else svMeta();
 }
 function svKeepFresh() {
@@ -4086,7 +4111,7 @@ document.addEventListener("click", (e) => {
   if (opt) { sv.open = { q: Number(opt.dataset.svQ), o: opt.dataset.svO }; renderStavnica(); $("#stavnica form.sv-bet input")?.focus(); }
   else if (chip) { const f = chip.closest("form"); f.amount.value = chip.dataset.svAmt; svUpdatePayout(); }
   else if (e.target.closest("[data-sv-cancel]")) { sv.open = null; renderStavnica(); }
-  else if (e.target.closest("[data-sv-reload]")) renderStavnica(true);
+  else if (e.target.closest("[data-sv-reload]")) { if (state.kazinoActive) renderKazino(true); else renderStavnica(true); }
   else if (e.target.closest("a[href^='#zabava/stavnica']")) sv.open = null;
 });
 document.addEventListener("input", (e) => { if (e.target.closest("#stavnica form.sv-bet")) svUpdatePayout(); });
