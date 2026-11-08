@@ -4004,13 +4004,14 @@ function svAgo(ts) {
 function svBetRow(b, { who = true, question = true } = {}) {
   const q = sv.state.questions.find((x) => x.id === b.question);
   const odds = b.odds || (q ? svOdds(q) : 1), pot = b.amount * odds;
-  const resolved = q?.result ? (b.option === q.result ? "won" : "lost") : null;
+  const resolved = q?.cancelled ? "cancelled" : q?.result ? (b.option === q.result ? "won" : "lost") : null;
   const w = who ? wdWho("", b.name) : null;
-  const out = resolved === "won" ? `<strong class="is-win" title="Zadel">+${b.payout ?? pot} ${SV_COIN}</strong>`
+  const out = resolved === "cancelled" ? `<strong class="is-refund" title="Stava preklicana – vložek vrnjen">↺ ${b.amount} ${SV_COIN}</strong>`
+    : resolved === "won" ? `<strong class="is-win" title="Zadel">+${b.payout ?? pot} ${SV_COIN}</strong>`
     : resolved === "lost" ? `<strong class="is-lost" title="Ni zadel">0 ${SV_COIN}</strong>`
     : `<strong title="Če zadene: vložek × ${odds}"><span class="sv-pot-pre">do</span> ${pot} ${SV_COIN}<span class="sv-pot-x">×${odds}</span></strong>`;
   return `<li class="sv-bet-item${resolved ? ` is-${resolved}` : ""}">
-    <div class="sv-bi-top${w ? " has-who" : ""}">${!who ? `<span class="sv-state ${resolved ? `is-${resolved}` : "is-open"}">${resolved === "won" ? "Zadel" : resolved === "lost" ? "Ni zadel" : "V igri"}</span>` : ""}${w ? `${w.av}<span class="sv-bi-who" title="${esc(w.title)}">${esc(w.label)}</span>` : ""}${question && q ? `<a class="sv-bi-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : question ? `<span class="sv-bi-q">${esc(b.question)}</span>` : ""}<span class="sv-bi-time muted-text">${esc(svAgo(b.ts))}</span></div>
+    <div class="sv-bi-top${w ? " has-who" : ""}">${!who ? `<span class="sv-state ${resolved ? `is-${resolved}` : "is-open"}">${resolved === "cancelled" ? "Preklicano" : resolved === "won" ? "Zadel" : resolved === "lost" ? "Ni zadel" : "V igri"}</span>` : ""}${w ? `${w.av}<span class="sv-bi-who" title="${esc(w.title)}">${esc(w.label)}</span>` : ""}${question && q ? `<a class="sv-bi-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : question ? `<span class="sv-bi-q">${esc(b.question)}</span>` : ""}<span class="sv-bi-time muted-text">${esc(svAgo(b.ts))}</span></div>
     <div class="sv-bi-facts">
       <span class="sv-fact sv-fact-pick"><small>Izbira</small><strong>${esc(q ? svLabel(q, b.option) : b.option)}</strong></span>
       <span class="sv-fact"><small>Vložek</small><strong>${b.amount} ${SV_COIN}</strong></span>
@@ -4054,13 +4055,13 @@ function svLogAgo(ts) {
 }
 function svLogRow(b, withQuestion) {
   const q = sv.state.questions.find((x) => x.id === b.question), w = wdWho("", b.name);
-  const won = !!q?.result && b.option === q.result, lost = !!q?.result && !won, pay = b.amount * (b.odds || (q ? svOdds(q) : 1));
-  return `<li class="sv-log-item${won ? " is-won" : lost ? " is-lost" : ""}">${w.av}
+  const cancelled = !!q?.cancelled, won = !cancelled && !!q?.result && b.option === q.result, lost = !cancelled && !!q?.result && !won, pay = b.amount * (b.odds || (q ? svOdds(q) : 1));
+  return `<li class="sv-log-item${won ? " is-won" : lost ? " is-lost" : cancelled ? " is-cancelled" : ""}">${w.av}
     <div class="sv-log-main">
       <p class="sv-log-line"><strong class="sv-log-who" title="${esc(w.title)}">${esc(w.label)}</strong><span class="sv-log-amt">${b.amount} ${SV_COIN}</span><span class="sv-log-na muted-text">na</span><span class="sv-log-pick">${esc(q ? svLabel(q, b.option) : b.option)}</span>${svLogAgo(b.ts) ? `<span class="sv-log-ago">${svLogAgo(b.ts)}</span>` : ""}</p>
       ${withQuestion && q ? `<a class="sv-log-q" href="#zabava/stavnica/${svSlug(q)}">${esc(b.question)}</a>` : ""}
     </div>
-    <span class="sv-log-end">${won ? `<span class="sv-log-won" title="Zadel">✓ +${pay}</span>` : lost ? `<span class="sv-log-lost" title="Ni zadel">✗ −${b.amount}</span>` : ""}<time class="sv-log-time muted-text" datetime="${b.ts ? new Date(b.ts).toISOString() : ""}">${esc(svLogWhen(b.ts))}</time></span>
+    <span class="sv-log-end">${cancelled ? `<span class="sv-log-refund" title="Stava preklicana – vložek vrnjen">↺ ${b.amount}</span>` : won ? `<span class="sv-log-won" title="Zadel">✓ +${pay}</span>` : lost ? `<span class="sv-log-lost" title="Ni zadel">✗ −${b.amount}</span>` : ""}<time class="sv-log-time muted-text" datetime="${b.ts ? new Date(b.ts).toISOString() : ""}">${esc(svLogWhen(b.ts))}</time></span>
   </li>`;
 }
 function svRecent(list, withQuestion) {
@@ -4112,7 +4113,7 @@ function svList(st, past = false) {
     return `<a class="card sv-card sv-card-link${q.result ? " is-resolved" : ""}" href="#zabava/stavnica/${svSlug(q)}">
       <div class="sv-card-head">${svImg(q) ? `<img class="sv-img" src="${esc(svImg(q))}" data-fb="${esc(svImgFallback(q))}" referrerpolicy="no-referrer" alt="" loading="lazy" width="48" height="48" />` : ""}<h3 class="sv-q">${esc(q.question)}</h3>${q.options.length ? `<span class="sv-odds">×${svOdds(q)}</span>` : ""}</div>
       ${q.options.length ? `<div class="sv-mini" style="--n:${q.options.length}">${q.options.map((o) => `<span class="sv-mini-opt${q.result === o ? " is-win" : ""}"><span>${esc(svLabel(q, o))}</span><strong>${sh.pct(o)} %</strong><i style="width:${sh.pct(o)}%"></i></span>`).join("")}</div>` : ""}
-      <p class="sv-foot muted-text">${q.result ? `<strong class="sv-res">Zaprto · ${esc(svLabel(q, q.result))}</strong> · ` : ""}${!q.options.length ? "Možnosti še niso določene." : sh.n ? svCount(sh.n) : "Še nihče ni stavil"}<span class="sv-go">Odpri ›</span></p>
+      <p class="sv-foot muted-text">${q.cancelled ? `<strong class="sv-res is-cancelled">Preklicano · vložki vrnjeni</strong> · ` : q.result ? `<strong class="sv-res">Zaprto · ${esc(svLabel(q, q.result))}</strong> · ` : ""}${!q.options.length ? "Možnosti še niso določene." : sh.n ? svCount(sh.n) : "Še nihče ni stavil"}<span class="sv-go">Odpri ›</span></p>
     </a>`;
   };
   const qs = st.questions.filter((q) => !!q.result === past);
@@ -4130,10 +4131,10 @@ function svDetail(st, me, i) {
       <header class="sv-detail-head">${svImg(q) ? `<img class="sv-detail-img" src="${esc(svImg(q, 288))}" data-fb="${esc(svImgFallback(q))}" referrerpolicy="no-referrer" alt="" width="96" height="96" />` : ""}
         <div><h2 class="sv-q">${esc(q.question)}</h2>
         <p class="muted-text sv-detail-meta">${q.options.length ? `<span class="sv-odds">×${svOdds(q)}</span> zadetek vrne ${svOdds(q)}-kratni vložek · ` : ""}${sh.n ? svCount(sh.n) : "še brez stav"}</p></div></header>
-      ${q.result ? `<p class="sv-meta"><strong class="sv-res">Zaprto · rezultat: ${esc(svLabel(q, q.result))}</strong></p>` : ""}
+      ${q.cancelled ? `<p class="sv-meta"><strong class="sv-res is-cancelled">Stava je preklicana · vsi so dobili vložek nazaj</strong></p>` : q.result ? `<p class="sv-meta"><strong class="sv-res">Zaprto · rezultat: ${esc(svLabel(q, q.result))}</strong></p>` : ""}
       ${q.options.length ? `<div class="sv-opts" style="--n:${q.options.length}">${q.options.map((o) => `<button type="button" class="sv-opt${o === sel ? " is-sel" : ""}${q.result === o ? " is-win" : ""}" data-sv-q="${i}" data-sv-o="${esc(o)}"${q.result ? " disabled" : ""}>
           <span class="sv-opt-label">${esc(svLabel(q, o))}</span><span class="sv-pct">${sh.pct(o)} %</span><span class="sv-meter" style="width:${sh.pct(o)}%"></span></button>`).join("")}</div>
-        <p class="sv-foot muted-text">${q.result ? "Stave so zaprte." : "Izberi možnost za stavo · odstotek = delež ljudi na možnosti"}</p>`
+        <p class="sv-foot muted-text">${q.cancelled ? "Stava je preklicana." : q.result ? "Stave so zaprte." : "Izberi možnost za stavo · odstotek = delež ljudi na možnosti"}</p>`
       : `<p class="sv-foot muted-text">Možnosti še niso določene.</p>`}
       ${sel ? `<form class="sv-bet" data-sv-q="${i}" data-sv-o="${esc(sel)}">
         <p class="sv-bet-title">Stava: <strong>${esc(svLabel(q, sel))}</strong> <span class="muted-text">· stanje ${SV_COIN} ${me.balance}</span></p>
@@ -4165,13 +4166,14 @@ function svCreateForm() {
       <p class="sv-status" role="status" aria-live="polite"></p>
     </form></details>`;
 }
-/* Admin: pick the winning option (pays out right away) or reopen a resolved question */
+/* Admin: pick the winning option (pays out right away), cancel the bet (everybody gets the stake back) or reopen it */
 function svResolveBox(q, i) {
   return `<section class="card sv-resolve" aria-label="Razreši stavo">
     <h3>Razreši stavo <span class="muted-text">· samo admin</span></h3>
-    <p class="muted-text sv-help">${q.result ? `Rezultat je <strong>${esc(svLabel(q, q.result))}</strong>. Lahko ga spremeniš ali stavo znova odpreš.` : "Izberi pravilno možnost – zmagovalci takoj dobijo izplačilo, stave se zaprejo."}</p>
+    <p class="muted-text sv-help">${q.cancelled ? "Stava je <strong>preklicana</strong> – vsi so dobili vložek nazaj. Lahko jo znova odpreš ali razrešiš." : q.result ? `Rezultat je <strong>${esc(svLabel(q, q.result))}</strong>. Lahko ga spremeniš, stavo prekličeš ali znova odpreš.` : "Izberi pravilno možnost – zmagovalci takoj dobijo izplačilo, stave se zaprejo. Ali pa stavo prekliči – vsi dobijo vložek nazaj."}</p>
     <div class="sv-resolve-btns">${q.options.map((o) => `<button type="button" class="btn ${q.result === o ? "primary" : "ghost"}" data-sv-resolve="${i}" data-result="${esc(o)}"${q.result === o ? " disabled" : ""}>${esc(svLabel(q, o))}</button>`).join("")}
-      ${q.result ? `<button type="button" class="btn ghost" data-sv-resolve="${i}" data-result="">↺ Znova odpri</button>` : ""}</div>
+      ${q.result ? `<button type="button" class="btn ghost" data-sv-resolve="${i}" data-result="">↺ Znova odpri</button>` : ""}
+      ${q.cancelled ? "" : `<button type="button" class="btn ghost sv-cancel-btn" data-sv-resolve="${i}" data-cancel="1">✕ Prekliči stavo</button>`}</div>
     <p class="sv-status" role="status" aria-live="polite"></p>
   </section>`;
 }
@@ -4240,11 +4242,13 @@ document.addEventListener("submit", async (e) => {
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("#stavnica [data-sv-resolve]");
   if (!b) return;
-  const q = sv.state.questions[Number(b.dataset.svResolve)], result = b.dataset.result, box = b.closest(".sv-resolve"), status = $(".sv-status", box);
-  if (!q || !confirm(result ? `Razrešim stavo »${q.question}«?\nRezultat: ${svLabel(q, result)} – zmagovalci dobijo izplačilo.` : `Znova odprem stavo »${q.question}«?\nIzplačila se umaknejo, dokler je ne razrešiš.`)) return;
+  const q = sv.state.questions[Number(b.dataset.svResolve)], cancel = !!b.dataset.cancel, result = cancel ? "" : b.dataset.result, box = b.closest(".sv-resolve"), status = $(".sv-status", box);
+  const n = q ? (sv.state.people || []).reduce((a, p) => a + p.bets.filter((x) => x.question === q.id).length, 0) : 0;
+  if (!q || !confirm(cancel ? `Prekličem stavo »${q.question}«?\nVsi, ki so stavili${n ? ` (${n} ${n % 100 === 1 ? "stava" : n % 100 === 2 ? "stavi" : n % 100 === 3 || n % 100 === 4 ? "stave" : "stav"})` : ""}, dobijo vložek nazaj, stava je označena kot preklicana.`
+    : result ? `Razrešim stavo »${q.question}«?\nRezultat: ${svLabel(q, result)} – zmagovalci dobijo izplačilo.` : `Znova odprem stavo »${q.question}«?\nIzplačila in vračila se umaknejo, dokler je ne razrešiš.`)) return;
   $$("button", box).forEach((x) => (x.disabled = true)); status.className = "sv-status"; status.textContent = "Shranjujem …";
   try {
-    sv.state = await svCall({ action: "resolve", question: q.id, result });
+    sv.state = await svCall({ action: "resolve", question: q.id, result, ...(cancel ? { cancel: true } : {}) });
     sv.fetchedAt = Date.now(); scriptSet("stavnica", sv.state); renderStavnica();
   } catch (err) {
     status.className = "sv-status is-err"; status.textContent = `Ni uspelo (${svErrText(err)}).`;
@@ -4385,6 +4389,7 @@ function svProfile(st, me) {
       <div class="card"><span class="muted-text">Priigrano</span><strong>${me.won ?? done.reduce((a, b) => a + (b.payout || 0), 0)}</strong></div>
       <div class="card"><span class="muted-text">Možen dobitek</span><strong>${pending}</strong></div>
       ${me.adjusted ? `<div class="card sv-stat-adj"><span class="muted-text">Popravki admina</span><strong>${me.adjusted > 0 ? "+" : ""}${me.adjusted}</strong></div>` : ""}
+      ${me.refunded ? `<div class="card"><span class="muted-text">Vrnjeno (preklicane)</span><strong>${me.refunded}</strong></div>` : ""}
       ${me.shopSpent ? `<div class="card"><span class="muted-text"><a href="#trgovina">Trgovina</a></span><strong>−${me.shopSpent}</strong></div>` : ""}
       ${me.casino?.count ? `<div class="card"><span class="muted-text"><a href="#zabava/kazino">Kazino</a> (${me.casino.count} iger)</span><strong>${me.casino.net > 0 ? "+" : ""}${me.casino.net}</strong></div>` : ""}
     </div>

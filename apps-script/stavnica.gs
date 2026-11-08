@@ -21,6 +21,8 @@
  * Rules: everyone starts with STAVNICA_BUDGET zlatnikov. Fixed odds = number of options: a winning bet on a
  * yes/no question pays 2× the stake, on a 3-option question 3×, … Other people's bets don't change the odds.
  * When the "resolved" column of a question is filled in, betting on it closes and winners get their payout.
+ * Admins can also cancel a question (action "resolve" {question, cancel:true}): "resolved" becomes PREKLICANO, betting
+ * closes and every stake on it is refunded (shown as refunded, not as a win). Reopening ({result:""}) undoes it.
  *
  * Kazino (site tabs "🤫 1" roulette and "🤫 2" dice): action "roulette" {bets:[{k, a}]} / "dice" {bets:[{k, a}]}.
  * The result is drawn here (never in the browser), the stake is checked against the balance under the same lock as bets,
@@ -41,6 +43,7 @@
 const STAVNICA_SHEET_ID = "1Nc9q0aSElmn7I0tIMYxGIa1yS5wdgZFFcHYCEEKN678";
 const STAVNICA_BUDGET = 10;
 const STAVNICA_BET_HEADER = ["Čas", "Vprašanje", "Opcija", "Vložek", "Ime", "E-naslov"];
+const STAVNICA_CANCELLED = "PREKLICANO"; // value of the "resolved" column of a cancelled question (stakes refunded)
 const STAVNICA_ADJ_SHEET = "popravki"; // admin balance adjustments (created on first use)
 const STAVNICA_ADJ_HEADER = ["Čas", "E-naslov", "Ime", "Znesek", "Razlog", "Admin"];
 const STAVNICA_CASINO_SHEET = "kazino";
@@ -331,9 +334,10 @@ function stavnicaState_(ss, me, withPeople) {
     if (type === "boolean" && !options.length) options = ["yes", "no"];
     const result = resCol >= 0 ? String(r[resCol] || "").trim() : "";
     // match the resolved value to an option case-insensitively ("Yes" → "yes")
-    const win = options.find((o) => o.toLowerCase() === result.toLowerCase()) || result;
+    const cancelled = result.toUpperCase() === STAVNICA_CANCELLED;
+    const win = cancelled ? STAVNICA_CANCELLED : options.find((o) => o.toLowerCase() === result.toLowerCase()) || result;
     const image = stavnicaImage_(imageAt(x.i));
-    return { id: question, question: question, type: type, options: options, odds: options.length, result: win, image: image, people: {} };
+    return { id: question, question: question, type: type, options: options, odds: options.length, result: win, cancelled: cancelled, image: image, people: {} };
   });
   const byId = {};
   questions.forEach((q) => (byId[q.id] = q));
@@ -385,14 +389,16 @@ function stavnicaState_(ss, me, withPeople) {
   const shop = { products: shopProducts_(ss).map((p) => ({ id: p.id, name: p.name, price: p.price, stock: p.stock })), canEdit: canEdit, spent: shopSpent,
     receipts: receipts.filter((r) => r.email === me), all: canEdit ? receipts : undefined };
 
-  // Balance: budget − all stakes + payouts (stake × odds) from resolved questions + adjustments + kazino
-  let staked = 0, won = 0;
+  // Payout of a bet: null while open; a cancelled question gives the stake back; otherwise stake × odds or 0
+  const payOf = (q, b) => (!q.result ? null : q.cancelled ? b.amount : b.option === q.result ? b.amount * q.odds : 0);
+  // Balance: budget − all stakes + payouts (stake × odds) from resolved questions + refunds + adjustments + kazino
+  let staked = 0, won = 0, refunded = 0;
   const mine = bets.filter((b) => b.email === me).map((b) => {
     const q = byId[b.question];
     staked += b.amount;
-    const payout = q.result ? (b.option === q.result ? b.amount * q.odds : 0) : null;
-    if (payout) won += payout;
-    return { ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout };
+    const payout = payOf(q, b);
+    if (q.cancelled) refunded += payout; else if (payout) won += payout;
+    return { ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout, cancelled: q.cancelled };
   });
   const recent = bets.slice(-200).reverse().map((b) => ({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, name: b.name }));
   const myAdj = adjs.filter((a) => a.email === me).map((a) => ({ ts: a.ts, amount: a.amount, reason: a.reason }));
@@ -401,19 +407,19 @@ function stavnicaState_(ss, me, withPeople) {
     games: myGames.slice(-30).reverse().map((g) => ({ ts: g.ts, game: g.game, bets: g.bets, stake: g.stake, payout: g.payout, result: g.result })) };
   // Everybody's latest kazino games (site: Piratski kazino → Vse igre)
   const casinoRecent = games.slice(-300).reverse().map((g) => ({ ts: g.ts, email: g.email, name: g.name, game: g.game, bets: g.bets, stake: g.stake, payout: g.payout, result: g.result }));
-  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, casinoRecent: casinoRecent, shop: shop, me: { balance: STAVNICA_BUDGET - staked + won + adjSum + casinoNet - shopSpent, shopSpent: shopSpent, staked: staked, won: won, adjusted: adjSum, casino: casinoMe, bets: mine.reverse(), adjustments: myAdj.reverse() } };
+  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, casinoRecent: casinoRecent, shop: shop, me: { balance: STAVNICA_BUDGET - staked + won + refunded + adjSum + casinoNet - shopSpent, refunded: refunded, shopSpent: shopSpent, staked: staked, won: won, adjusted: adjSum, casino: casinoMe, bets: mine.reverse(), adjustments: myAdj.reverse() } };
   if (withPeople) {
     // Admin overview: every player's balance and all their bets (newest first)
     const byEmail = {};
     const person = (email, name) => byEmail[email] || (byEmail[email] = { email: email, name: name, staked: 0, won: 0, open: 0, adjusted: 0, bets: [], adjustments: [] });
     bets.forEach((b) => {
-      const q = byId[b.question], payout = q.result ? (b.option === q.result ? b.amount * q.odds : 0) : null;
+      const q = byId[b.question], payout = payOf(q, b);
       const p = person(b.email, b.name);
       p.name = b.name || p.name;
       p.staked += b.amount;
-      if (payout) p.won += payout;
+      if (q.cancelled) p.refunded = (p.refunded || 0) + payout; else if (payout) p.won += payout;
       if (payout === null) p.open += b.amount;
-      p.bets.push({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout });
+      p.bets.push({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, odds: q.odds, payout: payout, cancelled: q.cancelled });
     });
     adjs.forEach((a) => {
       const p = person(a.email, a.name);
@@ -431,7 +437,7 @@ function stavnicaState_(ss, me, withPeople) {
     state.people = Object.keys(byEmail).map((k) => {
       const p = byEmail[k];
       p.shop = spentBy[k] || 0;
-      p.balance = STAVNICA_BUDGET - p.staked + p.won + p.adjusted + (p.casino || 0) - p.shop;
+      p.balance = STAVNICA_BUDGET - p.staked + p.won + (p.refunded || 0) + p.adjusted + (p.casino || 0) - p.shop;
       p.bets.reverse();
       p.adjustments.reverse();
       return p;
@@ -487,7 +493,9 @@ function stavnicaResolve_(ss, body) {
   const i = rows.findIndex((r) => String(r[qCol]).trim() === id);
   if (i < 0) return "vprašanje ne obstaja";
   const result = String(body.result || "").trim();
-  if (result) {
+  if (body.cancel === true) {
+    sh.getRange(i + 2, rCol + 1).setValue(STAVNICA_CANCELLED); // everybody gets their stake back
+  } else if (result) {
     let options = String(rows[i][oCol] || "").split(/[,\/;]/).map((o) => o.trim()).filter(String);
     if (String(rows[i][aCol] || "").trim().toLowerCase() === "boolean" && !options.length) options = ["yes", "no"];
     const win = options.find((o) => o.toLowerCase() === result.toLowerCase());
