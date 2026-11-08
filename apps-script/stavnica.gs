@@ -22,13 +22,13 @@
  * yes/no question pays 2× the stake, on a 3-option question 3×, … Other people's bets don't change the odds.
  * When the "resolved" column of a question is filled in, betting on it closes and winners get their payout.
  *
- * Kazino (site tabs "🤫 1" roulette and "🤫 2" dice/craps): action "roulette" {bets:[{k, a}]} / "dice" {bets:[{k, a}]}.
+ * Kazino (site tabs "🤫 1" roulette and "🤫 2" dice): action "roulette" {bets:[{k, a}]} / "dice" {bets:[{k, a}]}.
  * The result is drawn here (never in the browser), the stake is checked against the balance under the same lock as bets,
  * and every game is one row in sheet "kazino" (created on first use): Čas | E-naslov | Ime | Igra | Stave | Vložek | Izplačilo | Rezultat.
  * Balance = budget − stakes + payouts + adjustments + Σ(kazino payout − kazino stake). The reply has the new state + {casino: result}.
  *   Roulette (European, single 0) keys: n0…n36 (×36), red/black/even/odd/low/high (×2), d1–d3 dozens, c1–c3 columns (×3).
- *   Dice (craps) keys: pass/dontpass (rolled until decided, ×2; a 12 on the come-out pushes Don't Pass), field (one roll:
- *   3,4,9,10,11 ×2, 2 ×3, 12 ×4), any7 (×5), craps 2/3/12 (×8), yo 11 (×16), aces 2 (×31), boxcars 12 (×31).
+ *   Dice (two dice, one roll, bet on the total): t2…t12 exact total (2/12 ×31, 3/11 ×16, 4/10 ×11, 5/9 ×8, 6/8 ×7, 7 ×5),
+ *   under 2–6 / over 8–12 (×2, a 7 loses both), odd / even (×2).
  *   (×N = what comes back including the stake.)
  */
 const STAVNICA_SHEET_ID = "1Nc9q0aSElmn7I0tIMYxGIa1yS5wdgZFFcHYCEEKN678";
@@ -67,44 +67,25 @@ function casinoRoulette_(bets) {
   const out = bets.map((b) => ({ k: b.k, a: b.a, pay: win(b.k) ? b.a * mult(b.k) : 0 }));
   return { game: "ruleta", n: n, color: n ? (red ? "red" : "black") : "green", bets: out, text: n + (n ? (red ? " rdeča" : " črna") : " zelena") };
 }
+const CASINO_DICE_TOTAL = { 2: 31, 3: 16, 4: 11, 5: 8, 6: 7, 7: 5, 8: 7, 9: 8, 10: 11, 11: 16, 12: 31 };
 function casinoDice_(bets) {
-  const roll = () => { const a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6); return [a, b]; };
-  const rolls = [roll()], s0 = rolls[0][0] + rolls[0][1];
-  const line = bets.some((b) => b.k === "pass" || b.k === "dontpass");
-  let point = null, passWins = null, dpPush = false;
-  if (line) {
-    if (s0 === 7 || s0 === 11) passWins = true;
-    else if (s0 === 2 || s0 === 3 || s0 === 12) { passWins = false; dpPush = s0 === 12; }
-    else {
-      point = s0;
-      for (let i = 0; i < 200 && passWins === null; i++) {
-        const r = roll(), t = r[0] + r[1]; rolls.push(r);
-        if (t === point) passWins = true; else if (t === 7) passWins = false;
-      }
-    }
-  }
-  const field = { 2: 3, 3: 2, 4: 2, 9: 2, 10: 2, 11: 2, 12: 4 };
+  const r = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)], t = r[0] + r[1];
   const pay = (b) => {
-    switch (b.k) {
-      case "pass": return passWins ? b.a * 2 : 0;
-      case "dontpass": return dpPush ? b.a : passWins === false ? b.a * 2 : 0;
-      case "field": return b.a * (field[s0] || 0);
-      case "any7": return s0 === 7 ? b.a * 5 : 0;
-      case "craps": return s0 === 2 || s0 === 3 || s0 === 12 ? b.a * 8 : 0;
-      case "yo": return s0 === 11 ? b.a * 16 : 0;
-      case "aces": return s0 === 2 ? b.a * 31 : 0;
-      case "boxcars": return s0 === 12 ? b.a * 31 : 0;
-    }
+    if (b.k[0] === "t") return Number(b.k.slice(1)) === t ? b.a * CASINO_DICE_TOTAL[t] : 0;
+    if (b.k === "under") return t < 7 ? b.a * 2 : 0;
+    if (b.k === "over") return t > 7 ? b.a * 2 : 0;
+    if (b.k === "odd") return t % 2 === 1 ? b.a * 2 : 0;
+    if (b.k === "even") return t % 2 === 0 ? b.a * 2 : 0;
     return 0;
   };
   const out = bets.map((b) => ({ k: b.k, a: b.a, pay: pay(b) }));
-  return { game: "kocke", rolls: rolls, point: point, bets: out, text: rolls.map((r) => r[0] + "+" + r[1]).join(", ") + (point ? " (točka " + point + ")" : "") };
+  return { game: "kocke", rolls: [r], total: t, bets: out, text: r[0] + "+" + r[1] + " = " + t };
 }
 /** Play one roulette spin / dice round for `me` (caller holds the lock and checks nothing else) */
 function casinoPlay_(ss, me, name, body) {
   const roulette = body.action === "roulette";
   const valid = roulette ? (k) => /^n([0-9]|[12][0-9]|3[0-6])$/.test(k) || /^(red|black|even|odd|low|high|d[123]|c[123])$/.test(k)
-    : (k) => /^(pass|dontpass|field|any7|craps|yo|aces|boxcars)$/.test(k);
+    : (k) => /^(t([2-9]|1[0-2])|under|over|odd|even)$/.test(k);
   const bets = casinoBets_(body.bets, valid);
   if (typeof bets === "string") return bets;
   const stake = bets.reduce((t, b) => t + b.a, 0);

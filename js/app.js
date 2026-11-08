@@ -3217,25 +3217,17 @@ document.addEventListener("keydown", (e) => {
 setInterval(() => { if (state.rutkeActive && !document.hidden) { rkFlush(); loadRkScores(); } }, 30 * 1000);
 document.addEventListener("visibilitychange", () => { if (document.hidden && rkGet(RK_QUEUE, []).length) rkFlush(); });
 
-/* —— Stavnica → Kazino: "🤫 1" roulette (European, single 0) and "🤫 2" dice (craps) for the Stavnica coins.
+/* —— Stavnica → Kazino: "🤫 1" roulette (European, single 0) and "🤫 2" dice (two dice, bet on the total) for the Stavnica coins.
    Chips are placed here; the round is played by apps-script/stavnica.gs (action roulette / dice: balance check, random
    result, sheet "kazino"), which answers with the new state + the result; the wheel / dice then animate to it. —— */
 const CZ_RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 const CZ_WHEEL = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const CZ_CHIPS = [1, 2, 5, 10, 25];
-const CZ_DICE = [
-  { k: "pass", name: "Pass Line", x: 2, d: "1. met 7 ali 11 zmaga, 2, 3 ali 12 izgubi. Sicer postane met točka: mečeš, dokler ne pade točka (zmaga) ali 7 (izgubi)." },
-  { k: "dontpass", name: "Don't Pass", x: 2, d: "Nasprotno od Pass Line: 1. met 2 ali 3 zmaga, 12 vrne vložek, 7 ali 11 izgubi. Po točki zmaga 7 pred točko." },
-  { k: "field", name: "Field", x: "2–4", d: "En met: 3, 4, 9, 10 ali 11 vrne ×2, 2 vrne ×3, 12 vrne ×4. 5, 6, 7 in 8 izgubijo." },
-  { k: "any7", name: "Any 7", x: 5, d: "En met: vsota 7." },
-  { k: "craps", name: "Any Craps", x: 8, d: "En met: 2, 3 ali 12." },
-  { k: "yo", name: "Yo (11)", x: 16, d: "En met: vsota 11." },
-  { k: "aces", name: "Snake Eyes (2)", x: 31, d: "En met: dve enici." },
-  { k: "boxcars", name: "Boxcars (12)", x: 31, d: "En met: dve šestici." },
-];
+const CZ_DICE_X = { 2: 31, 3: 16, 4: 11, 5: 8, 6: 7, 7: 5, 8: 7, 9: 8, 10: 11, 11: 16, 12: 31 }; // keep in sync with stavnica.gs
+const CZ_DICE_OUT = [{ k: "under", name: "Pod 7", d: "2–6" }, { k: "even", name: "Sodo", d: "2, 4 … 12" }, { k: "odd", name: "Liho", d: "3, 5 … 11" }, { k: "over", name: "Nad 7", d: "8–12" }];
 const czColor = (n) => (!n ? "green" : CZ_RED.includes(n) ? "red" : "black");
 const CZ_OUT = { red: "Rdeča", black: "Črna", even: "Sodo", odd: "Liho", low: "1–18", high: "19–36", d1: "1–12", d2: "13–24", d3: "25–36", c1: "1. stolpec", c2: "2. stolpec", c3: "3. stolpec" };
-const czBetLabel = (game, k) => game === "kocke" ? (CZ_DICE.find((b) => b.k === k)?.name || k) : k[0] === "n" ? `št. ${k.slice(1)}` : CZ_OUT[k] || k;
+const czBetLabel = (game, k) => game === "kocke" ? (k[0] === "t" ? `vsota ${k.slice(1)}` : CZ_DICE_OUT.find((b) => b.k === k)?.name || k) : k[0] === "n" ? `št. ${k.slice(1)}` : CZ_OUT[k] || k;
 const czStake = (game) => Object.values(sv.cz.bets[game]).reduce((a, v) => a + v, 0);
 
 function czWheelSvg() {
@@ -3271,20 +3263,25 @@ function czRouletteTable() {
 const czDie = (v) => `<span class="cz-die" data-v="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="p${i}"></i>`).join("")}</span>`;
 function czResultText(game, res) {
   const net = res.payout - res.stake;
-  const head = game === "ruleta" ? `Padla je <strong class="cz-n cz-${res.color}">${res.n}</strong>.` : `${res.rolls.length > 1 ? `${res.rolls.length} metov` : "Met"}: ${res.rolls.map((r) => `${r[0]}+${r[1]}`).join(", ")}${res.point ? ` · točka ${res.point}` : ""}.`;
-  return `${head} ${res.payout ? `Izplačilo <strong>${res.payout}</strong> ${SV_COIN} ${net > 0 ? `(+${net})` : net < 0 ? `(${net})` : "(na ničli)"}` : `Tokrat ni sreče (−${res.stake}).`}`;
+  const r = res.rolls?.[0] || [0, 0];
+  const head = game === "ruleta" ? `Padla je <strong class="cz-n cz-${res.color}">${res.n}</strong>.` : `Padlo je ${r[0]} + ${r[1]} = <strong class="cz-n cz-green">${r[0] + r[1]}</strong>.`;
+  return `${head} ${res.payout ? `Izplačilo <strong>${res.payout}</strong> ${SV_COIN} ${net > 0 ? `(+${net})` : net < 0 ? `(−${-net})` : "(na ničli)"}` : `Tokrat ni sreče (−${res.stake}).`}`;
 }
 function svCasino(st, me, game) {
   const stake = czStake(game), last = sv.cz.last[game], busy = sv.cz.busy;
   const games = (me.casino?.games || []).filter((g) => g.game === game).slice(0, 8);
   const intro = game === "ruleta" ? "Evropska ruleta z eno ničlo. Izberi žeton, ga postavi na številke ali polja in zavrti. Številka vrne ×36, stolpec in tretjina ×3, rdeča/črna, sodo/liho in polovici ×2."
-    : "Craps – igra s kockama kot v igralnici. Izberi žeton, ga postavi na stavo in vrzi kocki. Pass Line in Don't Pass se mečeta, dokler nista odločeni, ostale stave štejejo samo prvi met.";
+    : "Vržeš dve kocki in stavljaš na vsoto. Izberi žeton in ga postavi na točno vsoto (2–12), na pod/nad 7 ali na sodo/liho. Če pade 7, pod in nad 7 izgubita.";
   const board = game === "ruleta"
     ? `<div class="cz-rl"><div class="cz-wheelbox">${czWheelSvg()}</div>${czRouletteTable()}</div>`
-    : `<div class="cz-dicebox"><div class="cz-dice" id="cz-dice">${czDie(last?.rolls?.slice(-1)[0]?.[0] || 5)}${czDie(last?.rolls?.slice(-1)[0]?.[1] || 2)}</div>
-        <div class="cz-rolls" id="cz-rolls">${!busy && last ? last.rolls.map((r, i) => `<span class="cz-roll${i === 0 ? " is-first" : ""}">${r[0] + r[1]}</span>${i === 0 && last.point ? `<span class="cz-point">točka ${last.point}</span>` : ""}`).join("") : ""}</div></div>
-      <div class="cz-dbets">${CZ_DICE.map((b) => `<button type="button" class="cz-dbet${!busy && last?.bets?.some((x) => x.k === b.k && x.pay > 0) ? " is-win" : ""}" data-cz-bet="${b.k}">
-          <span class="cz-dbet-h"><strong>${b.name}</strong><span class="cz-x">×${b.x}</span></span><span class="cz-dbet-d">${b.d}</span>${czChipOn("kocke", b.k)}</button>`).join("")}</div>`;
+    : (() => {
+      const lt = !busy && last?.rolls ? last.rolls[0][0] + last.rolls[0][1] : null, won = (k) => (!busy && last?.bets?.some((x) => x.k === k && x.pay > 0) ? " is-win" : "");
+      const sums = Array.from({ length: 11 }, (_, i) => i + 2).map((t) => `<button type="button" class="cz-cell cz-sum${won(`t${t}`)}${lt === t ? " is-ball" : ""}" data-cz-bet="t${t}"><strong>${t}</strong><small>×${CZ_DICE_X[t]}</small>${czChipOn("kocke", `t${t}`)}</button>`).join("");
+      const outs = CZ_DICE_OUT.map((b) => `<button type="button" class="cz-cell cz-dout${won(b.k)}" data-cz-bet="${b.k}"><strong>${b.name}</strong><small>${b.d} · ×2</small>${czChipOn("kocke", b.k)}</button>`).join("");
+      return `<div class="cz-dicebox"><div class="cz-dice" id="cz-dice">${czDie(last?.rolls?.[0]?.[0] || 5)}${czDie(last?.rolls?.[0]?.[1] || 2)}</div>
+          <div class="cz-total" id="cz-total">${lt ? `= ${lt}` : ""}</div></div>
+        <div class="cz-table cz-dtable"><div class="cz-sums">${sums}</div><div class="cz-row4">${outs}</div></div>`;
+    })();
   return `<div class="cz cz-${game}">
     <div class="sv-top card"><div><span class="sv-bal-label">Tvoje stanje</span><strong class="sv-bal">${SV_COIN} ${me.balance} <small>zlatnikov</small></strong></div>${czChips(game)}</div>
     <p class="muted-text cz-intro">${intro}</p>
@@ -3326,16 +3323,13 @@ async function czPlay(game) {
     if (rotor) { rotor.style.transition = "transform 4.2s cubic-bezier(.12,.6,.12,1)"; requestAnimationFrame(() => { rotor.style.transform = `rotate(${target}deg)`; }); }
     await new Promise((r) => setTimeout(r, 4400));
   } else {
-    const dice = $$("#cz-dice .cz-die"), log = $("#cz-rolls");
-    if (log) log.innerHTML = "";
-    for (let i = 0; i < c.rolls.length; i++) {
-      dice.forEach((d) => d.classList.add("is-rolling"));
-      await new Promise((r) => setTimeout(r, i < 4 ? 550 : 250));
-      dice.forEach((d, j) => { d.classList.remove("is-rolling"); d.dataset.v = c.rolls[i][j]; });
-      log?.insertAdjacentHTML("beforeend", `<span class="cz-roll${i === 0 ? " is-first" : ""}">${c.rolls[i][0] + c.rolls[i][1]}</span>`);
-      if (i === 0 && c.point) log?.insertAdjacentHTML("beforeend", `<span class="cz-point">točka ${c.point}</span>`);
-      await new Promise((r) => setTimeout(r, i < 4 ? 450 : 200));
-    }
+    const dice = $$("#cz-dice .cz-die"), tot = $("#cz-total"), r = c.rolls[0];
+    if (tot) tot.textContent = "";
+    dice.forEach((d) => d.classList.add("is-rolling"));
+    for (let i = 0; i < 6; i++) { await new Promise((ok) => setTimeout(ok, 160)); dice.forEach((d) => { d.dataset.v = 1 + Math.floor(Math.random() * 6); }); }
+    dice.forEach((d, j) => { d.classList.remove("is-rolling"); d.dataset.v = r[j]; });
+    if (tot) tot.textContent = `= ${r[0] + r[1]}`;
+    await new Promise((ok) => setTimeout(ok, 700));
   }
   delete res.casino;
   sv.state = res; sv.fetchedAt = Date.now();
