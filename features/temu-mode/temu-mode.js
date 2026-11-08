@@ -2,11 +2,21 @@
    PURELY COSMETIC: it only adds its own elements (class prefix tm-) next to the shop. It never changes prices, the cart,
    stock, the checkout or navigation, and it never reads anything back into the store. The only input it gets from the
    site is the "trgovina:render" event (cart item count + total) sent at the end of drawTrgovina() in js/app.js.
-   Everything is behind TEMU_CONFIG.ENABLE_CHAOS_MODE (off by default) + the customer's 🎪 toggle. See README.md. */
+   Availability: the admin switch "temu" on the Nadzor page (apps-script/flags.gs, sent by app.js as the "uvodja:flags"
+   event and cached in localStorage "uvodja.pageFlags") or TEMU_CONFIG.ENABLE_CHAOS_MODE. Then every customer turns it on
+   or off for themselves with the 🎪 toggle. Nothing is created until it is available. See README.md. */
 import { TEMU_CONFIG as C } from "./config.js";
 import { S } from "./strings.js";
 
-if (C.ENABLE_CHAOS_MODE) start();
+const serverFlag = () => { try { return JSON.parse(localStorage.getItem("uvodja.pageFlags"))?.temu === true; } catch { return false; } };
+let available = C.ENABLE_CHAOS_MODE === true || serverFlag();
+let api = null; // set by start(): { render, closeModal }
+window.addEventListener("uvodja:flags", (e) => {
+  available = C.ENABLE_CHAOS_MODE === true || e.detail?.temu === true;
+  if (available && !api) api = start();
+  else if (api) { if (!available) api.closeModal(); api.render(); }
+});
+if (available) api = start();
 
 function start() {
   /* —— small helpers —— */
@@ -31,7 +41,8 @@ function start() {
 
   /* —— state —— */
   const ON_KEY = "uvodja.temuMode";
-  let on = local.get(ON_KEY, C.DEFAULT_ON) === true;
+  let on = local.get(ON_KEY, C.DEFAULT_ON) === true; // the customer's own choice
+  const act = () => available && on; // Temu Mode is running for this customer
   let cart = { count: 0, total: 0 }, lastCartSig = null;
   let lastActive = Date.now();
   const onShop = () => { const t = document.getElementById("tab-trgovina"); return !!t && !t.hidden; };
@@ -94,7 +105,7 @@ function start() {
       <path d="M${c} 4l11 20h-22z" fill="#fff" stroke="#3a0613" stroke-width="2"/></svg>`;
   }
   function showWheel() {
-    if (session.get("wheel") || !on || !onShop() || modal) return;
+    if (session.get("wheel") || !act() || !onShop() || modal) return;
     session.set("wheel", true);
     const m = openModal(`<h2 id="tm-wheel-h">${esc(S.wheel.title)}</h2><p class="tm-sub">${esc(S.wheel.intro)}</p>${wheelSvg()}
       <p class="tm-won" hidden></p><p class="tm-fine" hidden></p>
@@ -231,7 +242,7 @@ function start() {
 
   /* —— 10. guilt-trip exit pop-up (desktop exit intent, once per session; on mobile skipped) —— */
   document.addEventListener("mouseout", (e) => {
-    if (!on || !onShop() || modal || session.get("exit") || e.relatedTarget || e.clientY > 0) return;
+    if (!act() || !onShop() || modal || session.get("exit") || e.relatedTarget || e.clientY > 0) return;
     if (!window.matchMedia?.("(pointer: fine)").matches) return;
     session.set("exit", true);
     openModal(`<h2 id="tm-exit-h">${esc(S.exit.title)}</h2><p>${esc(S.exit.text)}</p>
@@ -242,7 +253,7 @@ function start() {
   /* —— 11. "your cart misses you" (items in the cart, idle on another page, once per session) —— */
   ["pointerdown", "keydown", "scroll", "touchstart"].forEach((ev) => window.addEventListener(ev, () => { lastActive = Date.now(); }, { passive: true }));
   function cartMissesYou() {
-    if (!on || onShop() || cart.count < 1 || session.get("missed") || document.hidden) return;
+    if (!act() || onShop() || cart.count < 1 || session.get("missed") || document.hidden) return;
     const idle = Date.now() - lastActive;
     if (idle < C.CART_MISSES_YOU_IDLE_MS) return;
     session.set("missed", true);
@@ -252,14 +263,14 @@ function start() {
 
   /* —— wiring —— */
   function render() {
-    toggleBtn.hidden = !onShop();
+    toggleBtn.hidden = !available || !onShop();
     toggleBtn.setAttribute("aria-pressed", String(on));
     toggleBtn.textContent = on ? S.toggle.on : S.toggle.off;
-    coinBtn.hidden = !on || !onShop();
-    document.documentElement.classList.toggle("tm-on", on);
+    coinBtn.hidden = !act() || !onShop();
+    document.documentElement.classList.toggle("tm-on", act());
     root.classList.toggle("tm-has-cart", cart.count > 0);
     root.classList.toggle("tm-drawer", !!$("#tg-body .tg-cart"));
-    if (!on) { // remove every trace from the shop; the store is back to normal
+    if (!act()) { // remove every trace from the shop; the store is back to normal
       $$(".tm-badge, .tm-fake, .tm-deco, .tm-progress, #tm-extras").forEach((el) => el.remove());
       $$(".tm-toast").forEach((el) => el.remove());
       return;
@@ -277,7 +288,7 @@ function start() {
   });
   window.addEventListener("hashchange", () => setTimeout(render, 0));
   setInterval(() => {
-    if (!on) return;
+    if (!act()) return;
     if (onShop() && !document.hidden) {
       left -= 1;
       if (left < 0) { // "deal over" → instantly extended
@@ -291,4 +302,5 @@ function start() {
     cartMissesYou();
   }, 1000);
   render();
+  return { render, closeModal: () => modal?.close() };
 }

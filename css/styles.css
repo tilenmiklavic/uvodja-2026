@@ -97,6 +97,7 @@ body {
   .tabs [data-tab="gradiva"] { order: 4; } .tabs [data-tab="ekipa"] { order: 5; } .tabs [data-tab="os"] { order: 6; }
   .tabs [data-tab="uu"] { order: 7; } .tabs [data-tab="preverbe"] { order: 8; } .tabs [data-tab="zabava"] { order: 9; }
   .tabs [data-tab="vprasanja"] { order: 10; } .tabs [data-tab="analitika"] { order: 11; } .tabs .nav-user { order: 12; }
+  .tabs [data-tab="trgovina"] { order: 9; } .tabs [data-tab="nadzor"] { order: 11; } /* after Zabava / at the end (same order → markup order) */
 }
 @media (max-width: 700px) {
   .header-inner { flex-wrap: nowrap; gap: .5rem; padding: .5rem .75rem; }
@@ -2226,3 +2227,15 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .op-item.is-saving { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
 .op-saving { margin-left: auto; color: var(--gold-soft); font-weight: 700; font-size: .9rem; }
 .op-pick:disabled { opacity: .45; cursor: default; }
+
+/* —— Nadzor (#nadzor, admins) —— */
+.nadzor { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: .6rem; }
+.nz-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.nz-item { display: flex; align-items: center; gap: .8rem; padding: .8rem 1rem; border-left: 4px solid var(--line); }
+.nz-item.is-on { border-left-color: #6fbf67; }
+.nz-icon { font-size: 1.6rem; }
+.nz-main { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .5rem; }
+.nz-main .muted-text { flex-basis: 100%; font-size: .82rem; }
+.nz-state { flex: none; font-size: .72rem; font-weight: 800; letter-spacing: .05em; color: var(--ink-muted); }
+.nz-item.is-on .nz-state { color: #a8d47a; }
+.nz-note { font-size: .8rem; }

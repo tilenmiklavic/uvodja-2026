@@ -1,10 +1,11 @@
 /* Temu Mode – a self-aware parody of "engagement tricks" on the Trgovina page. Purely cosmetic: it never touches prices,
    the cart or the checkout. See README.md in this folder. */
 export const TEMU_CONFIG = {
-  /* Master switch. false = the feature does not exist (no toggle, no CSS hooks used, nothing on the page). */
+  /* Normally Temu Mode is made available by an admin on the Nadzor page (switch "Temu Mode", stored on the server).
+     true here forces it available regardless of that switch (e.g. for testing). While it isn't available nothing exists. */
   ENABLE_CHAOS_MODE: false,
-  /* When the master switch is on: is Temu Mode on for a customer who never touched the 🎪 toggle? */
-  DEFAULT_ON: true,
+  /* Once available: is it on for a customer who never touched the 🎪 toggle? false = everyone turns it on themselves. */
+  DEFAULT_ON: false,
   TOAST_EVERY_MS: 25000, // fake "live purchase" toasts …
   TOAST_MAX_PER_SESSION: 5, // … at most this many per session
   TOAST_VISIBLE_MS: 6500,

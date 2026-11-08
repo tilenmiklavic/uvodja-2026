@@ -12,15 +12,19 @@ The real price stays visible and unchanged. The only data it gets from the site 
 
 | File | What |
 |---|---|
-| `config.js` | **`ENABLE_CHAOS_MODE`** (master flag, `false` by default), the customer default (`DEFAULT_ON`), timings |
+| `config.js` | `ENABLE_CHAOS_MODE` (forces it available, `false`), the customer default (`DEFAULT_ON: false`), timings. The normal on/off is the admin **Nadzor** page |
 | `strings.js` | **All the copy** – edit jokes here (Slovene; the store has no translation layer) |
 | `temu-mode.js` | All logic (ES module, loaded by `index.html`) |
 | `temu-mode.css` | All styles (`.tm-*` only) |
 
 ## Enable / disable
 
-1. Set `ENABLE_CHAOS_MODE: true` in `config.js` and deploy. With `false`, the module returns immediately: no toggle and nothing on any page.
-2. Customers can then switch it on or off themselves with the floating **🎪 Temu Mode** button (bottom left on Trgovina). Their choice is remembered in `localStorage` (`uvodja.temuMode`). `DEFAULT_ON` decides the state for customers who never touched it.
+1. **Admin:** on the **Nadzor** page (≡ → Nadzor, admins only), turn on **Temu Mode**. This is the `temu` switch in `apps-script/flags.gs`, stored on the server, and it applies to everyone within about a minute.
+   - While it is off (the default), the module creates nothing: no toggle and nothing on any page.
+   - `ENABLE_CHAOS_MODE: true` in `config.js` forces it available regardless of the switch, e.g. for testing.
+2. **Every customer** then turns it on or off for themselves with the floating **🎪 Temu Mode** button (bottom left on Trgovina).
+   - It starts **off** (`DEFAULT_ON: false`).
+   - The choice is remembered in `localStorage` (`uvodja.temuMode`).
 
 ## What triggers what (only while Temu Mode is on)
 
@@ -52,3 +56,4 @@ The real price stays visible and unchanged. The only data it gets from the site 
 1. Delete the folder `features/temu-mode/`.
 2. In `index.html`, delete the two lines marked `Temu Mode` (the stylesheet `<link>` and the `<script>`).
 3. In `js/app.js`, delete the line `window.dispatchEvent(new CustomEvent("trgovina:render", …))` at the end of `drawTrgovina()`.
+4. Optionally remove `temu` from the Nadzor list (`NZ_ITEMS`, `PAGE_FLAG_LABEL` in `js/app.js`) and from `SITE_FLAG_PAGES` in `apps-script/flags.gs`.
