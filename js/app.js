@@ -213,13 +213,18 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
-const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika"];
+const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika", "nadzor"];
 /* Zadolžitve and Trgovina: every role may see them, but only once an admin switches them on (apps-script/flags.gs,
    GET ?type=flags). Until then – and whenever the switches can't be loaded – only admins see them, with the switch on top. */
 const GATED_PAGES = ["opravila", "trgovina"];
 const PAGE_FLAGS_KEY = "uvodja.pageFlags";
 state.pageFlags = (() => { try { return JSON.parse(localStorage.getItem(PAGE_FLAGS_KEY)) || {}; } catch { return {}; } })();
-function gatePages(set, role) { GATED_PAGES.forEach((p) => (role === "admin" || state.pageFlags?.[p] === true ? set.add(p) : set.delete(p))); return set; }
+const ADMIN_PAGES = ["nadzor"]; // Nadzor (page switches) – admins only, whatever data/access.json says
+function gatePages(set, role) {
+  GATED_PAGES.forEach((p) => (role === "admin" || state.pageFlags?.[p] === true ? set.add(p) : set.delete(p)));
+  ADMIN_PAGES.forEach((p) => (role === "admin" ? set.add(p) : set.delete(p)));
+  return set;
+}
 
 function loadUser() {
   try { const u = JSON.parse(localStorage.getItem("uvodja.user") || "null"); return u?.email ? u : null; } catch { return null; }
@@ -351,7 +356,7 @@ function applyAuth() {
   const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
   const barTabs = u && !["casovnica", "uu"].some((x) => state.allowed.has(x)) ? ["preverbe", "zabava"]
     : u && ["svod", "admin"].includes(effectiveRole(u.email)) ? ["zabava"] : ["uu"];
-  const MORE_ORDER = ["domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "vprasanja", "analitika"];
+  const MORE_ORDER = ["domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "vprasanja", "analitika", "nadzor"];
   ["uu", "preverbe", "zabava"].forEach((x) => {
     const b = $(`.tab[data-tab="${x}"]`, nav);
     if (!b || barTabs.includes(x)) return;
@@ -413,6 +418,7 @@ function setTab(name) {
   if (name === "teme") decorateTemeScores();
   if (name === "vprasanja") renderVprasanja();
   if (GATED_PAGES.includes(name)) renderFlagBars();
+  if (name === "nadzor") renderNadzor();
   if (name === "opravila") renderOpravila();
   if (name === "trgovina") renderTrgovina();
   const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar|rutke|kazino)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
@@ -1704,7 +1710,7 @@ function applyHash() {
     return;
   }
   if (hash === "info") { setTab("domov"); history.replaceState(null, "", "#domov"); return; }
-  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika"].includes(hash)) {
+  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika", "nadzor"].includes(hash)) {
     setTab(hash);
     if (hash === "ekipa") showEkipaList();
     if (hash === "teme") showTemeList();
@@ -3622,7 +3628,8 @@ document.addEventListener("submit", (e) => {
 setInterval(() => { if (currentTab === "trgovina" && !document.hidden && !tg.busy && !tg.edit) renderTrgovina(); }, 30 * 1000);
 
 /* —— Page switches (flags.gs): load for everyone; admins get an on/off bar on top of the gated pages —— */
-const PAGE_FLAG_LABEL = { opravila: "Zadolžitve", trgovina: "Trgovina" };
+const PAGE_FLAG_LABEL = { opravila: "Zadolžitve", trgovina: "Trgovina", temu: "Temu Mode" };
+const notifyFlags = () => window.dispatchEvent(new CustomEvent("uvodja:flags", { detail: { ...state.pageFlags } })); // read by features/temu-mode
 async function loadPageFlags() {
   try {
     const cfg = await wdConfig();
@@ -3638,11 +3645,13 @@ async function loadPageFlags() {
   state.flagWanted = null; // only the link the site was opened with, only on the first load
 }
 function pageFlagsChanged() {
+  notifyFlags();
   if (!state.user) return;
   applyAuth();
   if (GATED_PAGES.includes(currentTab) && !canSee(currentTab)) applyHash(); // switched off while open → back to the start page
   if (state.flagWanted && canSee(state.flagWanted)) { location.hash = `#${state.flagWanted}`; state.flagWanted = null; } // the link arrived before the switches
   renderFlagBars();
+  if (currentTab === "nadzor") renderNadzor();
 }
 function renderFlagBars() {
   const admin = !!state.user && effectiveRole(state.user.email) === "admin";
@@ -3668,6 +3677,39 @@ document.addEventListener("click", async (e) => {
   } catch (err) { alert(`Ni uspelo: ${err?.message || err}`); }
   delete bar.dataset.busy;
   pageFlagsChanged();
+});
+/* Nadzor (#nadzor, admins only): every switch in one place */
+const NZ_ITEMS = [
+  { key: "opravila", icon: "🧹", name: "Zadolžitve", href: "#opravila", on: "Stran vidijo vsi (v zgornji vrstici).", off: "Stran vidiš le ti (admin)." },
+  { key: "trgovina", icon: "🛒", name: "Trgovina", href: "#trgovina", on: "Stran vidijo vsi (v meniju ≡).", off: "Stran vidiš le ti (admin)." },
+  { key: "temu", icon: "🎪", name: "Temu Mode", href: "#trgovina", on: "Na Trgovini je gumb »🎪 Temu Mode« – vsak uporabnik ga vklopi sam.", off: "Gumba »🎪 Temu Mode« ni nikjer (šaljivi način je izklopljen za vse)." },
+];
+function renderNadzor() {
+  const box = $("#nz-body");
+  if (!box) return;
+  box.innerHTML = `<ul class="nz-list">${NZ_ITEMS.map((it) => {
+    const on = state.pageFlags?.[it.key] === true, busy = state.nzBusy === it.key;
+    return `<li class="card nz-item${on ? " is-on" : ""}"><span class="nz-icon" aria-hidden="true">${it.icon}</span>
+      <div class="nz-main"><strong>${esc(it.name)}</strong> <a class="link-btn" href="${it.href}">odpri ›</a><span class="muted-text">${esc(on ? it.on : it.off)}</span></div>
+      <span class="nz-state">${busy ? "Shranjujem …" : on ? "VKLOP" : "IZKLOP"}</span>
+      <button type="button" class="switch" role="switch" data-nz-toggle="${it.key}" aria-checked="${on}" aria-label="${esc(it.name)}" ${state.nzBusy ? "disabled" : ""}><span class="switch-knob"></span></button></li>`;
+  }).join("")}</ul>
+  <p class="muted-text nz-note">Spremembe so shranjene na strežniku in pri vseh uporabnikih veljajo v približno minuti. Admin vedno vidi vse strani.</p>`;
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest?.("[data-nz-toggle]");
+  if (!b || b.disabled) return;
+  const key = b.dataset.nzToggle, on = state.pageFlags?.[key] !== true, name = PAGE_FLAG_LABEL[key];
+  if (!confirm(key === "temu" ? (on ? "Omogočim gumb »🎪 Temu Mode« za vse? (Vsak ga vklopi sam.)" : "Izklopim Temu Mode za vse?") : on ? `Pokažem stran ${name} vsem?` : `Skrijem stran ${name} pred vsemi (razen adminov)?`)) return;
+  state.nzBusy = key; renderNadzor();
+  try {
+    const res = await scriptPost({ type: "flags", page: key, on });
+    state.pageFlags = res.flags || state.pageFlags;
+    try { localStorage.setItem(PAGE_FLAGS_KEY, JSON.stringify(state.pageFlags)); } catch {}
+  } catch (err) { alert(`Ni uspelo: ${err?.message || err}`); }
+  state.nzBusy = null;
+  pageFlagsChanged();
+  renderNadzor();
 });
 setInterval(loadPageFlags, 60 * 1000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) loadPageFlags(); });
@@ -3772,7 +3814,7 @@ function logVisit(page) {
     }).catch(() => {});
   } catch {}
 }
-const PAGE_LABEL = { trgovina: "Trgovina", opravila: "Zadolžitve", domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", vprasanja: "Vprašanja", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
+const PAGE_LABEL = { nadzor: "Nadzor", trgovina: "Trgovina", opravila: "Zadolžitve", domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", vprasanja: "Vprašanja", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
 /* Role for an Analitika row: by e-mail, else by matching the name to a listed person (access.json people), else the default role */
 function visitRole(p) {
   if (p.email) return roleOf(p.email);

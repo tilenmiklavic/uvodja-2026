@@ -2,14 +2,14 @@
  * Page visibility switches (admins turn pages on/off on the site): Script property SITE_FLAGS = {"<page>": true|false}.
  * A page listed in SITE_FLAG_PAGES is hidden from everyone but admins until it is switched on.
  *
- * doGet  ?type=flags → {ok, flags:{opravila:false, trgovina:false}}   (public)
+ * doGet  ?type=flags → {ok, flags:{opravila:false, trgovina:false, temu:false}}   (public)
  * doPost {type:'flags', credential, page, on} → {ok, flags}          (admins only: STATS_ADMINS or role admin)
  *
  * Hook it into Code.gs (wordle.gs; already done in the repo version):
  *   doPost: if (body.type === 'flags') return handleFlags(body);
  *   doGet:  if (e && e.parameter && e.parameter.type === 'flags') return json_({ ok: true, flags: siteFlags_() }, e.parameter.callback);
  */
-var SITE_FLAG_PAGES = ['opravila', 'trgovina']; // Zadolžitve, Trgovina
+var SITE_FLAG_PAGES = ['opravila', 'trgovina', 'temu']; // Zadolžitve, Trgovina, Temu Mode (makes the 🎪 toggle available; each user turns it on)
 
 function siteFlags_() {
   var saved = {};
