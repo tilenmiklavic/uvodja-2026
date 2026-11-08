@@ -2117,3 +2117,19 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .cz-row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .cz-dout strong { font-size: .9rem; }
 .cz-rl .cz-chip { right: -3px; top: -5px; min-width: 18px; height: 18px; font-size: .64rem; line-height: 14px; z-index: 1; }
+
+/* Piratski kazino → Vse igre */
+.cz-filter { display: flex; gap: .4rem; margin-bottom: .2rem; }
+.cz-filter .vday-chip { min-height: 40px; min-width: auto; flex-direction: row; font-weight: 700; font-size: .85rem; }
+.cz-even { color: var(--ink-muted); font-weight: 800; font-size: .75rem; }
+.cz-players li > span:last-child { margin-left: .2rem; }
+.cz-games { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.cz-games li { display: flex; align-items: center; gap: .6rem; padding: .5rem .7rem; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); border-left-width: 4px; }
+.cz-games li.is-win { border-left-color: #6fbf67; }
+.cz-games li.is-loss { border-left-color: #e5484d; }
+.cz-g-main { flex: 1 1 auto; min-width: 0; display: grid; gap: .1rem; }
+.cz-g-top { display: flex; gap: .5rem; align-items: baseline; flex-wrap: wrap; }
+.cz-g-game { font-variant-numeric: tabular-nums; }
+.cz-g-bets { font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-g-end { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: .15rem; }
+.cz-g-ago { font-size: .7rem; white-space: nowrap; }
