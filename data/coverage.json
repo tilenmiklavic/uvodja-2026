@@ -577,20 +577,20 @@
         {
           "text": "teorija o retoriki",
           "status": "vkljuceno",
-          "evidence": "Potek 2: Glavne točke retorike (15 min) in Potek 3: aristotelov model (ethos, pathos, logos)."
+          "evidence": "Glavne točke retorike (15 min) in aristotelov model (ethos, pathos, logos) (ethos, pathos, logos)."
         },
         {
           "text": "načini komunikacije, tehnike in orodja",
           "status": "vkljuceno",
-          "evidence": "Potek 2–4: govorica telesa in glas, vaji za trebušno dihanje ter tempo in premore (20 min)."
+          "evidence": "Glavne točke (govorica telesa, glas), trema ter vaji za trebušno dihanje ter tempo in premore (20 min)."
         }
       ],
       "contentsHash": "6c44ae1257e56b38",
       "mikronacrt": {
         "status": "exists",
         "fileId": "1v_Sxn_JW1jqSGg-BbNV0I-OzaMHQTn4g3RNdr6oOOd4",
-        "modifiedTime": "2026-11-02T18:45:28.150Z",
-        "textHash": "93c4442c84096b1b",
+        "modifiedTime": "2026-11-07T14:47:37.027Z",
+        "textHash": "945a886844939c4d",
         "cacheFile": "retorika.txt"
       },
       "judgedAt": "2026-11-03T07:30:00+01:00"
