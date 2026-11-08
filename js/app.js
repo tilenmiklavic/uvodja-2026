@@ -213,8 +213,8 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
-const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "opravila", "vprasanja", "analitika"];
-const OPEN_PAGES = ["opravila"]; // shown to every signed-in role, whatever data/access.json says (Zadolžitve – daily chores)
+const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika"];
+const OPEN_PAGES = ["opravila", "trgovina"]; // shown to every signed-in role, whatever data/access.json says (Zadolžitve – daily chores)
 
 function loadUser() {
   try { const u = JSON.parse(localStorage.getItem("uvodja.user") || "null"); return u?.email ? u : null; } catch { return null; }
@@ -348,7 +348,7 @@ function applyAuth() {
   const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
   const barTabs = u && !["casovnica", "uu"].some((x) => state.allowed.has(x)) ? ["preverbe", "zabava"]
     : u && ["svod", "admin"].includes(effectiveRole(u.email)) ? ["zabava"] : ["uu"];
-  const MORE_ORDER = ["domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "vprasanja", "analitika"];
+  const MORE_ORDER = ["domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "vprasanja", "analitika"];
   ["uu", "preverbe", "zabava"].forEach((x) => {
     const b = $(`.tab[data-tab="${x}"]`, nav);
     if (!b || barTabs.includes(x)) return;
@@ -410,6 +410,7 @@ function setTab(name) {
   if (name === "teme") decorateTemeScores();
   if (name === "vprasanja") renderVprasanja();
   if (name === "opravila") renderOpravila();
+  if (name === "trgovina") renderTrgovina();
   const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar|rutke|kazino)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   state.papigaActive = name === "zabava" && zb === "papiga";
@@ -1699,7 +1700,7 @@ function applyHash() {
     return;
   }
   if (hash === "info") { setTab("domov"); history.replaceState(null, "", "#domov"); return; }
-  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "opravila", "vprasanja", "analitika"].includes(hash)) {
+  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika"].includes(hash)) {
     setTab(hash);
     if (hash === "ekipa") showEkipaList();
     if (hash === "teme") showTemeList();
@@ -3510,6 +3511,110 @@ document.addEventListener("click", (e) => {
 setInterval(() => { if (currentTab === "opravila" && !document.hidden && !op.busy) renderOpravila(true); }, 20 * 1000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "opravila" && !op.busy) renderOpravila(true); });
 
+/* —— Trgovina (#trgovina, every role): real products for the Stavnica coins. Products, prices, stock, purchases and receipts
+   come from apps-script/stavnica.gs (state.shop; action buy / shop-edit / shop-handout). Marko, Tonka and admins can change
+   prices and stock and mark receipts as handed out. —— */
+const tg = { cart: {}, busy: false, msg: "", ok: "", edit: false, open: false, fresh: null };
+const TG_ICONS = [[/smetan/i, "🥛"], [/hrenov/i, "🌭"], [/sir|skuta/i, "🧀"], [/puter|maslo$/i, "🧈"], [/pašteta/i, "🥫"], [/kreker/i, "🍘"], [/čips/i, "🥔"],
+  [/piškot/i, "🍪"], [/napolitank/i, "🧇"], [/banan/i, "🍌"], [/gorenjka|čokolad/i, "🍫"], [/palčk/i, "🥨"], [/kis/i, "🍶"], [/marmelad/i, "🍓"], [/pesa/i, "🫜"],
+  [/čoko namaz/i, "🍫"], [/arašid|orešč/i, "🥜"], [/prašek|kvas/i, "🧁"], [/zucker|sladkor/i, "🧂"], [/čaj/i, "🍵"], [/kav|barcaffe/i, "☕"], [/mezga|paradiž/i, "🍅"],
+  [/zdrob|polenta/i, "🌾"], [/marelic|sliv/i, "🍑"], [/^med$/i, "🍯"], [/kakav/i, "🥤"], [/česen/i, "🧄"], [/lizik|bonbon/i, "🍭"], [/tuna/i, "🐟"]];
+const tgIcon = (name) => (TG_ICONS.find(([re]) => re.test(name)) || [, "🛍️"])[1];
+const tgCount = () => Object.values(tg.cart).reduce((a, v) => a + v, 0);
+async function renderTrgovina(force = false) {
+  const box = $("#tg-body");
+  if (!box) return;
+  if (!sv.state && scriptHas("stavnica")) { sv.state = scriptData.stavnica.data; sv.fetchedAt = scriptData.stavnica.at; }
+  if (!sv.state || force) {
+    if (!sv.state) box.innerHTML = `<p class="muted-text">Nalagam trgovino …</p>`;
+    try { sv.state = await scriptLoad("stavnica", true); sv.fetchedAt = Date.now(); sv.error = null; } catch (err) { sv.error = err; }
+  } else if (Date.now() - (sv.fetchedAt || 0) > 60 * 1000 && !tg.busy) { scriptLoad("stavnica", true).then((d) => { sv.state = d; sv.fetchedAt = Date.now(); if (currentTab === "trgovina" && !tg.busy) drawTrgovina(); }).catch(() => {}); }
+  drawTrgovina();
+}
+function drawTrgovina() {
+  const box = $("#tg-body");
+  if (!box) return;
+  if (!sv.state) { box.innerHTML = svErrorHtml(sv.error); return; }
+  const shop = sv.state.shop, me = sv.state.me || { balance: 0 };
+  $("#tg-bal").innerHTML = `${SV_COIN} ${me.balance}`;
+  if (!shop) { box.innerHTML = `<div class="card sv-empty"><p>Trgovina še ni odprta.</p><p class="muted-text">Strežnik (Apps Script) še ne pozna trgovine – posodobi stavnica.gs.</p></div>`; return; }
+  const byId = Object.fromEntries(shop.products.map((p) => [p.id, p]));
+  for (const id of Object.keys(tg.cart)) { const p = byId[id]; if (!p || !p.stock) delete tg.cart[id]; else if (tg.cart[id] > p.stock) tg.cart[id] = p.stock; } // stock or list changed
+  const total = Object.entries(tg.cart).reduce((a, [id, q]) => a + byId[id].price * q, 0), n = tgCount(), short = total - me.balance;
+  const card = (p) => {
+    const q = tg.cart[p.id] || 0, out = !p.stock;
+    const ctrl = out ? `<span class="tg-out">Razprodano</span>`
+      : q ? `<span class="tg-step"><button type="button" data-tg-minus="${esc(p.id)}" aria-label="Manj">−</button><strong>${q}</strong><button type="button" data-tg-plus="${esc(p.id)}" aria-label="Več" ${q >= p.stock ? "disabled" : ""}>+</button></span>`
+      : `<button type="button" class="btn primary tg-add" data-tg-plus="${esc(p.id)}">V košarico</button>`;
+    const edit = tg.edit ? `<form class="tg-edit" data-tg-edit="${esc(p.id)}"><label>Cena <input name="price" type="number" min="0" max="10000" inputmode="numeric" value="${p.price}" /></label><label>Zaloga <input name="stock" type="number" min="0" max="10000" inputmode="numeric" value="${p.stock}" /></label><button type="submit" class="btn ghost">Shrani</button></form>` : "";
+    return `<li class="card tg-item${out ? " is-out" : ""}${q ? " in-cart" : ""}"><span class="tg-icon" aria-hidden="true">${tgIcon(p.name)}</span>
+      <span class="tg-name">${esc(p.name)}</span><span class="tg-meta"><strong class="tg-price">${SV_COIN} ${p.price}</strong><span class="muted-text">${out ? "ni na zalogi" : `še ${p.stock}`}</span></span>${ctrl}${edit}</li>`;
+  };
+  const receipt = (r, admin) => `<article class="tg-receipt${r.done ? " is-done" : ""}${tg.fresh === r.id ? " is-fresh" : ""}" id="tg-r-${esc(r.id)}">
+      <header><strong>U VODJA 2026</strong><span>Piratska trgovina</span></header>
+      <p class="tg-r-meta">Račun št. ${esc(r.id)}<br>${new Date(r.ts).toLocaleString("sl-SI", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}${admin ? `<br>Kupec: <strong>${esc(r.name || r.email)}</strong>` : ""}</p>
+      <ul>${r.items.map((it) => `<li><span>${it.qty} × ${esc(it.name)}</span><span>${it.qty * it.price}</span></li>`).join("")}</ul>
+      <p class="tg-r-total"><span>SKUPAJ</span><span>${r.total} zlatnikov</span></p>
+      <p class="tg-stamp ${r.done ? "done" : "wait"}">${r.done ? "IZDANO ✓" : "ČAKA NA PREVZEM"}</p>
+      ${admin ? `<button type="button" class="btn ${r.done ? "ghost" : "primary"} tg-hand" data-tg-hand="${esc(r.id)}" data-tg-done="${r.done ? "" : "1"}" ${tg.busy ? "disabled" : ""}>${r.done ? "Prekliči izdajo" : "Označi kot izdano"}</button>` : `<p class="tg-r-foot">${r.done ? "Izdelki so bili prevzeti." : "Pokaži ta račun adminu (Marko, Tonka) za prevzem izdelkov."}</p>`}
+    </article>`;
+  const open = (shop.all || []).filter((r) => !r.done), done = (shop.all || []).filter((r) => r.done);
+  box.innerHTML = `${shop.canEdit ? `<div class="card tg-admin"><span>Urejanje cen in zaloge</span><button type="button" class="switch" role="switch" data-tg-editmode aria-checked="${tg.edit}"><span class="switch-knob"></span></button></div>` : ""}
+    ${tg.ok ? `<p class="tg-ok" role="status">${tg.ok}</p>` : ""}${tg.msg ? `<p class="op-msg" role="status">${esc(tg.msg)}</p>` : ""}
+    <ul class="tg-grid">${shop.products.map(card).join("")}</ul>
+    <section class="sv-list" id="tg-receipts"><h3>Moji računi</h3>${shop.receipts.length ? `<div class="tg-receipts">${shop.receipts.map((r) => receipt(r, false)).join("")}</div>` : `<p class="muted-text">Še nisi nič kupil/a.</p>`}</section>
+    ${shop.all ? `<section class="sv-list"><h3>Vsi računi <span class="muted-text">· za izdajo ${open.length}</span></h3>${shop.all.length ? `<div class="tg-receipts">${[...open, ...done].map((r) => receipt(r, true)).join("")}</div>` : `<p class="muted-text">Še ni nakupov.</p>`}</section>` : ""}
+    <div class="tg-cartbar${n ? "" : " is-empty"}">
+      ${tg.open && n ? `<div class="tg-cart card"><h3>Košarica</h3><ul>${Object.entries(tg.cart).map(([id, q]) => `<li><span>${tgIcon(byId[id].name)} ${esc(byId[id].name)}</span><span class="tg-step"><button type="button" data-tg-minus="${esc(id)}" aria-label="Manj">−</button><strong>${q}</strong><button type="button" data-tg-plus="${esc(id)}" aria-label="Več" ${q >= byId[id].stock ? "disabled" : ""}>+</button></span><span class="tg-line">${byId[id].price * q}</span></li>`).join("")}</ul>
+        <p class="tg-sum"><span>Skupaj</span><strong>${SV_COIN} ${total}</strong></p><p class="tg-sum muted-text"><span>Tvoje stanje</span><span>${me.balance} → ${me.balance - total}</span></p>
+        ${short > 0 ? `<p class="tg-short">Manjka ti še ${short} ${short === 1 ? "zlatnik" : short === 2 ? "zlatnika" : short < 5 ? "zlatniki" : "zlatnikov"}.</p>` : ""}
+        <div class="tg-cart-btns"><button type="button" class="btn ghost" data-tg-clear>Izprazni</button><button type="button" class="btn primary" data-tg-buy ${tg.busy || short > 0 ? "disabled" : ""}>${tg.busy ? "Kupujem …" : `Kupi za ${total}`}</button></div></div>` : ""}
+      ${n ? `<button type="button" class="tg-cartbtn" data-tg-cart aria-expanded="${tg.open}"><span>🛒 ${n} ${n === 1 ? "izdelek" : n === 2 ? "izdelka" : n < 5 ? "izdelki" : "izdelkov"}</span><strong>${SV_COIN} ${total}</strong><span>${tg.open ? "Zapri ▾" : "Košarica ▴"}</span></button>` : ""}
+    </div>`;
+}
+async function tgBuy() {
+  const items = Object.entries(tg.cart).map(([id, qty]) => ({ id, qty }));
+  if (!items.length || tg.busy) return;
+  tg.busy = true; tg.msg = ""; tg.ok = ""; drawTrgovina();
+  try {
+    const res = await svCall({ action: "buy", items });
+    const rc = res.receipt; delete res.receipt;
+    sv.state = res; sv.fetchedAt = Date.now(); scriptSet?.("stavnica", res);
+    tg.cart = {}; tg.open = false; tg.fresh = rc?.id || null;
+    tg.ok = `Nakup uspel! Račun št. <strong>${esc(rc?.id || "")}</strong> je spodaj – pokaži ga za prevzem.`;
+  } catch (err) { tg.msg = `Nakup ni uspel: ${err?.message || err}`; }
+  tg.busy = false;
+  drawTrgovina();
+  if (tg.fresh) $(`#tg-r-${CSS.escape(tg.fresh)}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+async function tgAdmin(extra) {
+  if (tg.busy) return;
+  tg.busy = true; tg.msg = ""; drawTrgovina();
+  try { const res = await svCall(extra); sv.state = res; sv.fetchedAt = Date.now(); } catch (err) { tg.msg = `Ni uspelo: ${err?.message || err}`; }
+  tg.busy = false; drawTrgovina();
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest?.("#tab-trgovina")) return;
+  const plus = e.target.closest("[data-tg-plus]"), minus = e.target.closest("[data-tg-minus]");
+  const p = (id) => sv.state?.shop?.products.find((x) => x.id === id);
+  if (plus && !plus.disabled) { const id = plus.dataset.tgPlus; tg.cart[id] = Math.min((tg.cart[id] || 0) + 1, p(id)?.stock || 0); tg.ok = ""; tg.msg = ""; drawTrgovina(); return; }
+  if (minus) { const id = minus.dataset.tgMinus; tg.cart[id] = (tg.cart[id] || 0) - 1; if (tg.cart[id] <= 0) delete tg.cart[id]; drawTrgovina(); return; }
+  if (e.target.closest("[data-tg-cart]")) { tg.open = !tg.open; drawTrgovina(); return; }
+  if (e.target.closest("[data-tg-clear]")) { tg.cart = {}; tg.open = false; drawTrgovina(); return; }
+  if (e.target.closest("[data-tg-buy]")) { tgBuy(); return; }
+  if (e.target.closest("[data-tg-editmode]")) { tg.edit = !tg.edit; drawTrgovina(); return; }
+  const hand = e.target.closest("[data-tg-hand]");
+  if (hand && !hand.disabled) { tgAdmin({ action: "shop-handout", receipt: hand.dataset.tgHand, done: !!hand.dataset.tgDone }); return; }
+  if (e.target.closest("[data-sv-reload]") && currentTab === "trgovina") renderTrgovina(true);
+});
+document.addEventListener("submit", (e) => {
+  const f = e.target.closest?.("[data-tg-edit]");
+  if (!f) return;
+  e.preventDefault();
+  tgAdmin({ action: "shop-edit", id: f.dataset.tgEdit, price: f.price.value, stock: f.stock.value });
+});
+setInterval(() => { if (currentTab === "trgovina" && !document.hidden && !tg.busy && !tg.edit) renderTrgovina(); }, 30 * 1000);
+
 async function init() {
   await loadData();
   state.mobileDay = upcomingDayId() || ttDays()[0]?.id;
@@ -3608,7 +3713,7 @@ function logVisit(page) {
     }).catch(() => {});
   } catch {}
 }
-const PAGE_LABEL = { opravila: "Zadolžitve", domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", vprasanja: "Vprašanja", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
+const PAGE_LABEL = { trgovina: "Trgovina", opravila: "Zadolžitve", domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", vprasanja: "Vprašanja", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
 /* Role for an Analitika row: by e-mail, else by matching the name to a listed person (access.json people), else the default role */
 function visitRole(p) {
   if (p.email) return roleOf(p.email);
@@ -4179,6 +4284,7 @@ function svProfile(st, me) {
       <div class="card"><span class="muted-text">Priigrano</span><strong>${me.won ?? done.reduce((a, b) => a + (b.payout || 0), 0)}</strong></div>
       <div class="card"><span class="muted-text">Možen dobitek</span><strong>${pending}</strong></div>
       ${me.adjusted ? `<div class="card sv-stat-adj"><span class="muted-text">Popravki admina</span><strong>${me.adjusted > 0 ? "+" : ""}${me.adjusted}</strong></div>` : ""}
+      ${me.shopSpent ? `<div class="card"><span class="muted-text"><a href="#trgovina">Trgovina</a></span><strong>−${me.shopSpent}</strong></div>` : ""}
       ${me.casino?.count ? `<div class="card"><span class="muted-text"><a href="#zabava/kazino">Kazino</a> (${me.casino.count} iger)</span><strong>${me.casino.net > 0 ? "+" : ""}${me.casino.net}</strong></div>` : ""}
     </div>
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
