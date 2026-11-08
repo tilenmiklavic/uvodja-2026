@@ -2052,11 +2052,11 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .wd-board-list li.bb-banned .wd-name { text-decoration: line-through; text-decoration-color: rgba(229,72,77,.7); }
 .bb-ban-note { display: block; margin-bottom: .3rem; color: #ff8a8d; }
 
-/* —— Stavnica → 🤫 1 ruleta / 🤫 2 kocke —— */
+/* —— Zabava → Piratski kazino (ruleta / kocke; Stavnica coins) —— */
 .stavnica .pv-ftabs { overflow-x: auto; scrollbar-width: none; }
 .stavnica .pv-ftabs::-webkit-scrollbar { display: none; }
 .stavnica .pv-ftab.pv-tab { flex: 1 0 auto; }
-.sv-ftab-cz.pv-tab { padding: 0 .7rem; }
+.kz-sv.pv-tab { flex: 0 0 auto; padding: 0 .8rem; color: var(--gold-soft); }
 .cz { display: flex; flex-direction: column; gap: .7rem; }
 .cz .sv-top { flex-wrap: wrap; gap: .6rem; }
 .cz-intro { margin: 0; font-size: .85rem; }
