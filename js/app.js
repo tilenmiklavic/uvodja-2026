@@ -214,7 +214,12 @@ function bindNavMore() {
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
 const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika"];
-const OPEN_PAGES = ["opravila", "trgovina"]; // shown to every signed-in role, whatever data/access.json says (Zadolžitve – daily chores)
+/* Zadolžitve and Trgovina: every role may see them, but only once an admin switches them on (apps-script/flags.gs,
+   GET ?type=flags). Until then – and whenever the switches can't be loaded – only admins see them, with the switch on top. */
+const GATED_PAGES = ["opravila", "trgovina"];
+const PAGE_FLAGS_KEY = "uvodja.pageFlags";
+state.pageFlags = (() => { try { return JSON.parse(localStorage.getItem(PAGE_FLAGS_KEY)) || {}; } catch { return {}; } })();
+function gatePages(set, role) { GATED_PAGES.forEach((p) => (role === "admin" || state.pageFlags?.[p] === true ? set.add(p) : set.delete(p))); return set; }
 
 function loadUser() {
   try { const u = JSON.parse(localStorage.getItem("uvodja.user") || "null"); return u?.email ? u : null; } catch { return null; }
@@ -244,15 +249,14 @@ function effectiveRole(email) {
   return real === "admin" && SIM_ROLES.includes(state.simRole) ? state.simRole : real;
 }
 function pagesForRole(role) {
-  if (!state.access) return new Set(ALL_PAGES);
+  if (!state.access) return gatePages(new Set(ALL_PAGES), role);
   const acc = state.access;
   if (!acc.roles) { // legacy format
     const pages = role === "admin" && !acc.groups?.admin ? ["*"] : (acc.rules || []).filter((x) => (x.groups || []).includes(role)).flatMap((x) => x.pages || []);
     const list = pages.length ? pages : (acc.default || []);
     const set = new Set(list.includes("*") ? ALL_PAGES : list);
     if (set.delete("zadolzitve")) set.add("teme");
-    OPEN_PAGES.forEach((p) => set.add(p));
-    return set;
+    return gatePages(set, role);
   }
   const r = acc.roles[role];
   if (!r) return new Set();
@@ -260,8 +264,7 @@ function pagesForRole(role) {
   const set = new Set(!allow.length || allow.includes("*") ? ALL_PAGES : allow);
   if (set.delete("zadolzitve")) set.add("teme"); // Zadolžitve now live on the Teme page
   (r.deny || []).forEach((x) => (x === "*" ? set.clear() : set.delete(x)));
-  OPEN_PAGES.forEach((p) => set.add(p));
-  return set;
+  return gatePages(set, role);
 }
 function allowedPages(email) {
   return email ? pagesForRole(effectiveRole(email)) : new Set();
@@ -409,6 +412,7 @@ function setTab(name) {
   if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
   if (name === "teme") decorateTemeScores();
   if (name === "vprasanja") renderVprasanja();
+  if (GATED_PAGES.includes(name)) renderFlagBars();
   if (name === "opravila") renderOpravila();
   if (name === "trgovina") renderTrgovina();
   const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar|rutke|kazino)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
@@ -3615,6 +3619,57 @@ document.addEventListener("submit", (e) => {
 });
 setInterval(() => { if (currentTab === "trgovina" && !document.hidden && !tg.busy && !tg.edit) renderTrgovina(); }, 30 * 1000);
 
+/* —— Page switches (flags.gs): load for everyone; admins get an on/off bar on top of the gated pages —— */
+const PAGE_FLAG_LABEL = { opravila: "Zadolžitve", trgovina: "Trgovina" };
+async function loadPageFlags() {
+  try {
+    const cfg = await wdConfig();
+    if (!cfg?.scriptUrl) return;
+    const j = await (await fetch(`${cfg.scriptUrl}${cfg.scriptUrl.includes("?") ? "&" : "?"}type=flags&t=${Date.now()}`)).json();
+    const flags = j?.ok && j.flags && typeof j.flags === "object" ? j.flags : {}; // older script without flags.gs → everything stays hidden
+    if (JSON.stringify(flags) !== JSON.stringify(state.pageFlags)) {
+      state.pageFlags = flags;
+      try { localStorage.setItem(PAGE_FLAGS_KEY, JSON.stringify(flags)); } catch {}
+      pageFlagsChanged();
+    }
+  } catch {}
+  state.flagWanted = null; // only the link the site was opened with, only on the first load
+}
+function pageFlagsChanged() {
+  if (!state.user) return;
+  applyAuth();
+  if (GATED_PAGES.includes(currentTab) && !canSee(currentTab)) applyHash(); // switched off while open → back to the start page
+  if (state.flagWanted && canSee(state.flagWanted)) { location.hash = `#${state.flagWanted}`; state.flagWanted = null; } // the link arrived before the switches
+  renderFlagBars();
+}
+function renderFlagBars() {
+  const admin = !!state.user && effectiveRole(state.user.email) === "admin";
+  $$("[data-flag-bar]").forEach((el) => {
+    const p = el.dataset.flagBar, on = state.pageFlags?.[p] === true;
+    el.hidden = !admin;
+    if (!admin) { el.innerHTML = ""; return; }
+    el.innerHTML = `<span><strong>${on ? "Vidno vsem" : "Skrito"}</strong> – ${on ? `stran ${PAGE_FLAG_LABEL[p]} vidijo vsi.` : `stran ${PAGE_FLAG_LABEL[p]} vidiš le ti (admin).`}</span>
+      <button type="button" class="switch" role="switch" data-flag-toggle="${p}" aria-checked="${on}" aria-label="${PAGE_FLAG_LABEL[p]} vidna vsem" ${el.dataset.busy ? "disabled" : ""}><span class="switch-knob"></span></button>`;
+    el.classList.toggle("is-on", on);
+  });
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest?.("[data-flag-toggle]");
+  if (!b || b.disabled) return;
+  const p = b.dataset.flagToggle, on = state.pageFlags?.[p] !== true, bar = b.closest("[data-flag-bar]");
+  if (!confirm(on ? `Pokažem stran ${PAGE_FLAG_LABEL[p]} vsem?` : `Skrijem stran ${PAGE_FLAG_LABEL[p]} pred vsemi (razen adminov)?`)) return;
+  bar.dataset.busy = "1"; renderFlagBars();
+  try {
+    const res = await scriptPost({ type: "flags", page: p, on });
+    state.pageFlags = res.flags || state.pageFlags;
+    try { localStorage.setItem(PAGE_FLAGS_KEY, JSON.stringify(state.pageFlags)); } catch {}
+  } catch (err) { alert(`Ni uspelo: ${err?.message || err}`); }
+  delete bar.dataset.busy;
+  pageFlagsChanged();
+});
+setInterval(loadPageFlags, 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) loadPageFlags(); });
+
 async function init() {
   await loadData();
   state.mobileDay = upcomingDayId() || ttDays()[0]?.id;
@@ -3622,6 +3677,8 @@ async function init() {
   window.addEventListener("resize", () => { placeNowLine(); placeUuNow(); });
   state.user = loadUser();
   try { state.simRole = sessionStorage.getItem("uvodja.simRole"); } catch { state.simRole = null; }
+  const wantGated = location.hash.replace(/^#/, ""); if (GATED_PAGES.includes(wantGated)) state.flagWanted = wantGated; // a link to a page that may be switched on
+  loadPageFlags(); // Zadolžitve / Trgovina switches (async; re-applies the nav when they differ from the saved ones)
   bindControls();
   applyTheme(document.documentElement.dataset.theme === "cgp" ? "cgp" : "default");
   $("#theme-toggle")?.addEventListener("click", () => applyTheme(document.documentElement.dataset.theme === "cgp" ? "default" : "cgp"));

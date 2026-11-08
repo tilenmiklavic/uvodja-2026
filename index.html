@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="U Vodja" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
-  <link rel="stylesheet" href="css/styles.css?v=114" />
+  <link rel="stylesheet" href="css/styles.css?v=115" />
   <script src="https://accounts.google.com/gsi/client" async></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -338,6 +338,7 @@
     </section>
     <section id="tab-trgovina" class="tab-panel" hidden>
       <div class="trgovina">
+        <div class="card flag-bar" data-flag-bar="trgovina" hidden></div>
         <div class="wd-head"><h2>Trgovina</h2><span class="tg-bal" id="tg-bal"></span></div>
         <p class="muted-text op-lede">Zlatnike iz Stavnice in Piratskega kazina zamenjaj za prave dobrote. Dodaj v košarico, kupi in račun pokaži za prevzem.</p>
         <div id="tg-body"><p class="muted-text">Nalagam trgovino …</p></div>
@@ -345,6 +346,7 @@
     </section>
     <section id="tab-opravila" class="tab-panel" hidden>
       <div class="opravila">
+        <div class="card flag-bar" data-flag-bar="opravila" hidden></div>
         <div class="wd-head"><h2>Zadolžitve</h2><p class="muted-text wd-sub" id="op-sub"></p></div>
         <p class="muted-text op-lede">Izberi, kaj boš danes pospravljal/a. Vsak izbere eno zadolžitev; ko je mest zmanjka, je polna. Izbiro lahko zamenjaš ali se odjaviš.</p>
         <div id="op-body"><p class="muted-text">Nalagam zadolžitve …</p></div>
@@ -460,6 +462,6 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=133" type="module"></script>
+  <script src="js/app.js?v=134" type="module"></script>
 </body>
 </html>
