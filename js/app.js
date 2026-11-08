@@ -3290,8 +3290,7 @@ function svCasino(st, me, game) {
     <p class="muted-text cz-intro">${intro}</p>
     ${board}
     <div class="cz-bar"><span>Vložek: <strong>${stake}</strong>${stake > me.balance ? ` <span class="cz-over">več kot imaš</span>` : ""}</span>
-      <span class="cz-btns"><button type="button" class="btn ghost" data-cz-undo ${busy || !stake ? "disabled" : ""}>Razveljavi</button><button type="button" class="btn ghost" data-cz-clear ${busy || !stake ? "disabled" : ""}>Počisti</button>
-      ${!stake && sv.cz.prev[game] ? `<button type="button" class="btn ghost" data-cz-repeat ${busy ? "disabled" : ""}>Ponovi stavo</button>` : ""}
+      <span class="cz-btns"><button type="button" class="btn ghost" data-cz-clear ${busy || !stake ? "disabled" : ""}>Počisti</button>
       <button type="button" class="btn primary" data-cz-play="${game}" ${busy || !stake || stake > me.balance ? "disabled" : ""}>${busy ? (game === "ruleta" ? "Vrtim …" : "Mečem …") : game === "ruleta" ? "Zavrti 🎡" : "Vrzi kocki 🎲"}</button></span></div>
     <p class="cz-msg" id="cz-msg" role="status" aria-live="polite">${sv.cz.err ? esc(sv.cz.err) : !busy && last ? czResultText(game, last) : ""}</p>
     ${!busy && last ? `<ul class="cz-lastbets">${last.bets.map((b) => `<li class="${b.pay ? "is-win" : ""}">${esc(czBetLabel(game, b.k))} · ${b.a} → ${b.pay ? `<strong>${b.pay}</strong>` : "0"}</li>`).join("")}</ul>` : ""}
@@ -3329,7 +3328,6 @@ function czAdd(k) {
   if (czStake(game) + sv.cz.chip > me.balance) { sv.cz.err = `Imaš le ${me.balance} zlatnikov.`; czRender(); return; }
   sv.cz.err = ""; sv.cz.last[game] = null;
   sv.cz.bets[game][k] = (sv.cz.bets[game][k] || 0) + sv.cz.chip;
-  (sv.cz.stack ||= []).push([game, k, sv.cz.chip]);
   czRender();
 }
 /* The animation starts on the tap, while the server draws the result: the wheel spins at a steady speed (or the dice tumble)
@@ -3396,7 +3394,7 @@ async function czPlay(game) {
   if (game === "kocke") await czSleep(600);
   delete res.casino;
   sv.state = res; sv.fetchedAt = Date.now();
-  sv.cz.prev[game] = { ...sv.cz.bets[game] }; sv.cz.bets[game] = {}; sv.cz.stack = [];
+  sv.cz.bets[game] = {};
   sv.cz.last[game] = c; sv.cz.busy = false;
   czRender();
 }
@@ -3407,17 +3405,7 @@ document.addEventListener("click", (e) => {
   const bet = e.target.closest("[data-cz-bet]");
   if (bet) { czAdd(bet.dataset.czBet); return; }
   const game = czGame();
-  if (e.target.closest("[data-cz-clear]")) { sv.cz.bets[game] = {}; sv.cz.stack = []; sv.cz.err = ""; czRender(); return; }
-  if (e.target.closest("[data-cz-undo]")) {
-    const i = (sv.cz.stack || []).map((x) => x[0]).lastIndexOf(game);
-    if (i >= 0) { const [, k, v] = sv.cz.stack.splice(i, 1)[0]; sv.cz.bets[game][k] -= v; if (sv.cz.bets[game][k] <= 0) delete sv.cz.bets[game][k]; }
-    sv.cz.err = ""; czRender(); return;
-  }
-  if (e.target.closest("[data-cz-repeat]")) {
-    const p = sv.cz.prev[game], total = Object.values(p || {}).reduce((a, v) => a + v, 0);
-    if (total > (sv.state?.me?.balance || 0)) { sv.cz.err = "Za ponovitev stave nimaš dovolj zlatnikov."; czRender(); return; }
-    sv.cz.bets[game] = { ...p }; sv.cz.last[game] = null; sv.cz.err = ""; czRender(); return;
-  }
+  if (e.target.closest("[data-cz-clear]")) { sv.cz.bets[game] = {}; sv.cz.err = ""; czRender(); return; }
   const play = e.target.closest("[data-cz-play]");
   if (play && !play.disabled) czPlay(play.dataset.czPlay);
 });
@@ -3634,7 +3622,7 @@ async function renderOsDays() {
 /* Gold coin icon (the 🪙 emoji renders silver/grey on some devices) */
 const SV_COIN = `<svg class="sv-coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#f5b82e" stroke="#a8711a" stroke-width="1.6"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#a8711a" stroke-width="1.3" opacity=".8"/><path d="M9.2 8.4a5 5 0 0 1 4.4-1.2" stroke="#ffe7a3" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`;
 const sv = { state: null, loading: false, open: null, error: "", media: undefined, view: "", czView: "ruleta", // view: "" = Stave, "profil", or a question slug; czView: Piratski kazino tab
-  cz: { chip: 1, bets: { ruleta: {}, kocke: {} }, prev: { ruleta: null, kocke: null }, last: { ruleta: null, kocke: null }, busy: false, rot: 0, err: "" } }; // 🤫 kazino
+  cz: { chip: 1, bets: { ruleta: {}, kocke: {} }, last: { ruleta: null, kocke: null }, busy: false, rot: 0, err: "" } }; // 🤫 kazino
 async function svCall(extra = {}, onStage = () => {}) {
   const err = (kind, msg) => Object.assign(new Error(msg || kind), { kind });
   if (navigator.onLine === false) throw err("offline");
