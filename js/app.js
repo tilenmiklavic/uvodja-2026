@@ -3333,31 +3333,68 @@ function czAdd(k) {
   (sv.cz.stack ||= []).push([game, k, sv.cz.chip]);
   czRender();
 }
+/* The animation starts on the tap, while the server draws the result: the wheel spins at a steady speed (or the dice tumble)
+   until the answer arrives, then it decelerates evenly onto the drawn pocket (dice land on the drawn faces). */
+const CZ_SPIN = 540; // °/s while waiting for the server
+const czSleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
+function czSpinStart() {
+  const rotor = $("#cz-rotor");
+  const sp = { rotor, angle: sv.cz.rot, t: performance.now(), stop: null };
+  if (rotor) rotor.style.transition = "none";
+  const frame = (now) => {
+    const dt = (now - sp.t) / 1000; sp.t = now;
+    if (!sp.stop) sp.angle += CZ_SPIN * dt;
+    else { // constant deceleration from CZ_SPIN to 0 over the distance D: angle(τ) = a0 + vτ − v²τ²/(2D)
+      const s = sp.stop, tau = Math.min((now - s.t0) / 1000, s.T);
+      sp.angle = s.a0 + CZ_SPIN * tau - (CZ_SPIN * CZ_SPIN * tau * tau) / (2 * s.D);
+      if (tau >= s.T) { sp.angle = s.a0 + s.D; if (sp.rotor) sp.rotor.style.transform = `rotate(${sp.angle}deg)`; sv.cz.rot = sp.angle; s.done(); return; }
+    }
+    if (sp.rotor) sp.rotor.style.transform = `rotate(${sp.angle}deg)`;
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  return sp;
+}
+/* Decelerate onto pocket n (null = just stop where it is, e.g. after an error) */
+function czSpinStop(sp, n) {
+  return new Promise((done) => {
+    const a = 360 / 37, cur = sp.angle;
+    let D;
+    if (n == null) D = CZ_SPIN / 2; // ~1 s to a halt
+    else {
+      const want = (((-CZ_WHEEL.indexOf(n) * a + (Math.random() - 0.5) * a * 0.6) % 360) + 360) % 360; // pocket under the pointer
+      D = (want - (((cur % 360) + 360) % 360) + 720) % 360 + 720; // at least two more turns
+    }
+    sp.stop = { a0: cur, D, T: (2 * D) / CZ_SPIN, t0: performance.now(), done };
+  });
+}
+function czDiceStart() {
+  const dice = $$("#cz-dice .cz-die"), tot = $("#cz-total");
+  if (tot) tot.textContent = "";
+  dice.forEach((d) => d.classList.add("is-rolling"));
+  const id = setInterval(() => dice.forEach((d) => { d.dataset.v = 1 + Math.floor(Math.random() * 6); }), 120);
+  return { dice, tot, id, t0: performance.now() };
+}
+async function czDiceStop(dr, roll) {
+  const left = 700 - (performance.now() - dr.t0); // tumble at least 0.7 s in total
+  if (left > 0) await czSleep(left);
+  clearInterval(dr.id);
+  dr.dice.forEach((d, j) => { d.classList.remove("is-rolling"); if (roll) d.dataset.v = roll[j]; });
+  if (roll && dr.tot) dr.tot.textContent = `= ${roll[0] + roll[1]}`;
+}
 async function czPlay(game) {
   const bets = Object.entries(sv.cz.bets[game]).map(([k, a]) => ({ k, a }));
   if (!bets.length || sv.cz.busy) return;
   sv.cz.busy = true; sv.cz.err = ""; sv.cz.last[game] = null;
-  czRender();
-  let res;
-  try { res = await svCall({ action: game === "ruleta" ? "roulette" : "dice", bets }); }
-  catch (err) { sv.cz.busy = false; sv.cz.err = `Ni uspelo: ${err?.message || err}`; czRender(); return; }
-  const c = res.casino;
-  if (game === "ruleta") {
-    const a = 360 / 37, i = CZ_WHEEL.indexOf(c.n), cur = sv.cz.rot;
-    const target = cur - (((cur % 360) + 360) % 360) + 360 * 6 - i * a + (Math.random() - 0.5) * a * 0.6;
-    const rotor = $("#cz-rotor");
-    sv.cz.rot = target;
-    if (rotor) { rotor.style.transition = "transform 4.2s cubic-bezier(.12,.6,.12,1)"; requestAnimationFrame(() => { rotor.style.transform = `rotate(${target}deg)`; }); }
-    await new Promise((r) => setTimeout(r, 4400));
-  } else {
-    const dice = $$("#cz-dice .cz-die"), tot = $("#cz-total"), r = c.rolls[0];
-    if (tot) tot.textContent = "";
-    dice.forEach((d) => d.classList.add("is-rolling"));
-    for (let i = 0; i < 6; i++) { await new Promise((ok) => setTimeout(ok, 160)); dice.forEach((d) => { d.dataset.v = 1 + Math.floor(Math.random() * 6); }); }
-    dice.forEach((d, j) => { d.classList.remove("is-rolling"); d.dataset.v = r[j]; });
-    if (tot) tot.textContent = `= ${r[0] + r[1]}`;
-    await new Promise((ok) => setTimeout(ok, 700));
-  }
+  czRender(); // disabled buttons, "Vrtim …" – drawn synchronously, so the animation below runs on the new elements
+  const anim = game === "ruleta" ? czSpinStart() : czDiceStart();
+  let res, err;
+  try { res = await svCall({ action: game === "ruleta" ? "roulette" : "dice", bets }); } catch (e) { err = e; }
+  const c = res?.casino;
+  if (game === "ruleta") await czSpinStop(anim, c ? c.n : null);
+  else await czDiceStop(anim, c ? c.rolls[0] : null);
+  if (!c) { sv.cz.busy = false; sv.cz.err = `Ni uspelo: ${err?.message || "ni rezultata"}`; czRender(); return; }
+  if (game === "kocke") await czSleep(600);
   delete res.casino;
   sv.state = res; sv.fetchedAt = Date.now();
   sv.cz.prev[game] = { ...sv.cz.bets[game] }; sv.cz.bets[game] = {}; sv.cz.stack = [];
@@ -3365,7 +3402,7 @@ async function czPlay(game) {
   czRender();
 }
 document.addEventListener("click", (e) => {
-  if (!e.target.closest?.("#kazino .cz")) return;
+  if (!e.target.closest?.("#kazino .cz") || sv.cz.busy) return; // no redraw while the wheel / dice are moving
   const chip = e.target.closest("[data-cz-chip]");
   if (chip) { sv.cz.chip = Number(chip.dataset.czChip); czRender(); return; }
   const bet = e.target.closest("[data-cz-bet]");
