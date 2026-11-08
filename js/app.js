@@ -3255,11 +3255,10 @@ function czRouletteTable() {
   const last = sv.cz.last.ruleta, hit = (k) => (last && !sv.cz.busy && last.bets?.some((b) => b.k === k && b.pay > 0) ? " is-win" : "");
   const cell = (k, label, cls = "") => `<button type="button" class="cz-cell ${cls}${hit(k)}${last && !sv.cz.busy && k === `n${last.n}` ? " is-ball" : ""}" data-cz-bet="${k}">${label}${czChipOn("ruleta", k)}</button>`;
   let nums = "";
-  for (let row = 0; row < 12; row++) for (let c = 0; c < 3; c++) { const n = row * 3 + c + 1; nums += cell(`n${n}`, n, `cz-${czColor(n)}`); }
+  for (let n = 1; n <= 36; n++) nums += cell(`n${n}`, n, `cz-${czColor(n)}`); // 6 × 6, in order
   return `<div class="cz-table">
       ${cell("n0", "0", "cz-green cz-zero")}
       <div class="cz-nums">${nums}</div>
-      <div class="cz-row3">${cell("c1", "2:1")}${cell("c2", "2:1")}${cell("c3", "2:1")}</div>
       <div class="cz-row3">${cell("d1", "1–12")}${cell("d2", "13–24")}${cell("d3", "25–36")}</div>
       <div class="cz-row6">${cell("low", "1–18")}${cell("even", "Sodo")}${cell("red", "<i class=\"cz-dot red\"></i>", "cz-o-red")}${cell("black", "<i class=\"cz-dot black\"></i>", "cz-o-black")}${cell("odd", "Liho")}${cell("high", "19–36")}</div>
     </div>`;
@@ -3274,7 +3273,7 @@ function czResultText(game, res) {
 function svCasino(st, me, game) {
   const stake = czStake(game), last = sv.cz.last[game], busy = sv.cz.busy;
   const games = (me.casino?.games || []).filter((g) => g.game === game).slice(0, 8);
-  const intro = game === "ruleta" ? "Evropska ruleta z eno ničlo. Izberi žeton, ga postavi na številke ali polja in zavrti. Številka vrne ×36, stolpec in tretjina ×3, rdeča/črna, sodo/liho in polovici ×2."
+  const intro = game === "ruleta" ? "Evropska ruleta z eno ničlo. Izberi žeton, ga postavi na številke ali polja in zavrti. Številka vrne ×36, tretjina ×3, rdeča/črna, sodo/liho in polovici ×2."
     : "Vržeš dve kocki in stavljaš na vsoto. Izberi žeton in ga postavi na točno vsoto (2–12), na pod/nad 7 ali na sodo/liho. Če pade 7, pod in nad 7 izgubita.";
   const board = game === "ruleta"
     ? `<div class="cz-rl"><div class="cz-wheelbox">${czWheelSvg()}</div>${czRouletteTable()}</div>`

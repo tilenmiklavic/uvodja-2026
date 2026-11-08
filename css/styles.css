@@ -2069,16 +2069,16 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 @media (min-width: 640px) { .cz-rl { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: start; } }
 .cz-wheelbox { padding: .6rem; border-radius: var(--radius); background: radial-gradient(circle at 50% 40%, #1d6b3f, #0d3a22); }
 .cz-wheel { display: block; width: min(100%, 320px); margin: 0 auto; }
-@media (max-width: 639px) { .cz-wheel { width: min(100%, 240px); } }
+@media (max-width: 639px) { .cz-wheel { width: min(100%, 210px); } .cz-wheelbox { padding: .4rem; } }
 #cz-rotor { transform-origin: 110px 110px; transform-box: view-box; }
-.cz-table { padding: .5rem; border-radius: var(--radius); background: #12573a; border: 3px solid #6b4a1f; display: grid; gap: 4px; }
-.cz-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.cz-row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.cz-row6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
-.cz-cell { position: relative; min-height: 36px; border: 1px solid rgba(255,255,255,.35); border-radius: 6px; background: transparent; color: #fff; font: inherit; font-weight: 800; font-size: .9rem; cursor: pointer; touch-action: manipulation; }
+.cz-table { padding: .4rem; border-radius: var(--radius); background: #12573a; border: 3px solid #6b4a1f; display: grid; gap: 3px; }
+.cz-nums { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.cz-row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.cz-row6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.cz-cell { position: relative; min-height: 34px; border: 1px solid rgba(255,255,255,.35); border-radius: 6px; background: transparent; color: #fff; font: inherit; font-weight: 800; font-size: .9rem; cursor: pointer; touch-action: manipulation; }
 .cz-cell:hover { background: rgba(255,255,255,.1); }
 .cz-cell.cz-red { background: #b3222a; } .cz-cell.cz-black { background: #1b1b1f; } .cz-cell.cz-green { background: #1f8a4c; }
-.cz-zero { min-height: 40px; }
+.cz-zero { min-height: 34px; }
 .cz-row6 .cz-cell { font-size: .78rem; }
 .cz-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; vertical-align: middle; border: 2px solid rgba(255,255,255,.7); }
 .cz-dot.red { background: #c0262d; } .cz-dot.black { background: #111; }
@@ -2116,3 +2116,4 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .cz-sum small, .cz-dout small { font-size: .68rem; font-weight: 700; color: var(--gold-soft); }
 .cz-row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .cz-dout strong { font-size: .9rem; }
+.cz-rl .cz-chip { right: -3px; top: -5px; min-width: 18px; height: 18px; font-size: .64rem; line-height: 14px; z-index: 1; }
