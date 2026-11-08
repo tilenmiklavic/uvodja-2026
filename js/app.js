@@ -3217,6 +3217,154 @@ document.addEventListener("keydown", (e) => {
 setInterval(() => { if (state.rutkeActive && !document.hidden) { rkFlush(); loadRkScores(); } }, 30 * 1000);
 document.addEventListener("visibilitychange", () => { if (document.hidden && rkGet(RK_QUEUE, []).length) rkFlush(); });
 
+/* —— Stavnica → Kazino: "🤫 1" roulette (European, single 0) and "🤫 2" dice (craps) for the Stavnica coins.
+   Chips are placed here; the round is played by apps-script/stavnica.gs (action roulette / dice: balance check, random
+   result, sheet "kazino"), which answers with the new state + the result; the wheel / dice then animate to it. —— */
+const CZ_RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+const CZ_WHEEL = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+const CZ_CHIPS = [1, 2, 5, 10, 25];
+const CZ_DICE = [
+  { k: "pass", name: "Pass Line", x: 2, d: "1. met 7 ali 11 zmaga, 2, 3 ali 12 izgubi. Sicer postane met točka: mečeš, dokler ne pade točka (zmaga) ali 7 (izgubi)." },
+  { k: "dontpass", name: "Don't Pass", x: 2, d: "Nasprotno od Pass Line: 1. met 2 ali 3 zmaga, 12 vrne vložek, 7 ali 11 izgubi. Po točki zmaga 7 pred točko." },
+  { k: "field", name: "Field", x: "2–4", d: "En met: 3, 4, 9, 10 ali 11 vrne ×2, 2 vrne ×3, 12 vrne ×4. 5, 6, 7 in 8 izgubijo." },
+  { k: "any7", name: "Any 7", x: 5, d: "En met: vsota 7." },
+  { k: "craps", name: "Any Craps", x: 8, d: "En met: 2, 3 ali 12." },
+  { k: "yo", name: "Yo (11)", x: 16, d: "En met: vsota 11." },
+  { k: "aces", name: "Snake Eyes (2)", x: 31, d: "En met: dve enici." },
+  { k: "boxcars", name: "Boxcars (12)", x: 31, d: "En met: dve šestici." },
+];
+const czColor = (n) => (!n ? "green" : CZ_RED.includes(n) ? "red" : "black");
+const CZ_OUT = { red: "Rdeča", black: "Črna", even: "Sodo", odd: "Liho", low: "1–18", high: "19–36", d1: "1–12", d2: "13–24", d3: "25–36", c1: "1. stolpec", c2: "2. stolpec", c3: "3. stolpec" };
+const czBetLabel = (game, k) => game === "kocke" ? (CZ_DICE.find((b) => b.k === k)?.name || k) : k[0] === "n" ? `št. ${k.slice(1)}` : CZ_OUT[k] || k;
+const czStake = (game) => Object.values(sv.cz.bets[game]).reduce((a, v) => a + v, 0);
+
+function czWheelSvg() {
+  const a = 360 / 37, R = 100, r = 66, pt = (deg, rad) => { const t = (deg - 90) * Math.PI / 180; return [Math.round((110 + rad * Math.cos(t)) * 100) / 100, Math.round((110 + rad * Math.sin(t)) * 100) / 100]; };
+  const fill = { green: "#1f8a4c", red: "#c0262d", black: "#1b1b1f" };
+  const pockets = CZ_WHEEL.map((n, i) => {
+    const s = i * a - a / 2, e = s + a, [x1, y1] = pt(s, R), [x2, y2] = pt(e, R), [x3, y3] = pt(e, r), [x4, y4] = pt(s, r), [tx, ty] = pt(i * a, 85);
+    return `<path d="M${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r} ${r} 0 0 0 ${x4} ${y4}Z" fill="${fill[czColor(n)]}" stroke="#d9b45a" stroke-width=".6"/>`
+      + `<text x="${tx}" y="${ty}" transform="rotate(${i * a} ${tx} ${ty})" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="800" fill="#fff">${n}</text>`;
+  }).join("");
+  return `<svg class="cz-wheel" viewBox="0 0 220 220" aria-hidden="true"><circle cx="110" cy="110" r="108" fill="#5a3a1a" stroke="#d9b45a" stroke-width="3"/>
+    <g id="cz-rotor" style="transform:rotate(${sv.cz.rot}deg)">${pockets}<circle cx="110" cy="110" r="64" fill="#3b2410" stroke="#d9b45a" stroke-width="1.5"/>
+    <circle cx="110" cy="110" r="26" fill="#d9b45a"/><path d="M110 70v80M70 110h80" stroke="#8a6a25" stroke-width="5" stroke-linecap="round"/><circle cx="110" cy="110" r="9" fill="#f2d98b"/></g>
+    <path d="M110 1l7 13h-14z" fill="#fff" stroke="#3b2410" stroke-width="1"/></svg>`;
+}
+function czChips(game) {
+  return `<div class="cz-chips" role="group" aria-label="Vrednost žetona">${CZ_CHIPS.map((c) => `<button type="button" class="cz-chipbtn${sv.cz.chip === c ? " is-on" : ""}" data-cz-chip="${c}" aria-pressed="${sv.cz.chip === c}">${c}</button>`).join("")}</div>`;
+}
+const czChipOn = (game, k) => { const v = sv.cz.bets[game][k]; return v ? `<span class="cz-chip">${v}</span>` : ""; };
+function czRouletteTable() {
+  const last = sv.cz.last.ruleta, hit = (k) => (last && !sv.cz.busy && last.bets?.some((b) => b.k === k && b.pay > 0) ? " is-win" : "");
+  const cell = (k, label, cls = "") => `<button type="button" class="cz-cell ${cls}${hit(k)}${last && !sv.cz.busy && k === `n${last.n}` ? " is-ball" : ""}" data-cz-bet="${k}">${label}${czChipOn("ruleta", k)}</button>`;
+  let nums = "";
+  for (let row = 0; row < 12; row++) for (let c = 0; c < 3; c++) { const n = row * 3 + c + 1; nums += cell(`n${n}`, n, `cz-${czColor(n)}`); }
+  return `<div class="cz-table">
+      ${cell("n0", "0", "cz-green cz-zero")}
+      <div class="cz-nums">${nums}</div>
+      <div class="cz-row3">${cell("c1", "2:1")}${cell("c2", "2:1")}${cell("c3", "2:1")}</div>
+      <div class="cz-row3">${cell("d1", "1–12")}${cell("d2", "13–24")}${cell("d3", "25–36")}</div>
+      <div class="cz-row6">${cell("low", "1–18")}${cell("even", "Sodo")}${cell("red", "<i class=\"cz-dot red\"></i>", "cz-o-red")}${cell("black", "<i class=\"cz-dot black\"></i>", "cz-o-black")}${cell("odd", "Liho")}${cell("high", "19–36")}</div>
+    </div>`;
+}
+const czDie = (v) => `<span class="cz-die" data-v="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="p${i}"></i>`).join("")}</span>`;
+function czResultText(game, res) {
+  const net = res.payout - res.stake;
+  const head = game === "ruleta" ? `Padla je <strong class="cz-n cz-${res.color}">${res.n}</strong>.` : `${res.rolls.length > 1 ? `${res.rolls.length} metov` : "Met"}: ${res.rolls.map((r) => `${r[0]}+${r[1]}`).join(", ")}${res.point ? ` · točka ${res.point}` : ""}.`;
+  return `${head} ${res.payout ? `Izplačilo <strong>${res.payout}</strong> ${SV_COIN} ${net > 0 ? `(+${net})` : net < 0 ? `(${net})` : "(na ničli)"}` : `Tokrat ni sreče (−${res.stake}).`}`;
+}
+function svCasino(st, me, game) {
+  const stake = czStake(game), last = sv.cz.last[game], busy = sv.cz.busy;
+  const games = (me.casino?.games || []).filter((g) => g.game === game).slice(0, 8);
+  const intro = game === "ruleta" ? "Evropska ruleta z eno ničlo. Izberi žeton, ga postavi na številke ali polja in zavrti. Številka vrne ×36, stolpec in tretjina ×3, rdeča/črna, sodo/liho in polovici ×2."
+    : "Craps – igra s kockama kot v igralnici. Izberi žeton, ga postavi na stavo in vrzi kocki. Pass Line in Don't Pass se mečeta, dokler nista odločeni, ostale stave štejejo samo prvi met.";
+  const board = game === "ruleta"
+    ? `<div class="cz-rl"><div class="cz-wheelbox">${czWheelSvg()}</div>${czRouletteTable()}</div>`
+    : `<div class="cz-dicebox"><div class="cz-dice" id="cz-dice">${czDie(last?.rolls?.slice(-1)[0]?.[0] || 5)}${czDie(last?.rolls?.slice(-1)[0]?.[1] || 2)}</div>
+        <div class="cz-rolls" id="cz-rolls">${!busy && last ? last.rolls.map((r, i) => `<span class="cz-roll${i === 0 ? " is-first" : ""}">${r[0] + r[1]}</span>${i === 0 && last.point ? `<span class="cz-point">točka ${last.point}</span>` : ""}`).join("") : ""}</div></div>
+      <div class="cz-dbets">${CZ_DICE.map((b) => `<button type="button" class="cz-dbet${!busy && last?.bets?.some((x) => x.k === b.k && x.pay > 0) ? " is-win" : ""}" data-cz-bet="${b.k}">
+          <span class="cz-dbet-h"><strong>${b.name}</strong><span class="cz-x">×${b.x}</span></span><span class="cz-dbet-d">${b.d}</span>${czChipOn("kocke", b.k)}</button>`).join("")}</div>`;
+  return `<div class="cz cz-${game}">
+    <div class="sv-top card"><div><span class="sv-bal-label">Tvoje stanje</span><strong class="sv-bal">${SV_COIN} ${me.balance} <small>zlatnikov</small></strong></div>${czChips(game)}</div>
+    <p class="muted-text cz-intro">${intro}</p>
+    ${board}
+    <div class="cz-bar"><span>Vložek: <strong>${stake}</strong>${stake > me.balance ? ` <span class="cz-over">več kot imaš</span>` : ""}</span>
+      <span class="cz-btns"><button type="button" class="btn ghost" data-cz-undo ${busy || !stake ? "disabled" : ""}>Razveljavi</button><button type="button" class="btn ghost" data-cz-clear ${busy || !stake ? "disabled" : ""}>Počisti</button>
+      ${!stake && sv.cz.prev[game] ? `<button type="button" class="btn ghost" data-cz-repeat ${busy ? "disabled" : ""}>Ponovi stavo</button>` : ""}
+      <button type="button" class="btn primary" data-cz-play="${game}" ${busy || !stake || stake > me.balance ? "disabled" : ""}>${busy ? (game === "ruleta" ? "Vrtim …" : "Mečem …") : game === "ruleta" ? "Zavrti 🎡" : "Vrzi kocki 🎲"}</button></span></div>
+    <p class="cz-msg" id="cz-msg" role="status" aria-live="polite">${sv.cz.err ? esc(sv.cz.err) : !busy && last ? czResultText(game, last) : ""}</p>
+    ${!busy && last ? `<ul class="cz-lastbets">${last.bets.map((b) => `<li class="${b.pay ? "is-win" : ""}">${esc(czBetLabel(game, b.k))} · ${b.a} → ${b.pay ? `<strong>${b.pay}</strong>` : "0"}</li>`).join("")}</ul>` : ""}
+    ${games.length ? `<section class="sv-list cz-hist"><h3>Moje igre</h3><ul>${games.map((g) => `<li><span class="muted-text">${esc(svAgo(g.ts))}</span><span>${esc(g.result)}</span><span class="${g.payout - g.stake > 0 ? "sv-log-won" : g.payout - g.stake < 0 ? "sv-log-lost" : "muted-text"}">${g.payout - g.stake > 0 ? "+" : ""}${g.payout - g.stake}</span></li>`).join("")}</ul></section>` : ""}
+    <p class="muted-text cz-fine">Igra je samo za zlatnike iz Stavnice – izid določi strežnik, ne tvoja naprava.</p>
+  </div>`;
+}
+const czGame = () => (sv.view === "kocke" ? "kocke" : "ruleta");
+function czAdd(k) {
+  const game = czGame(), me = sv.state?.me;
+  if (sv.cz.busy || !me) return;
+  if (czStake(game) + sv.cz.chip > me.balance) { sv.cz.err = `Imaš le ${me.balance} zlatnikov.`; renderStavnica(); return; }
+  sv.cz.err = ""; sv.cz.last[game] = null;
+  sv.cz.bets[game][k] = (sv.cz.bets[game][k] || 0) + sv.cz.chip;
+  (sv.cz.stack ||= []).push([game, k, sv.cz.chip]);
+  renderStavnica();
+}
+async function czPlay(game) {
+  const bets = Object.entries(sv.cz.bets[game]).map(([k, a]) => ({ k, a }));
+  if (!bets.length || sv.cz.busy) return;
+  sv.cz.busy = true; sv.cz.err = ""; sv.cz.last[game] = null;
+  renderStavnica();
+  let res;
+  try { res = await svCall({ action: game === "ruleta" ? "roulette" : "dice", bets }); }
+  catch (err) { sv.cz.busy = false; sv.cz.err = `Ni uspelo: ${err?.message || err}`; renderStavnica(); return; }
+  const c = res.casino;
+  if (game === "ruleta") {
+    const a = 360 / 37, i = CZ_WHEEL.indexOf(c.n), cur = sv.cz.rot;
+    const target = cur - (((cur % 360) + 360) % 360) + 360 * 6 - i * a + (Math.random() - 0.5) * a * 0.6;
+    const rotor = $("#cz-rotor");
+    sv.cz.rot = target;
+    if (rotor) { rotor.style.transition = "transform 4.2s cubic-bezier(.12,.6,.12,1)"; requestAnimationFrame(() => { rotor.style.transform = `rotate(${target}deg)`; }); }
+    await new Promise((r) => setTimeout(r, 4400));
+  } else {
+    const dice = $$("#cz-dice .cz-die"), log = $("#cz-rolls");
+    if (log) log.innerHTML = "";
+    for (let i = 0; i < c.rolls.length; i++) {
+      dice.forEach((d) => d.classList.add("is-rolling"));
+      await new Promise((r) => setTimeout(r, i < 4 ? 550 : 250));
+      dice.forEach((d, j) => { d.classList.remove("is-rolling"); d.dataset.v = c.rolls[i][j]; });
+      log?.insertAdjacentHTML("beforeend", `<span class="cz-roll${i === 0 ? " is-first" : ""}">${c.rolls[i][0] + c.rolls[i][1]}</span>`);
+      if (i === 0 && c.point) log?.insertAdjacentHTML("beforeend", `<span class="cz-point">točka ${c.point}</span>`);
+      await new Promise((r) => setTimeout(r, i < 4 ? 450 : 200));
+    }
+  }
+  delete res.casino;
+  sv.state = res; sv.fetchedAt = Date.now();
+  sv.cz.prev[game] = { ...sv.cz.bets[game] }; sv.cz.bets[game] = {}; sv.cz.stack = [];
+  sv.cz.last[game] = c; sv.cz.busy = false;
+  renderStavnica();
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest?.("#stavnica .cz")) return;
+  const chip = e.target.closest("[data-cz-chip]");
+  if (chip) { sv.cz.chip = Number(chip.dataset.czChip); renderStavnica(); return; }
+  const bet = e.target.closest("[data-cz-bet]");
+  if (bet) { czAdd(bet.dataset.czBet); return; }
+  const game = czGame();
+  if (e.target.closest("[data-cz-clear]")) { sv.cz.bets[game] = {}; sv.cz.stack = []; sv.cz.err = ""; renderStavnica(); return; }
+  if (e.target.closest("[data-cz-undo]")) {
+    const i = (sv.cz.stack || []).map((x) => x[0]).lastIndexOf(game);
+    if (i >= 0) { const [, k, v] = sv.cz.stack.splice(i, 1)[0]; sv.cz.bets[game][k] -= v; if (sv.cz.bets[game][k] <= 0) delete sv.cz.bets[game][k]; }
+    sv.cz.err = ""; renderStavnica(); return;
+  }
+  if (e.target.closest("[data-cz-repeat]")) {
+    const p = sv.cz.prev[game], total = Object.values(p || {}).reduce((a, v) => a + v, 0);
+    if (total > (sv.state?.me?.balance || 0)) { sv.cz.err = "Za ponovitev stave nimaš dovolj zlatnikov."; renderStavnica(); return; }
+    sv.cz.bets[game] = { ...p }; sv.cz.last[game] = null; sv.cz.err = ""; renderStavnica(); return;
+  }
+  const play = e.target.closest("[data-cz-play]");
+  if (play && !play.disabled) czPlay(play.dataset.czPlay);
+});
+
 async function init() {
   await loadData();
   state.mobileDay = upcomingDayId() || ttDays()[0]?.id;
@@ -3428,7 +3576,8 @@ async function renderOsDays() {
 /* —— Zabava → Stavnica: fixed-odds bets with virtual zlatniki via Apps Script (apps-script/stavnica.gs) —— */
 /* Gold coin icon (the 🪙 emoji renders silver/grey on some devices) */
 const SV_COIN = `<svg class="sv-coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#f5b82e" stroke="#a8711a" stroke-width="1.6"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#a8711a" stroke-width="1.3" opacity=".8"/><path d="M9.2 8.4a5 5 0 0 1 4.4-1.2" stroke="#ffe7a3" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`;
-const sv = { state: null, loading: false, open: null, error: "", media: undefined, view: "" }; // view: "" = Stave, "profil", or a question slug
+const sv = { state: null, loading: false, open: null, error: "", media: undefined, view: "", // view: "" = Stave, "profil", "ruleta", "kocke", or a question slug
+  cz: { chip: 1, bets: { ruleta: {}, kocke: {} }, prev: { ruleta: null, kocke: null }, last: { ruleta: null, kocke: null }, busy: false, rot: 0, err: "" } }; // 🤫 kazino
 async function svCall(extra = {}, onStage = () => {}) {
   const err = (kind, msg) => Object.assign(new Error(msg || kind), { kind });
   if (navigator.onLine === false) throw err("offline");
@@ -3588,15 +3737,18 @@ async function renderStavnica(force = false) {
   const qi = st.questions.findIndex((q) => svSlug(q) === sv.view);
   const isAdminView = !!st.people && effectiveRole(state.user?.email) === "admin"; // overview only in the admin view (not when simulating)
   const playerSlug = isAdminView && /^igralec\//.test(sv.view) ? sv.view.slice(8) : null;
-  const tab = playerSlug ? "pregled" : sv.view === "profil" || sv.view === "pretekle" || (sv.view === "pregled" && isAdminView) ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
+  const tab = playerSlug ? "pregled" : ["profil", "pretekle", "ruleta", "kocke"].includes(sv.view) || (sv.view === "pregled" && isAdminView) ? sv.view : qi >= 0 && st.questions[qi].result ? "pretekle" : "stave";
   const tabs = `<div class="pv-ftabs" role="tablist" aria-label="Stavnica">
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica" aria-selected="${tab === "stave"}">Stave</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/pretekle" aria-selected="${tab === "pretekle"}">Pretekle stave</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/profil" aria-selected="${tab === "profil"}">Profil <span class="sv-tab-bal">${SV_COIN} ${me.balance}</span></a>
+      <a role="tab" class="pv-tab pv-ftab sv-ftab-cz" href="#zabava/stavnica/ruleta" aria-selected="${tab === "ruleta"}" title="Ruleta">🤫 1</a>
+      <a role="tab" class="pv-tab pv-ftab sv-ftab-cz" href="#zabava/stavnica/kocke" aria-selected="${tab === "kocke"}" title="Kocke">🤫 2</a>
       ${isAdminView ? `<a role="tab" class="pv-tab pv-ftab" href="#zabava/stavnica/pregled" aria-selected="${tab === "pregled"}">Pregled</a>` : ""}
     </div>`;
   let body;
   if (tab === "profil") body = svProfile(st, me);
+  else if (tab === "ruleta" || tab === "kocke") body = svCasino(st, me, tab);
   else if (playerSlug) body = svPlayer(st, playerSlug);
   else if (tab === "pregled") body = svOverview(st);
   else if (qi >= 0) body = svDetail(st, me, qi);
@@ -3885,6 +4037,7 @@ function svProfile(st, me) {
       <div class="card"><span class="muted-text">Priigrano</span><strong>${me.won ?? done.reduce((a, b) => a + (b.payout || 0), 0)}</strong></div>
       <div class="card"><span class="muted-text">Možen dobitek</span><strong>${pending}</strong></div>
       ${me.adjusted ? `<div class="card sv-stat-adj"><span class="muted-text">Popravki admina</span><strong>${me.adjusted > 0 ? "+" : ""}${me.adjusted}</strong></div>` : ""}
+      ${me.casino?.count ? `<div class="card"><span class="muted-text">🤫 (${me.casino.count} iger)</span><strong>${me.casino.net > 0 ? "+" : ""}${me.casino.net}</strong></div>` : ""}
     </div>
     <p class="muted-text sv-help">Vsak začne z ${st.budget} zlatniki. Če zadeneš, dobiš vložek pomnožen s številom možnosti (da/ne ×2, tri možnosti ×3 …). Izplačilo dobiš, ko je vprašanje razrešeno.</p>
     <section class="sv-list"><h3>Moje stave</h3>${me.bets.length || me.adjustments?.length ? svSections(me.bets, me.adjustments) : `<p class="muted-text">Še nisi stavil/a. <a href="#zabava/stavnica">Na stave ›</a></p>`}</section>`;
@@ -3897,7 +4050,7 @@ const SV_FRESH = 90 * 1000;
 const svSig = (x) => JSON.stringify([x.questions, x.recent, x.me, x.people]);
 function svBusy() {
   const a = document.activeElement;
-  return !!($("#stavnica form.sv-bet") || (a && a.closest?.("#stavnica form"))
+  return !!(sv.cz?.busy || $("#stavnica form.sv-bet") || (a && a.closest?.("#stavnica form"))
     || $$("#stavnica .sv-create-form textarea, #stavnica .sv-create-form input:not([type=file]), #stavnica .sv-adj-form input[type=text], #stavnica .sv-adj-form input[type=email]").some((x) => x.value.trim())
     || !!$("#stavnica .sv-create-form")?.dataset.image);
 }
