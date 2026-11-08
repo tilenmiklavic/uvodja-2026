@@ -3451,7 +3451,7 @@ document.addEventListener("click", (e) => {
 
 /* —— Zadolžitve (#opravila, every role): pick today's chore; places per chore are limited. The list, the places and who took
    what come from apps-script/zadolzitve.gs (GET ?type=zadolzitve; POST pick / leave, checked under a lock). —— */
-const op = { data: undefined, busy: false, msg: "" };
+const op = { data: undefined, busy: false, msg: "", pending: null }; // pending: chore being saved, or "leave"
 async function loadOpravila() {
   const cfg = await wdConfig();
   if (!cfg?.scriptUrl) throw new Error("config");
@@ -3477,15 +3477,16 @@ function drawOpravila() {
   const mine = d.chores.find((c) => c.people.some((p) => p.email === me));
   const free = d.chores.reduce((a, c) => a + Math.max(0, c.cap - c.people.length), 0), total = d.chores.reduce((a, c) => a + c.cap, 0);
   $("#op-sub").textContent = `${Number(d.date.slice(8))}. ${Number(d.date.slice(5, 7))}. · prostih mest ${free} od ${total}`;
-  box.innerHTML = `<div class="card op-mine${mine ? " is-set" : ""}">${mine ? `<span>Tvoja današnja zadolžitev:</span><strong>${esc(mine.name)}</strong><button type="button" class="link-btn" data-op-leave ${op.busy ? "disabled" : ""}>Odjavi se</button>` : `<span>Še nisi izbral/a zadolžitve – tapni »Izberi« pri eni od spodnjih.</span>`}</div>
+  box.innerHTML = `<div class="card op-mine${mine ? " is-set" : ""}">${mine ? `<span>Tvoja današnja zadolžitev:</span><strong>${esc(mine.name)}</strong>${op.pending === "leave" ? `<span class="op-saving"><i class="op-spin"></i>Odjavljam …</span>` : `<button type="button" class="link-btn" data-op-leave ${op.busy ? "disabled" : ""}>Odjavi se</button>`}` : `<span>Še nisi izbral/a zadolžitve – tapni »Izberi« pri eni od spodnjih.</span>`}</div>
     ${op.msg ? `<p class="op-msg" role="status">${esc(op.msg)}</p>` : ""}
     <ul class="op-list">${d.chores.map((c) => {
       const n = c.people.length, full = n >= c.cap, isMine = mine === c;
       const who = c.people.map((p) => { const w = wdWho(p.email, p.name); return `<span class="op-person" title="${esc(w.title)}">${w.av}<span>${esc(w.label)}</span></span>`; }).join("");
-      const btn = isMine ? `<span class="op-tag">✓ Tvoja</span>`
+      const btn = op.pending === c.name ? `<span class="btn primary op-pick is-saving" aria-live="polite"><i class="op-spin"></i>Shranjujem …</span>`
+        : isMine ? `<span class="op-tag">✓ Tvoja</span>`
         : full ? `<span class="op-tag is-full">Polno</span>`
         : `<button type="button" class="btn ${mine ? "ghost" : "primary"} op-pick" data-op-pick="${esc(c.name)}" ${op.busy ? "disabled" : ""}>${mine ? "Zamenjaj" : "Izberi"}</button>`;
-      return `<li class="card op-item${isMine ? " is-mine" : ""}${full && !isMine ? " is-full" : ""}">
+      return `<li class="card op-item${isMine ? " is-mine" : ""}${full && !isMine ? " is-full" : ""}${op.pending === c.name ? " is-saving" : ""}">
         <div class="op-head"><strong class="op-name">${esc(c.name)}</strong><span class="op-count${full ? " is-full" : ""}">${n}/${c.cap}</span>${btn}</div>
         <div class="op-slots" aria-hidden="true">${Array.from({ length: c.cap }, (_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("")}</div>
         ${n ? `<div class="op-people">${who}</div>` : `<p class="muted-text op-none">Še nihče.</p>`}
@@ -3495,7 +3496,7 @@ function drawOpravila() {
 }
 async function opAct(item) {
   if (op.busy) return;
-  op.busy = true; op.msg = ""; drawOpravila();
+  op.busy = true; op.msg = ""; op.pending = item.action === "pick" ? item.chore : "leave"; drawOpravila();
   try {
     const cfg = await wdConfig(), cred = await wdFreshToken();
     if (!cred) throw new Error("prijava je potekla – osveži jo v meniju");
@@ -3503,7 +3504,7 @@ async function opAct(item) {
     if (Array.isArray(res?.chores)) op.data = res;
     if (!res?.ok) op.msg = res?.error === "polno" ? "Žal je ta zadolžitev medtem že polna – izberi drugo." : `Ni uspelo: ${res?.error || "napaka"}`;
   } catch (err) { op.msg = `Ni uspelo: ${err?.message || err}`; }
-  op.busy = false;
+  op.busy = false; op.pending = null;
   drawOpravila();
 }
 document.addEventListener("click", (e) => {
