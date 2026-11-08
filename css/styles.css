@@ -2239,3 +2239,11 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .nz-state { flex: none; font-size: .72rem; font-weight: 800; letter-spacing: .05em; color: var(--ink-muted); }
 .nz-item.is-on .nz-state { color: #a8d47a; }
 .nz-note { font-size: .8rem; }
+
+/* Stavnica: cancelled bets (stakes refunded) */
+.sv-res.is-cancelled { color: var(--ink-muted); }
+.sv-bet-item .is-refund, .sv-log-refund { color: #9ec5ff; font-weight: 800; white-space: nowrap; }
+.sv-log-refund { padding: .05rem .45rem; border-radius: 999px; background: rgba(110,160,255,.16); font-size: .75rem; font-variant-numeric: tabular-nums; }
+.sv-state.is-cancelled { background: rgba(110,160,255,.16); color: #9ec5ff; }
+.sv-bet-item.is-cancelled { opacity: .85; }
+.sv-cancel-btn { border-color: rgba(229,72,77,.5); color: #ff8a8d; }
