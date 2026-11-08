@@ -3576,6 +3576,7 @@ function drawTrgovina() {
         <div class="tg-cart-btns"><button type="button" class="btn ghost" data-tg-clear>Izprazni</button><button type="button" class="btn primary" data-tg-buy ${tg.busy || short > 0 ? "disabled" : ""}>${tg.busy ? "Kupujem …" : `Kupi za ${total}`}</button></div></div>` : ""}
       ${n ? `<button type="button" class="tg-cartbtn" data-tg-cart aria-expanded="${tg.open}"><span>🛒 ${n} ${n === 1 ? "izdelek" : n === 2 ? "izdelka" : n < 5 ? "izdelki" : "izdelkov"}</span><strong>${SV_COIN} ${total}</strong><span>${tg.open ? "Zapri ▾" : "Košarica ▴"}</span></button>` : ""}
     </div>`;
+  window.dispatchEvent(new CustomEvent("trgovina:render", { detail: { count: n, total } })); // read-only notice for features/temu-mode (cosmetic add-on)
 }
 async function tgBuy() {
   const items = Object.entries(tg.cart).map(([id, qty]) => ({ id, qty }));
