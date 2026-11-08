@@ -2082,7 +2082,7 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .cz-row6 .cz-cell { font-size: .78rem; }
 .cz-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; vertical-align: middle; border: 2px solid rgba(255,255,255,.7); }
 .cz-dot.red { background: #c0262d; } .cz-dot.black { background: #111; }
-.cz-cell.is-win, .cz-dbet.is-win { box-shadow: 0 0 0 3px #6fbf67, 0 0 14px rgba(111,191,103,.7); }
+.cz-cell.is-win { box-shadow: 0 0 0 3px #6fbf67, 0 0 14px rgba(111,191,103,.7); }
 .cz-cell.is-ball { outline: 3px solid var(--gold); outline-offset: 1px; animation: czpulse 1s ease-in-out 3; }
 @keyframes czpulse { 50% { outline-color: #fff; } }
 .cz-bar { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
@@ -2108,14 +2108,11 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .cz-die[data-v="6"] :is(.p3, .p5) { visibility: visible; }
 .cz-die.is-rolling { animation: czroll .5s linear infinite; }
 @keyframes czroll { 0% { transform: rotate(0) translateY(0); } 25% { transform: rotate(90deg) translateY(-8px); } 50% { transform: rotate(180deg) translateY(0); } 75% { transform: rotate(270deg) translateY(-6px); } 100% { transform: rotate(360deg); } }
-.cz-rolls { display: flex; flex-wrap: wrap; gap: .3rem; justify-content: center; min-height: 28px; }
-.cz-roll { min-width: 28px; height: 28px; padding: 0 .3rem; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; font-weight: 800; font-size: .85rem; }
-.cz-roll.is-first { background: var(--gold); color: #1b1b1f; }
-.cz-point { padding: 0 .6rem; height: 28px; display: grid; place-items: center; border-radius: 999px; background: #fff; color: #1b1b1f; font-weight: 900; font-size: .78rem; text-transform: uppercase; }
-.cz-dbets { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; }
-.cz-dbet { position: relative; display: flex; flex-direction: column; gap: .25rem; padding: .7rem .8rem; text-align: left; border-radius: 12px; border: 1px solid rgba(255,255,255,.3); background: #12573a; color: #fff; font: inherit; cursor: pointer; touch-action: manipulation; }
-.cz-dbet:hover { background: #176845; }
-.cz-dbet-h { display: flex; align-items: baseline; gap: .5rem; padding-right: 1.6rem; }
-.cz-x { margin-left: auto; color: var(--gold-soft); font-weight: 900; }
-.cz-dbet-d { font-size: .76rem; color: rgba(255,255,255,.8); line-height: 1.35; }
-.cz-dbet .cz-chip { right: 6px; top: 6px; }
+.cz-total { min-height: 1.6em; font-size: 1.6rem; font-weight: 900; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.cz-sums { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+@media (min-width: 640px) { .cz-sums { grid-template-columns: repeat(11, 1fr); } }
+.cz-sum, .cz-dout { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 52px; background: rgba(0,0,0,.18); }
+.cz-sum strong { font-size: 1.15rem; }
+.cz-sum small, .cz-dout small { font-size: .68rem; font-weight: 700; color: var(--gold-soft); }
+.cz-row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.cz-dout strong { font-size: .9rem; }
