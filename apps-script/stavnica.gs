@@ -21,12 +21,104 @@
  * Rules: everyone starts with STAVNICA_BUDGET zlatnikov. Fixed odds = number of options: a winning bet on a
  * yes/no question pays 2× the stake, on a 3-option question 3×, … Other people's bets don't change the odds.
  * When the "resolved" column of a question is filled in, betting on it closes and winners get their payout.
+ *
+ * Kazino (site tabs "🤫 1" roulette and "🤫 2" dice/craps): action "roulette" {bets:[{k, a}]} / "dice" {bets:[{k, a}]}.
+ * The result is drawn here (never in the browser), the stake is checked against the balance under the same lock as bets,
+ * and every game is one row in sheet "kazino" (created on first use): Čas | E-naslov | Ime | Igra | Stave | Vložek | Izplačilo | Rezultat.
+ * Balance = budget − stakes + payouts + adjustments + Σ(kazino payout − kazino stake). The reply has the new state + {casino: result}.
+ *   Roulette (European, single 0) keys: n0…n36 (×36), red/black/even/odd/low/high (×2), d1–d3 dozens, c1–c3 columns (×3).
+ *   Dice (craps) keys: pass/dontpass (rolled until decided, ×2; a 12 on the come-out pushes Don't Pass), field (one roll:
+ *   3,4,9,10,11 ×2, 2 ×3, 12 ×4), any7 (×5), craps 2/3/12 (×8), yo 11 (×16), aces 2 (×31), boxcars 12 (×31).
+ *   (×N = what comes back including the stake.)
  */
 const STAVNICA_SHEET_ID = "1Nc9q0aSElmn7I0tIMYxGIa1yS5wdgZFFcHYCEEKN678";
 const STAVNICA_BUDGET = 10;
 const STAVNICA_BET_HEADER = ["Čas", "Vprašanje", "Opcija", "Vložek", "Ime", "E-naslov"];
 const STAVNICA_ADJ_SHEET = "popravki"; // admin balance adjustments (created on first use)
 const STAVNICA_ADJ_HEADER = ["Čas", "E-naslov", "Ime", "Znesek", "Razlog", "Admin"];
+const STAVNICA_CASINO_SHEET = "kazino";
+const STAVNICA_CASINO_HEADER = ["Čas", "E-naslov", "Ime", "Igra", "Stave", "Vložek", "Izplačilo", "Rezultat"];
+const CASINO_RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+const CASINO_MAX_STAKE = 1000;
+
+/** Bets from the site → [{k, a}] with valid keys and whole positive amounts (same key merged), or an error text */
+function casinoBets_(raw, valid) {
+  const sum = {};
+  [].concat(raw || []).slice(0, 60).forEach((b) => {
+    const k = String(b && b.k || ""), a = Math.floor(Number(b && b.a));
+    if (valid(k) && a >= 1) sum[k] = (sum[k] || 0) + a;
+  });
+  const bets = Object.keys(sum).map((k) => ({ k: k, a: sum[k] }));
+  return bets.length ? bets : "ni veljavnih stav";
+}
+function casinoRoulette_(bets) {
+  const n = Math.floor(Math.random() * 37), red = CASINO_RED.indexOf(n) >= 0;
+  const win = (k) => {
+    if (k[0] === "n") return Number(k.slice(1)) === n;
+    if (!n) return false; // 0: every outside bet loses
+    if (k === "red") return red; if (k === "black") return !red;
+    if (k === "even") return n % 2 === 0; if (k === "odd") return n % 2 === 1;
+    if (k === "low") return n <= 18; if (k === "high") return n >= 19;
+    if (k[0] === "d") return Math.ceil(n / 12) === Number(k[1]);
+    if (k[0] === "c") return ((n - 1) % 3) + 1 === Number(k[1]);
+    return false;
+  };
+  const mult = (k) => (k[0] === "n" ? 36 : k[0] === "d" || k[0] === "c" ? 3 : 2);
+  const out = bets.map((b) => ({ k: b.k, a: b.a, pay: win(b.k) ? b.a * mult(b.k) : 0 }));
+  return { game: "ruleta", n: n, color: n ? (red ? "red" : "black") : "green", bets: out, text: n + (n ? (red ? " rdeča" : " črna") : " zelena") };
+}
+function casinoDice_(bets) {
+  const roll = () => { const a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6); return [a, b]; };
+  const rolls = [roll()], s0 = rolls[0][0] + rolls[0][1];
+  const line = bets.some((b) => b.k === "pass" || b.k === "dontpass");
+  let point = null, passWins = null, dpPush = false;
+  if (line) {
+    if (s0 === 7 || s0 === 11) passWins = true;
+    else if (s0 === 2 || s0 === 3 || s0 === 12) { passWins = false; dpPush = s0 === 12; }
+    else {
+      point = s0;
+      for (let i = 0; i < 200 && passWins === null; i++) {
+        const r = roll(), t = r[0] + r[1]; rolls.push(r);
+        if (t === point) passWins = true; else if (t === 7) passWins = false;
+      }
+    }
+  }
+  const field = { 2: 3, 3: 2, 4: 2, 9: 2, 10: 2, 11: 2, 12: 4 };
+  const pay = (b) => {
+    switch (b.k) {
+      case "pass": return passWins ? b.a * 2 : 0;
+      case "dontpass": return dpPush ? b.a : passWins === false ? b.a * 2 : 0;
+      case "field": return b.a * (field[s0] || 0);
+      case "any7": return s0 === 7 ? b.a * 5 : 0;
+      case "craps": return s0 === 2 || s0 === 3 || s0 === 12 ? b.a * 8 : 0;
+      case "yo": return s0 === 11 ? b.a * 16 : 0;
+      case "aces": return s0 === 2 ? b.a * 31 : 0;
+      case "boxcars": return s0 === 12 ? b.a * 31 : 0;
+    }
+    return 0;
+  };
+  const out = bets.map((b) => ({ k: b.k, a: b.a, pay: pay(b) }));
+  return { game: "kocke", rolls: rolls, point: point, bets: out, text: rolls.map((r) => r[0] + "+" + r[1]).join(", ") + (point ? " (točka " + point + ")" : "") };
+}
+/** Play one roulette spin / dice round for `me` (caller holds the lock and checks nothing else) */
+function casinoPlay_(ss, me, name, body) {
+  const roulette = body.action === "roulette";
+  const valid = roulette ? (k) => /^n([0-9]|[12][0-9]|3[0-6])$/.test(k) || /^(red|black|even|odd|low|high|d[123]|c[123])$/.test(k)
+    : (k) => /^(pass|dontpass|field|any7|craps|yo|aces|boxcars)$/.test(k);
+  const bets = casinoBets_(body.bets, valid);
+  if (typeof bets === "string") return bets;
+  const stake = bets.reduce((t, b) => t + b.a, 0);
+  if (stake > CASINO_MAX_STAKE) return "največji vložek je " + CASINO_MAX_STAKE;
+  const st = stavnicaState_(ss, me);
+  if (stake > st.me.balance) return "premalo zlatnikov (" + st.me.balance + ")";
+  const res = roulette ? casinoRoulette_(bets) : casinoDice_(bets);
+  res.stake = stake; res.payout = res.bets.reduce((t, b) => t + b.pay, 0);
+  let sh = ss.getSheetByName(STAVNICA_CASINO_SHEET);
+  if (!sh) { sh = ss.insertSheet(STAVNICA_CASINO_SHEET); sh.appendRow(STAVNICA_CASINO_HEADER); sh.setFrozenRows(1); }
+  sh.appendRow([new Date(), me, name, res.game, bets.map((b) => b.k + ":" + b.a).join(" "), stake, res.payout, res.text]);
+  SpreadsheetApp.flush();
+  return res;
+}
 
 function handleStavnica(body) {
   const out = (o) => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
@@ -35,6 +127,16 @@ function handleStavnica(body) {
     if (!tok) return out({ ok: false, error: "prijava ni veljavna" });
     const me = String(tok.email).toLowerCase();
     const ss = SpreadsheetApp.openById(STAVNICA_SHEET_ID);
+    let casino = null;
+
+    if (body.action === "roulette" || body.action === "dice") {
+      const lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        casino = casinoPlay_(ss, me, String(tok.name || body.name || "").slice(0, 100), body);
+        if (typeof casino === "string") return out({ ok: false, error: casino });
+      } finally { lock.releaseLock(); }
+    }
 
     if (body.action === "bet") {
       const lock = LockService.getScriptLock();
@@ -84,7 +186,7 @@ function handleStavnica(body) {
       } finally { lock.releaseLock(); }
     }
     const st = stavnicaState_(ss, me, siteRole_(me) === "admin"); // admins also get the overview of all players
-    return out(Object.assign({ ok: true }, st));
+    return out(Object.assign({ ok: true }, st, casino ? { casino: casino } : {}));
   } catch (err) {
     return out({ ok: false, error: String(err && err.message || err) });
   }
@@ -174,7 +276,15 @@ function stavnicaState_(ss, me, withPeople) {
     .map((r) => ({ ts: new Date(r[0]).getTime(), email: String(r[1] || "").trim().toLowerCase(), name: String(r[2] || ""), amount: Math.trunc(Number(r[3])) || 0, reason: String(r[4] || "") }))
     .filter((a) => a.email && a.amount) : [];
 
-  // Balance: budget − all stakes + payouts (stake × odds) from resolved questions + adjustments
+  // Kazino games, sheet "kazino": Čas | E-naslov | Ime | Igra | Stave | Vložek | Izplačilo | Rezultat
+  const cSheet = ss.getSheetByName(STAVNICA_CASINO_SHEET);
+  const games = cSheet && cSheet.getLastRow() > 1 ? cSheet.getRange(2, 1, cSheet.getLastRow() - 1, 8).getValues()
+    .map((r) => ({ ts: new Date(r[0]).getTime(), email: String(r[1] || "").trim().toLowerCase(), name: String(r[2] || ""), game: String(r[3] || ""), bets: String(r[4] || ""), stake: Number(r[5]) || 0, payout: Number(r[6]) || 0, result: String(r[7] || "") }))
+    .filter((g) => g.email) : [];
+  const myGames = games.filter((g) => g.email === me);
+  const casinoNet = myGames.reduce((t, g) => t + g.payout - g.stake, 0);
+
+  // Balance: budget − all stakes + payouts (stake × odds) from resolved questions + adjustments + kazino
   let staked = 0, won = 0;
   const mine = bets.filter((b) => b.email === me).map((b) => {
     const q = byId[b.question];
@@ -186,7 +296,9 @@ function stavnicaState_(ss, me, withPeople) {
   const recent = bets.slice(-200).reverse().map((b) => ({ ts: b.ts, question: b.question, option: b.option, amount: b.amount, name: b.name }));
   const myAdj = adjs.filter((a) => a.email === me).map((a) => ({ ts: a.ts, amount: a.amount, reason: a.reason }));
   const adjSum = myAdj.reduce((t, a) => t + a.amount, 0);
-  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won + adjSum, staked: staked, won: won, adjusted: adjSum, bets: mine.reverse(), adjustments: myAdj.reverse() } };
+  const casinoMe = { net: casinoNet, staked: myGames.reduce((t, g) => t + g.stake, 0), paid: myGames.reduce((t, g) => t + g.payout, 0), count: myGames.length,
+    games: myGames.slice(-30).reverse().map((g) => ({ ts: g.ts, game: g.game, bets: g.bets, stake: g.stake, payout: g.payout, result: g.result })) };
+  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won + adjSum + casinoNet, staked: staked, won: won, adjusted: adjSum, casino: casinoMe, bets: mine.reverse(), adjustments: myAdj.reverse() } };
   if (withPeople) {
     // Admin overview: every player's balance and all their bets (newest first)
     const byEmail = {};
@@ -206,9 +318,15 @@ function stavnicaState_(ss, me, withPeople) {
       p.adjusted += a.amount;
       p.adjustments.push({ ts: a.ts, amount: a.amount, reason: a.reason });
     });
+    games.forEach((g) => {
+      const p = person(g.email, g.name);
+      if (!p.name) p.name = g.name;
+      p.casino = (p.casino || 0) + g.payout - g.stake;
+      p.casinoGames = (p.casinoGames || 0) + 1;
+    });
     state.people = Object.keys(byEmail).map((k) => {
       const p = byEmail[k];
-      p.balance = STAVNICA_BUDGET - p.staked + p.won + p.adjusted;
+      p.balance = STAVNICA_BUDGET - p.staked + p.won + p.adjusted + (p.casino || 0);
       p.bets.reverse();
       p.adjustments.reverse();
       return p;
