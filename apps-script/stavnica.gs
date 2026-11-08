@@ -31,6 +31,12 @@
  *   Dice (two dice, one roll, bet on the total): t2…t12 exact total (2/12 ×31, 3/11 ×16, 4/10 ×11, 5/9 ×8, 6/8 ×7, 7 ×5),
  *   under 2–6 / over 8–12 (×2, a 7 loses both), odd / even (×2).
  *   (×N = what comes back including the stake.)
+ *
+ * Trgovina (site page #trgovina): real products bought with the same coins. Sheet "trgovina" (created from SHOP_SEED on first
+ * use): ID | Izdelek | Cena | Zaloga. Sheet "nakupi": Čas | E-naslov | Ime | Račun | ID | Izdelek | Količina | Cena | Skupaj | Izdano | Izdal.
+ *   action "buy" {items:[{id, qty}]} → checks stock and balance under the bet lock, lowers the stock, one row per item (+ {receipt})
+ *   action "shop-edit" {id, price?, stock?} and "shop-handout" {receipt, done} → only SHOP_EDITORS and admins
+ *   Balance −= everything bought. Every state has shop: {products, canEdit, receipts (mine), all (editors: everybody's)}.
  */
 const STAVNICA_SHEET_ID = "1Nc9q0aSElmn7I0tIMYxGIa1yS5wdgZFFcHYCEEKN678";
 const STAVNICA_BUDGET = 10;
@@ -39,6 +45,86 @@ const STAVNICA_ADJ_SHEET = "popravki"; // admin balance adjustments (created on 
 const STAVNICA_ADJ_HEADER = ["Čas", "E-naslov", "Ime", "Znesek", "Razlog", "Admin"];
 const STAVNICA_CASINO_SHEET = "kazino";
 const STAVNICA_CASINO_HEADER = ["Čas", "E-naslov", "Ime", "Igra", "Stave", "Vložek", "Izplačilo", "Rezultat"];
+const SHOP_EDITORS = ["marko.pleterski@skavti.si", "tonka.kocjancic@skavti.si"]; // + everyone with role admin
+const SHOP_SEED = [ // [Izdelek, cena, zaloga] – only used to create the "trgovina" sheet; then edit prices / stock there or on the site
+  ["Smetana za kuhanje", 4, 5], ["Hrenovke", 6, 4], ["Sirni namaz", 4, 3], ["Skuta", 4, 3], ["Puter", 5, 2], ["Kisla smetana", 3, 1],
+  ["Sladka smetana", 4, 1], ["Pašteta (paket)", 5, 1], ["Krekerji", 4, 1], ["Čips", 5, 1], ["Masleni piškoti", 4, 3], ["Napolitanke", 4, 3],
+  ["Bananice (paket)", 5, 2], ["Čokolada", 6, 3], ["Slane palčke", 3, 1], ["Twisted palčke", 4, 1], ["Jabolčni kis", 3, 1], ["Marmelada", 5, 2],
+  ["Rdeča pesa", 3, 3], ["Čoko namaz", 8, 2], ["Arašidovo maslo", 8, 1], ["Pecilni prašek (paket)", 2, 1], ["Suhi kvas (paket)", 2, 1],
+  ["Tonka zucker", 3, 2], ["Vanilijev sladkor (paket)", 2, 1], ["Peppermint čaj", 3, 2], ["Čaj mešano sadje", 3, 1], ["Čaj gozdni sadeži", 3, 1],
+  ["Barcaffe (paket)", 9, 1], ["Bosanska kava (paket)", 7, 2], ["Rjavi sladkor", 3, 1], ["Sladkor v prahu", 3, 1], ["Paradižnikova mezga", 3, 1],
+  ["Pšenični zdrob", 3, 1], ["Instant polenta", 3, 1], ["Sladkor", 3, 2], ["Suhe marelice", 6, 1], ["Mešani oreščki", 7, 1], ["Suhe slive", 5, 2],
+  ["Med", 8, 1], ["Kakav", 5, 1], ["Piškoti", 4, 1], ["Česen", 2, 1], ["Lizike in bonboni", 4, 1], ["Tuna", 5, 2], ["Gorenjka čokolada", 7, 1],
+];
+const shopId_ = (name) => String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+function shopCanEdit_(me) { return SHOP_EDITORS.indexOf(me) >= 0 || siteRole_(me) === "admin"; }
+function shopSheet_(ss) {
+  let sh = ss.getSheetByName("trgovina");
+  if (!sh) {
+    sh = ss.insertSheet("trgovina");
+    sh.getRange(1, 1, SHOP_SEED.length + 1, 4).setValues([["ID", "Izdelek", "Cena", "Zaloga"]].concat(SHOP_SEED.map((p) => [shopId_(p[0]), p[0], p[1], p[2]])));
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+/** [{id, name, price, stock, row}] (row = sheet row number) */
+function shopProducts_(ss) {
+  const sh = shopSheet_(ss), rows = sh.getDataRange().getValues();
+  const out = [];
+  for (let i = 1; i < rows.length; i++) {
+    const name = String(rows[i][1] || "").trim();
+    if (!name) continue;
+    out.push({ id: String(rows[i][0] || shopId_(name)), name: name, price: Math.max(0, Math.round(Number(rows[i][2]) || 0)), stock: Math.max(0, Math.floor(Number(rows[i][3]) || 0)), row: i + 1 });
+  }
+  return out;
+}
+function shopNakupi_(ss) {
+  let sh = ss.getSheetByName("nakupi");
+  if (!sh) { sh = ss.insertSheet("nakupi"); sh.appendRow(["Čas", "E-naslov", "Ime", "Račun", "ID", "Izdelek", "Količina", "Cena", "Skupaj", "Izdano", "Izdal"]); sh.setFrozenRows(1); }
+  return sh;
+}
+/** Buy: caller holds the lock. Returns the receipt or an error text. */
+function shopBuy_(ss, me, name, body) {
+  const want = {};
+  [].concat(body.items || []).slice(0, 60).forEach((it) => { const q = Math.floor(Number(it && it.qty)); if (it && it.id && q >= 1) want[String(it.id)] = (want[String(it.id)] || 0) + q; });
+  const ids = Object.keys(want);
+  if (!ids.length) return "košarica je prazna";
+  const products = shopProducts_(ss), byId = {};
+  products.forEach((p) => (byId[p.id] = p));
+  let total = 0;
+  for (let i = 0; i < ids.length; i++) {
+    const p = byId[ids[i]];
+    if (!p) return "izdelka ni več v trgovini";
+    if (want[p.id] > p.stock) return p.stock ? "»" + p.name + "« je na zalogi le še " + p.stock : "»" + p.name + "« je razprodan";
+    total += p.price * want[p.id];
+  }
+  const st = stavnicaState_(ss, me);
+  if (total > st.me.balance) return "premalo zlatnikov (" + st.me.balance + ", potrebuješ " + total + ")";
+  const receipt = Utilities.formatDate(new Date(), "Europe/Ljubljana", "MMdd-HHmmss") + "-" + Math.floor(Math.random() * 90 + 10);
+  const now = new Date(), sh = shopNakupi_(ss), pSheet = shopSheet_(ss);
+  const rows = ids.map((id) => { const p = byId[id]; return [now, me, name, receipt, p.id, p.name, want[id], p.price, p.price * want[id], "", ""]; });
+  sh.getRange(sh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+  ids.forEach((id) => pSheet.getRange(byId[id].row, 4).setValue(byId[id].stock - want[id]));
+  SpreadsheetApp.flush();
+  return { id: receipt, total: total };
+}
+/** Receipts from the "nakupi" sheet: [{id, ts, email, name, items:[{name, qty, price}], total, done, by}] newest first */
+function shopReceipts_(ss) {
+  const sh = ss.getSheetByName("nakupi");
+  if (!sh || sh.getLastRow() < 2) return [];
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 11).getValues(), by = {}, order = [];
+  rows.forEach((r) => {
+    const id = String(r[3] || "");
+    if (!id) return;
+    let rc = by[id];
+    if (!rc) { rc = by[id] = { id: id, ts: new Date(r[0]).getTime(), email: String(r[1]).toLowerCase(), name: String(r[2] || ""), items: [], total: 0, done: false, by: "" }; order.push(id); }
+    rc.items.push({ name: String(r[5]), qty: Number(r[6]) || 0, price: Number(r[7]) || 0 });
+    rc.total += Number(r[8]) || 0;
+    if (r[9] === true || String(r[9]).toUpperCase() === "TRUE") { rc.done = true; rc.by = String(r[10] || ""); }
+  });
+  return order.reverse().map((id) => by[id]);
+}
+
 const CASINO_RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 const CASINO_MAX_STAKE = 1000;
 
@@ -167,8 +253,35 @@ function handleStavnica(body) {
         SpreadsheetApp.flush();
       } finally { lock.releaseLock(); }
     }
+    let receipt = null;
+    if (body.action === "buy") {
+      const lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        receipt = shopBuy_(ss, me, String(tok.name || body.name || "").slice(0, 100), body);
+        if (typeof receipt === "string") return out({ ok: false, error: receipt });
+      } finally { lock.releaseLock(); }
+    }
+    if (body.action === "shop-edit" || body.action === "shop-handout") {
+      if (!shopCanEdit_(me)) return out({ ok: false, error: "ni dostopa" });
+      const lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        if (body.action === "shop-edit") {
+          const p = shopProducts_(ss).find((x) => x.id === String(body.id));
+          if (!p) return out({ ok: false, error: "izdelek ne obstaja" });
+          const sh = shopSheet_(ss);
+          if (body.price !== undefined && body.price !== "") { const v = Math.round(Number(body.price)); if (!(v >= 0 && v <= 10000)) return out({ ok: false, error: "neveljavna cena" }); sh.getRange(p.row, 3).setValue(v); }
+          if (body.stock !== undefined && body.stock !== "") { const v = Math.floor(Number(body.stock)); if (!(v >= 0 && v <= 10000)) return out({ ok: false, error: "neveljavna zaloga" }); sh.getRange(p.row, 4).setValue(v); }
+        } else {
+          const sh = shopNakupi_(ss), rows = sh.getLastRow() > 1 ? sh.getRange(2, 4, sh.getLastRow() - 1, 1).getValues() : [];
+          rows.forEach((r, i) => { if (String(r[0]) === String(body.receipt)) sh.getRange(i + 2, 10, 1, 2).setValues([[body.done !== false, body.done !== false ? me : ""]]); });
+        }
+        SpreadsheetApp.flush();
+      } finally { lock.releaseLock(); }
+    }
     const st = stavnicaState_(ss, me, siteRole_(me) === "admin"); // admins also get the overview of all players
-    return out(Object.assign({ ok: true }, st, casino ? { casino: casino } : {}));
+    return out(Object.assign({ ok: true }, st, casino ? { casino: casino } : {}, receipt ? { receipt: receipt } : {}));
   } catch (err) {
     return out({ ok: false, error: String(err && err.message || err) });
   }
@@ -265,6 +378,12 @@ function stavnicaState_(ss, me, withPeople) {
     .filter((g) => g.email) : [];
   const myGames = games.filter((g) => g.email === me);
   const casinoNet = myGames.reduce((t, g) => t + g.payout - g.stake, 0);
+  // Trgovina: everything bought is taken off the balance
+  const receipts = shopReceipts_(ss), spentBy = {};
+  receipts.forEach((r) => (spentBy[r.email] = (spentBy[r.email] || 0) + r.total));
+  const shopSpent = spentBy[me] || 0, canEdit = shopCanEdit_(me);
+  const shop = { products: shopProducts_(ss).map((p) => ({ id: p.id, name: p.name, price: p.price, stock: p.stock })), canEdit: canEdit, spent: shopSpent,
+    receipts: receipts.filter((r) => r.email === me), all: canEdit ? receipts : undefined };
 
   // Balance: budget − all stakes + payouts (stake × odds) from resolved questions + adjustments + kazino
   let staked = 0, won = 0;
@@ -282,7 +401,7 @@ function stavnicaState_(ss, me, withPeople) {
     games: myGames.slice(-30).reverse().map((g) => ({ ts: g.ts, game: g.game, bets: g.bets, stake: g.stake, payout: g.payout, result: g.result })) };
   // Everybody's latest kazino games (site: Piratski kazino → Vse igre)
   const casinoRecent = games.slice(-300).reverse().map((g) => ({ ts: g.ts, email: g.email, name: g.name, game: g.game, bets: g.bets, stake: g.stake, payout: g.payout, result: g.result }));
-  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, casinoRecent: casinoRecent, me: { balance: STAVNICA_BUDGET - staked + won + adjSum + casinoNet, staked: staked, won: won, adjusted: adjSum, casino: casinoMe, bets: mine.reverse(), adjustments: myAdj.reverse() } };
+  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, casinoRecent: casinoRecent, shop: shop, me: { balance: STAVNICA_BUDGET - staked + won + adjSum + casinoNet - shopSpent, shopSpent: shopSpent, staked: staked, won: won, adjusted: adjSum, casino: casinoMe, bets: mine.reverse(), adjustments: myAdj.reverse() } };
   if (withPeople) {
     // Admin overview: every player's balance and all their bets (newest first)
     const byEmail = {};
@@ -308,9 +427,11 @@ function stavnicaState_(ss, me, withPeople) {
       p.casino = (p.casino || 0) + g.payout - g.stake;
       p.casinoGames = (p.casinoGames || 0) + 1;
     });
+    receipts.forEach((r) => { const p = person(r.email, r.name); if (!p.name) p.name = r.name; });
     state.people = Object.keys(byEmail).map((k) => {
       const p = byEmail[k];
-      p.balance = STAVNICA_BUDGET - p.staked + p.won + p.adjusted + (p.casino || 0);
+      p.shop = spentBy[k] || 0;
+      p.balance = STAVNICA_BUDGET - p.staked + p.won + p.adjusted + (p.casino || 0) - p.shop;
       p.bets.reverse();
       p.adjustments.reverse();
       return p;
