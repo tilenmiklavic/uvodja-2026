@@ -225,7 +225,7 @@ function handleStavnica(body) {
         if (amount > st.me.balance) return out({ ok: false, error: "premalo zlatnikov (" + st.me.balance + ")" });
         const sh = ss.getSheetByName("bets");
         if (sh.getLastRow() === 0) sh.appendRow(STAVNICA_BET_HEADER);
-        sh.appendRow([new Date(), q.question, String(body.option), amount, tok.name || body.name || "", me]);
+        sh.appendRow([new Date(), stavnicaText_(q.question), stavnicaText_(String(body.option)), amount, tok.name || body.name || "", me]);
         SpreadsheetApp.flush();
       } finally { lock.releaseLock(); }
       const opt = { yes: "Da", no: "Ne" }[String(body.option).toLowerCase()] || String(body.option);
@@ -357,8 +357,12 @@ function stavnicaState_(ss, me, withPeople) {
   if (changed) props.setProperty("sv_resolved", JSON.stringify(resolvedAt));
 
   const bSheet = ss.getSheetByName("bets");
-  const bRows = bSheet.getLastRow() > 1 ? bSheet.getRange(2, 1, bSheet.getLastRow() - 1, 6).getValues() : [];
-  const bets = bRows.map((r) => ({ ts: new Date(r[0]).getTime(), question: String(r[1]).trim(), option: String(r[2]), amount: Number(r[3]) || 0, name: String(r[4] || ""), email: String(r[5] || "").toLowerCase() }))
+  const bRange = bSheet.getLastRow() > 1 ? bSheet.getRange(2, 1, bSheet.getLastRow() - 1, 6) : null;
+  const bRows = bRange ? bRange.getValues() : [];
+  // Question and option as shown in the sheet: Sheets turned some options into dates ("6-10" → 6. 10.), and
+  // String(Date) would never match the option again (older rows were written before stavnicaText_ was used here)
+  const bShown = bRange ? bRange.getDisplayValues() : [];
+  const bets = bRows.map((r, i) => ({ ts: new Date(r[0]).getTime(), question: String(bShown[i][1]).trim(), option: String(bShown[i][2]).trim(), amount: Number(r[3]) || 0, name: String(r[4] || ""), email: String(r[5] || "").toLowerCase() }))
     .filter((b) => byId[b.question] && b.amount > 0);
 
   // How many different people bet on each option (shown as %, doesn't affect the fixed odds)
@@ -449,7 +453,9 @@ function stavnicaState_(ss, me, withPeople) {
 }
 
 /* —— Admin: new questions and results from the site (sheet "questions": question | answer | options | expires | image | resolved) —— */
-const stavnicaText_ = (v) => (/^[=+\-@]/.test(v) ? "'" + v : v); // keep Sheets from reading text as a formula
+// Store user text as plain text: the leading ' stops Sheets from reading it as a formula (=, +, -, @), a date
+// ("6-10" → 6. 10.) or a number; it isn't part of the cell's value or display.
+const stavnicaText_ = (v) => (v === "" || v == null ? "" : "'" + v);
 function stavnicaHead_(sh) {
   return sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map((h) => String(h).trim().toLowerCase());
 }
