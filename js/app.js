@@ -213,7 +213,8 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
-const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "vprasanja", "analitika"];
+const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "opravila", "vprasanja", "analitika"];
+const OPEN_PAGES = ["opravila"]; // shown to every signed-in role, whatever data/access.json says (Zadolžitve – daily chores)
 
 function loadUser() {
   try { const u = JSON.parse(localStorage.getItem("uvodja.user") || "null"); return u?.email ? u : null; } catch { return null; }
@@ -250,6 +251,7 @@ function pagesForRole(role) {
     const list = pages.length ? pages : (acc.default || []);
     const set = new Set(list.includes("*") ? ALL_PAGES : list);
     if (set.delete("zadolzitve")) set.add("teme");
+    OPEN_PAGES.forEach((p) => set.add(p));
     return set;
   }
   const r = acc.roles[role];
@@ -258,6 +260,7 @@ function pagesForRole(role) {
   const set = new Set(!allow.length || allow.includes("*") ? ALL_PAGES : allow);
   if (set.delete("zadolzitve")) set.add("teme"); // Zadolžitve now live on the Teme page
   (r.deny || []).forEach((x) => (x === "*" ? set.clear() : set.delete(x)));
+  OPEN_PAGES.forEach((p) => set.add(p));
   return set;
 }
 function allowedPages(email) {
@@ -406,6 +409,7 @@ function setTab(name) {
   if (name === "ekipa") { ensureWorkloadChart(); renderOcene(); }
   if (name === "teme") decorateTemeScores();
   if (name === "vprasanja") renderVprasanja();
+  if (name === "opravila") renderOpravila();
   const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar|rutke|kazino)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
   state.wordleActive = name === "zabava" && zb === "wordle";
   state.papigaActive = name === "zabava" && zb === "papiga";
@@ -1695,7 +1699,7 @@ function applyHash() {
     return;
   }
   if (hash === "info") { setTab("domov"); history.replaceState(null, "", "#domov"); return; }
-  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "vprasanja", "analitika"].includes(hash)) {
+  if (["domov", "gradiva", "ekipa", "teme", "os", "uu", "preverbe", "zabava", "opravila", "vprasanja", "analitika"].includes(hash)) {
     setTab(hash);
     if (hash === "ekipa") showEkipaList();
     if (hash === "teme") showTemeList();
@@ -3440,6 +3444,72 @@ document.addEventListener("click", (e) => {
   if (play && !play.disabled) czPlay(play.dataset.czPlay);
 });
 
+/* —— Zadolžitve (#opravila, every role): pick today's chore; places per chore are limited. The list, the places and who took
+   what come from apps-script/zadolzitve.gs (GET ?type=zadolzitve; POST pick / leave, checked under a lock). —— */
+const op = { data: undefined, busy: false, msg: "" };
+async function loadOpravila() {
+  const cfg = await wdConfig();
+  if (!cfg?.scriptUrl) throw new Error("config");
+  const j = await (await fetch(`${cfg.scriptUrl}${cfg.scriptUrl.includes("?") ? "&" : "?"}type=zadolzitve&t=${Date.now()}`)).json();
+  if (!j.ok) throw new Error(j.error || "napaka");
+  if (!Array.isArray(j.chores)) throw new Error("strežnik še ne pozna zadolžitev (Apps Script ni posodobljen)");
+  return j;
+}
+async function renderOpravila(force = false) {
+  const box = $("#op-body");
+  if (!box) return;
+  if (op.data === undefined || force) {
+    if (op.data === undefined) box.innerHTML = `<p class="muted-text">Nalagam zadolžitve …</p>`;
+    try { op.data = await loadOpravila(); op.err = ""; } catch (err) { op.err = err?.message || String(err); if (op.data === undefined) op.data = null; }
+  }
+  drawOpravila();
+}
+function drawOpravila() {
+  const box = $("#op-body");
+  if (!box) return;
+  const d = op.data, me = state.user?.email?.toLowerCase();
+  if (!d) { box.innerHTML = `<div class="card sv-empty"><p>Zadolžitev ni bilo mogoče naložiti.</p><p class="muted-text">${esc(op.err || "")}</p><button type="button" class="btn ghost" data-op-reload>Poskusi znova</button></div>`; return; }
+  const mine = d.chores.find((c) => c.people.some((p) => p.email === me));
+  const free = d.chores.reduce((a, c) => a + Math.max(0, c.cap - c.people.length), 0), total = d.chores.reduce((a, c) => a + c.cap, 0);
+  $("#op-sub").textContent = `${Number(d.date.slice(8))}. ${Number(d.date.slice(5, 7))}. · prostih mest ${free} od ${total}`;
+  box.innerHTML = `<div class="card op-mine${mine ? " is-set" : ""}">${mine ? `<span>Tvoja današnja zadolžitev:</span><strong>${esc(mine.name)}</strong><button type="button" class="link-btn" data-op-leave ${op.busy ? "disabled" : ""}>Odjavi se</button>` : `<span>Še nisi izbral/a zadolžitve – tapni »Izberi« pri eni od spodnjih.</span>`}</div>
+    ${op.msg ? `<p class="op-msg" role="status">${esc(op.msg)}</p>` : ""}
+    <ul class="op-list">${d.chores.map((c) => {
+      const n = c.people.length, full = n >= c.cap, isMine = mine === c;
+      const who = c.people.map((p) => { const w = wdWho(p.email, p.name); return `<span class="op-person" title="${esc(w.title)}">${w.av}<span>${esc(w.label)}</span></span>`; }).join("");
+      const btn = isMine ? `<span class="op-tag">✓ Tvoja</span>`
+        : full ? `<span class="op-tag is-full">Polno</span>`
+        : `<button type="button" class="btn ${mine ? "ghost" : "primary"} op-pick" data-op-pick="${esc(c.name)}" ${op.busy ? "disabled" : ""}>${mine ? "Zamenjaj" : "Izberi"}</button>`;
+      return `<li class="card op-item${isMine ? " is-mine" : ""}${full && !isMine ? " is-full" : ""}">
+        <div class="op-head"><strong class="op-name">${esc(c.name)}</strong><span class="op-count${full ? " is-full" : ""}">${n}/${c.cap}</span>${btn}</div>
+        <div class="op-slots" aria-hidden="true">${Array.from({ length: c.cap }, (_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("")}</div>
+        ${n ? `<div class="op-people">${who}</div>` : `<p class="muted-text op-none">Še nihče.</p>`}
+      </li>`;
+    }).join("")}</ul>
+    <p class="wd-score-meta muted-text">${op.err ? `Osveževanje ni uspelo (${esc(op.err)}) · ` : ""}<button type="button" class="link-btn" data-op-reload>Osveži</button></p>`;
+}
+async function opAct(item) {
+  if (op.busy) return;
+  op.busy = true; op.msg = ""; drawOpravila();
+  try {
+    const cfg = await wdConfig(), cred = await wdFreshToken();
+    if (!cred) throw new Error("prijava je potekla – osveži jo v meniju");
+    const res = await wdPost(cfg.scriptUrl, { type: "zadolzitve", ...item }, cred);
+    if (Array.isArray(res?.chores)) op.data = res;
+    if (!res?.ok) op.msg = res?.error === "polno" ? "Žal je ta zadolžitev medtem že polna – izberi drugo." : `Ni uspelo: ${res?.error || "napaka"}`;
+  } catch (err) { op.msg = `Ni uspelo: ${err?.message || err}`; }
+  op.busy = false;
+  drawOpravila();
+}
+document.addEventListener("click", (e) => {
+  const pick = e.target.closest?.("[data-op-pick]");
+  if (pick && !pick.disabled) { opAct({ action: "pick", chore: pick.dataset.opPick }); return; }
+  if (e.target.closest?.("[data-op-leave]")) { if (confirm("Se odjavim od današnje zadolžitve?")) opAct({ action: "leave" }); return; }
+  if (e.target.closest?.("[data-op-reload]")) renderOpravila(true);
+});
+setInterval(() => { if (currentTab === "opravila" && !document.hidden && !op.busy) renderOpravila(true); }, 20 * 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "opravila" && !op.busy) renderOpravila(true); });
+
 async function init() {
   await loadData();
   state.mobileDay = upcomingDayId() || ttDays()[0]?.id;
@@ -3538,7 +3608,7 @@ function logVisit(page) {
     }).catch(() => {});
   } catch {}
 }
-const PAGE_LABEL = { domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", vprasanja: "Vprašanja", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
+const PAGE_LABEL = { opravila: "Zadolžitve", domov: "Domov", casovnica: "Časovnica", teme: "Teme", tema: "Tema (podstran)", ekipa: "Ekipa", oseba: "Oseba (podstran)", os: "OS", preverbe: "Preverbe", vprasanja: "Vprašanja", analitika: "Analitika", zabava: "Zabava", noaccess: "Brez dostopa" };
 /* Role for an Analitika row: by e-mail, else by matching the name to a listed person (access.json people), else the default role */
 function visitRole(p) {
   if (p.email) return roleOf(p.email);
