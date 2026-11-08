@@ -2213,3 +2213,8 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .tg-stamp.wait { color: #c0571b; border-color: #c0571b; }
 .tg-r-foot { margin: .4rem 0 0; color: #666; text-align: center; font-size: .72rem; }
 .tg-receipt .tg-hand { display: block; width: 100%; margin-top: .5rem; font-family: var(--font); }
+
+/* Admin page switch (Zadolžitve, Trgovina) */
+.flag-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 1rem; border: 1px dashed #e5a00d; background: rgba(229,160,13,.1); font-size: .9rem; }
+.flag-bar[hidden] { display: none; }
+.flag-bar.is-on { border-style: solid; border-color: #6fbf67; background: rgba(111,191,103,.1); }
