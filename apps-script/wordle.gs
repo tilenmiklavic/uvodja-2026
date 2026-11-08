@@ -1,4 +1,4 @@
-// SCRIPT_VERSION: v10 (2026-11-06) - Rutke (rutke.gs); v9: Bum-Bar (bumbar.gs), admin push notifications (push.gs)
+// SCRIPT_VERSION: v11 (2026-11-08) - Zadolžitve (zadolzitve.gs); v10: Rutke (rutke.gs); v9: Bum-Bar (bumbar.gs), admin push notifications (push.gs)
 /**
  * U Vodja 2026 – Wordle rezultati (Google Apps Script, bound to the results Sheet).
  * Sheet tab "rezultati", header row: Timestamp | Email | Name | Date | Guesses | Solved | Ms
@@ -84,6 +84,7 @@ function doPost(e) {
     if (body.type === 'papiga') return handlePapiga(body);
     if (body.type === 'bumbar') return handleBumbar(body);
     if (body.type === 'rutke') return handleRutke(body);
+    if (body.type === 'zadolzitve') return handleZadolzitve(body);
     if (body.type === 'push') return handlePush(body);
     if (body.type === 'visitstats') return visitStatsAuth_(body);
     if (body.type === 'preverba') return handlePreverba(body);
@@ -132,7 +133,8 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.type === 'papiga') return papigaResults_(e.parameter.callback);
   if (e && e.parameter && e.parameter.type === 'bumbar') return bumbarResults_(e.parameter.callback);
   if (e && e.parameter && e.parameter.type === 'rutke') return rutkeResults_(e.parameter.callback);
-  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v10' });
+  if (e && e.parameter && e.parameter.type === 'zadolzitve') return zadolzitveResults_(e.parameter.callback);
+  if (e && e.parameter && e.parameter.type === 'version') return json_({ ok: true, version: 'v11' });
   var cb = e && e.parameter && e.parameter.callback;
   if (e && e.parameter && e.parameter.type === 'visits') return json_({ ok: false, error: 'use_post' }, cb);
   try {

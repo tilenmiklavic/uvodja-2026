@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="U Vodja" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
-  <link rel="stylesheet" href="css/styles.css?v=112" />
+  <link rel="stylesheet" href="css/styles.css?v=113" />
   <script src="https://accounts.google.com/gsi/client" async></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,6 +31,7 @@
       <nav class="tabs" id="main-nav" aria-label="Glavna navigacija">
         <button type="button" class="tab" data-tab="casovnica" aria-selected="true">Časovnica</button>
         <button type="button" class="tab" data-tab="uu" aria-selected="false">UU</button>
+        <button type="button" class="tab" data-tab="opravila" aria-selected="false">Zadolžitve</button>
         <button type="button" class="nav-more-toggle" id="nav-more-toggle" aria-expanded="false" aria-controls="nav-more" aria-label="Več zavihkov">≡</button>
         <div class="nav-more" id="nav-more">
           <button type="button" class="tab" data-tab="domov" aria-selected="false">Domov</button>
@@ -334,6 +335,13 @@
         </div>
       </div>
     </section>
+    <section id="tab-opravila" class="tab-panel" hidden>
+      <div class="opravila">
+        <div class="wd-head"><h2>Zadolžitve</h2><p class="muted-text wd-sub" id="op-sub"></p></div>
+        <p class="muted-text op-lede">Izberi, kaj boš danes pospravljal/a. Vsak izbere eno zadolžitev; ko je mest zmanjka, je polna. Izbiro lahko zamenjaš ali se odjaviš.</p>
+        <div id="op-body"><p class="muted-text">Nalagam zadolžitve …</p></div>
+      </div>
+    </section>
     <section id="tab-zabava" class="tab-panel" hidden>
       <nav class="zb-pick" id="zb-pick" aria-label="Zabava">
         <a class="zb-choice" href="#zabava/wordle"><img src="assets/zabava/wordle.webp" alt="" width="1200" height="480" /><span class="zb-choice-label">Dnevni Wordle</span></a>
@@ -444,6 +452,6 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=131" type="module"></script>
+  <script src="js/app.js?v=132" type="module"></script>
 </body>
 </html>
