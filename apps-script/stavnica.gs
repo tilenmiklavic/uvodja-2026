@@ -60,7 +60,9 @@ const SHOP_SEED = [ // [Izdelek, cena, zaloga] – only used to create the "trgo
   ["Med", 8, 1], ["Kakav", 5, 1], ["Piškoti", 4, 1], ["Česen", 2, 1], ["Lizike in bonboni", 4, 1], ["Tuna", 5, 2], ["Gorenjka čokolada", 7, 1],
 ];
 const shopId_ = (name) => String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-function shopCanEdit_(me) { return SHOP_EDITORS.indexOf(me) >= 0 || siteRole_(me) === "admin"; }
+/** Admin = role "admin" in the mails sheet, or an admin account from STATS_ADMINS (wordle.gs; e.g. a personal Gmail) – same as the rest of the site. */
+function stavnicaIsAdmin_(me) { return siteRole_(me) === "admin" || (typeof STATS_ADMINS !== "undefined" && STATS_ADMINS.indexOf(me) >= 0); }
+function shopCanEdit_(me) { return SHOP_EDITORS.indexOf(me) >= 0 || stavnicaIsAdmin_(me); }
 function shopSheet_(ss) {
   let sh = ss.getSheetByName("trgovina");
   if (!sh) {
@@ -231,7 +233,7 @@ function handleStavnica(body) {
         url: "./#zabava/stavnica/pregled" }, me); // push.gs: admins' devices, not the bettor's own
     }
     if (body.action === "adjust") {
-      if (siteRole_(me) !== "admin") return out({ ok: false, error: "ni dostopa" });
+      if (!stavnicaIsAdmin_(me)) return out({ ok: false, error: "ni dostopa" });
       const email = String(body.email || "").trim().toLowerCase(), amount = Math.trunc(Number(body.amount));
       const reason = String(body.reason || "").trim().slice(0, 200);
       if (!/^[^@\s]+@[^@\s]+$/.test(email)) return out({ ok: false, error: "neveljaven e-naslov" });
@@ -247,7 +249,7 @@ function handleStavnica(body) {
       } finally { lock.releaseLock(); }
     }
     if (body.action === "create" || body.action === "resolve") {
-      if (siteRole_(me) !== "admin") return out({ ok: false, error: "ni dostopa" });
+      if (!stavnicaIsAdmin_(me)) return out({ ok: false, error: "ni dostopa" });
       const lock = LockService.getScriptLock();
       lock.waitLock(10000);
       try {
@@ -283,7 +285,7 @@ function handleStavnica(body) {
         SpreadsheetApp.flush();
       } finally { lock.releaseLock(); }
     }
-    const st = stavnicaState_(ss, me, siteRole_(me) === "admin"); // admins also get the overview of all players
+    const st = stavnicaState_(ss, me, stavnicaIsAdmin_(me)); // admins also get the overview of all players
     return out(Object.assign({ ok: true }, st, casino ? { casino: casino } : {}, receipt ? { receipt: receipt } : {}));
   } catch (err) {
     return out({ ok: false, error: String(err && err.message || err) });

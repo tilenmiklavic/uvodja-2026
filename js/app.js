@@ -4145,7 +4145,7 @@ function svDetail(st, me, i) {
         <p class="sv-status" role="status" aria-live="polite"></p>
       </form>` : ""}
     </article>
-    ${st.people && effectiveRole(state.user?.email) === "admin" && q.options.length ? svResolveBox(q, i) : ""}
+    ${st.people && effectiveRole(state.user?.email) === "admin" ? svResolveBox(q, i) : ""}
     <section class="sv-list"><h3>Zadnje stave na to vprašanje</h3>${svRecent(st.recent.filter((b) => b.question === q.id), false)}</section>`;
 }
 /* Admin: new question (written to the sheet "questions" by Apps Script) */
@@ -4170,7 +4170,7 @@ function svCreateForm() {
 function svResolveBox(q, i) {
   return `<section class="card sv-resolve" aria-label="Razreši stavo">
     <h3>Razreši stavo <span class="muted-text">· samo admin</span></h3>
-    <p class="muted-text sv-help">${q.cancelled ? "Stava je <strong>preklicana</strong> – vsi so dobili vložek nazaj. Lahko jo znova odpreš ali razrešiš." : q.result ? `Rezultat je <strong>${esc(svLabel(q, q.result))}</strong>. Lahko ga spremeniš, stavo prekličeš ali znova odpreš.` : "Izberi pravilno možnost – zmagovalci takoj dobijo izplačilo, stave se zaprejo. Ali pa stavo prekliči – vsi dobijo vložek nazaj."}</p>
+    <p class="muted-text sv-help">${!q.options.length && !q.cancelled ? "Ta stava še nima možnosti – lahko jo le prekličeš." : q.cancelled ? "Stava je <strong>preklicana</strong> – vsi so dobili vložek nazaj. Lahko jo znova odpreš ali razrešiš." : q.result ? `Rezultat je <strong>${esc(svLabel(q, q.result))}</strong>. Lahko ga spremeniš, stavo prekličeš ali znova odpreš.` : "Izberi pravilno možnost – zmagovalci takoj dobijo izplačilo, stave se zaprejo. Ali pa stavo prekliči – vsi dobijo vložek nazaj."}</p>
     <div class="sv-resolve-btns">${q.options.map((o) => `<button type="button" class="btn ${q.result === o ? "primary" : "ghost"}" data-sv-resolve="${i}" data-result="${esc(o)}"${q.result === o ? " disabled" : ""}>${esc(svLabel(q, o))}</button>`).join("")}
       ${q.result ? `<button type="button" class="btn ghost" data-sv-resolve="${i}" data-result="">↺ Znova odpri</button>` : ""}
       ${q.cancelled ? "" : `<button type="button" class="btn ghost sv-cancel-btn" data-sv-resolve="${i}" data-cancel="1">✕ Prekliči stavo</button>`}</div>
