@@ -25,7 +25,8 @@
  * Kazino (site tabs "🤫 1" roulette and "🤫 2" dice): action "roulette" {bets:[{k, a}]} / "dice" {bets:[{k, a}]}.
  * The result is drawn here (never in the browser), the stake is checked against the balance under the same lock as bets,
  * and every game is one row in sheet "kazino" (created on first use): Čas | E-naslov | Ime | Igra | Stave | Vložek | Izplačilo | Rezultat.
- * Balance = budget − stakes + payouts + adjustments + Σ(kazino payout − kazino stake). The reply has the new state + {casino: result}.
+ * Balance = budget − stakes + payouts + adjustments + Σ(kazino payout − kazino stake). The reply has the new state + {casino: result};
+ * every state also has casinoRecent = everybody's latest 300 games (newest first) for the site's "Vse igre" overview.
  *   Roulette (European, single 0) keys: n0…n36 (×36), red/black/even/odd/low/high (×2), d1–d3 dozens, c1–c3 columns (×3).
  *   Dice (two dice, one roll, bet on the total): t2…t12 exact total (2/12 ×31, 3/11 ×16, 4/10 ×11, 5/9 ×8, 6/8 ×7, 7 ×5),
  *   under 2–6 / over 8–12 (×2, a 7 loses both), odd / even (×2).
@@ -279,7 +280,9 @@ function stavnicaState_(ss, me, withPeople) {
   const adjSum = myAdj.reduce((t, a) => t + a.amount, 0);
   const casinoMe = { net: casinoNet, staked: myGames.reduce((t, g) => t + g.stake, 0), paid: myGames.reduce((t, g) => t + g.payout, 0), count: myGames.length,
     games: myGames.slice(-30).reverse().map((g) => ({ ts: g.ts, game: g.game, bets: g.bets, stake: g.stake, payout: g.payout, result: g.result })) };
-  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, me: { balance: STAVNICA_BUDGET - staked + won + adjSum + casinoNet, staked: staked, won: won, adjusted: adjSum, casino: casinoMe, bets: mine.reverse(), adjustments: myAdj.reverse() } };
+  // Everybody's latest kazino games (site: Piratski kazino → Vse igre)
+  const casinoRecent = games.slice(-300).reverse().map((g) => ({ ts: g.ts, email: g.email, name: g.name, game: g.game, bets: g.bets, stake: g.stake, payout: g.payout, result: g.result }));
+  const state = { budget: STAVNICA_BUDGET, questions: questions, recent: recent, casinoRecent: casinoRecent, me: { balance: STAVNICA_BUDGET - staked + won + adjSum + casinoNet, staked: staked, won: won, adjusted: adjSum, casino: casinoMe, bets: mine.reverse(), adjustments: myAdj.reverse() } };
   if (withPeople) {
     // Admin overview: every player's balance and all their bets (newest first)
     const byEmail = {};

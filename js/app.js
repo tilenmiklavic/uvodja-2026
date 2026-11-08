@@ -418,7 +418,7 @@ function setTab(name) {
   if (name === "zabava") {
     $("#zb-pick").hidden = !!zb; $("#zb-back").hidden = !zb;
     $("#wordle").hidden = zb !== "wordle"; $("#stavnica").hidden = zb !== "stavnica"; $("#papiga").hidden = zb !== "papiga"; $("#bumbar").hidden = zb !== "bumbar"; $("#rutke").hidden = zb !== "rutke"; $("#kazino").hidden = zb !== "kazino";
-    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga(); else if (zb === "bumbar") renderBumbar(); else if (zb === "rutke") renderRutke(); else if (zb === "kazino") { sv.czView = zbm[2] === "kocke" ? "kocke" : "ruleta"; renderKazino(); }
+    if (zb === "wordle") renderWordle(); else if (zb === "stavnica") { sv.view = zbm[2] || ""; renderStavnica(); } else if (zb === "papiga") renderPapiga(); else if (zb === "bumbar") renderBumbar(); else if (zb === "rutke") renderRutke(); else if (zb === "kazino") { sv.czView = ["kocke", "igre"].includes(zbm[2]) ? zbm[2] : "ruleta"; renderKazino(); }
     if (zb) window.scrollTo(0, 0);
   }
   $("#nav-more-toggle")?.classList.toggle("has-active", !!$(`#nav-more [data-tab="${name}"]`));
@@ -1706,7 +1706,7 @@ function applyHash() {
   if (/^analitika\/(obiski|svod|teme|wordle|papiga|bumbar)$/.test(hash)) { setTab("analitika"); return; }
   const oldCz = /^zabava\/stavnica\/(ruleta|kocke)$/.exec(hash); // the casino used to be Stavnica tabs "🤫 1" / "🤫 2"
   if (oldCz) { history.replaceState(null, "", `#zabava/kazino/${oldCz[1]}`); setTab("zabava"); return; }
-  if (/^zabava\/(wordle|papiga|bumbar|rutke|kazino(\/(ruleta|kocke))?|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
+  if (/^zabava\/(wordle|papiga|bumbar|rutke|kazino(\/(ruleta|kocke|igre))?|stavnica(\/.+)?)$/.test(hash)) { setTab("zabava"); return; }
   if (/^os\/\d+$/.test(hash)) { setTab("os"); window.scrollTo(0, 0); return; }
   if (hash.startsWith("day-")) { setTab("casovnica"); openDay(hash.slice(4), true); return; }
   if (hash.startsWith("sid-")) { setTab("casovnica"); openSession(hash.slice(4)); return; }
@@ -3314,14 +3314,44 @@ async function renderKazino(force = false) {
   } else if (!sv.cz.busy && (force || Date.now() - (sv.fetchedAt || 0) > SV_FRESH)) svRefresh(force);
   if (!state.kazinoActive) return;
   if (!sv.state) { box.innerHTML = svErrorHtml(sv.error); return; }
-  const game = czGame(), me = sv.state.me || { balance: sv.state.budget, bets: [] };
+  const game = sv.czView === "igre" ? "igre" : czGame(), me = sv.state.me || { balance: sv.state.budget, bets: [] };
   box.innerHTML = `<div class="pv-folder"><div class="pv-ftabs" role="tablist" aria-label="Piratski kazino">
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/kazino/ruleta" aria-selected="${game === "ruleta"}">🎡 Ruleta</a>
       <a role="tab" class="pv-tab pv-ftab" href="#zabava/kazino/kocke" aria-selected="${game === "kocke"}">🎲 Kocke</a>
+      <a role="tab" class="pv-tab pv-ftab" href="#zabava/kazino/igre" aria-selected="${game === "igre"}">📜 Vse igre</a>
       <a class="pv-tab pv-ftab kz-sv" href="#zabava/stavnica/profil" title="Tvoje stanje (Stavnica)">${SV_COIN} ${me.balance}</a>
-    </div><div class="pv-fpanel sv-panel">${svCasino(sv.state, me, game)}</div></div>`;
+    </div><div class="pv-fpanel sv-panel">${game === "igre" ? czOverview(sv.state) : svCasino(sv.state, me, game)}</div></div>`;
 }
 const czRender = () => { if (state.kazinoActive) renderKazino(); };
+/* "Vse igre": everybody's latest games (state.casinoRecent from stavnica.gs) – per player totals, then the games, newest first */
+function czOverview(st) {
+  const all = st.casinoRecent;
+  if (!Array.isArray(all)) return `<div class="card sv-empty"><p>Pregled iger še ni na voljo.</p><p class="muted-text">Strežnik (Apps Script) še ne pošilja iger vseh igralcev – posodobi stavnica.gs.</p></div>`;
+  const f = sv.czFilter || "vse", list = all.filter((g) => f === "vse" || g.game === f);
+  const filt = `<div class="cz-filter" role="group" aria-label="Igra">${[["vse", "Vse"], ["ruleta", "🎡 Ruleta"], ["kocke", "🎲 Kocke"]].map(([k, l]) => `<button type="button" class="vday-chip${f === k ? " is-sel" : ""}" data-cz-filter="${k}" aria-pressed="${f === k}">${l}</button>`).join("")}</div>`;
+  if (!list.length) return `${filt}<div class="card sv-empty"><p>Tu še nihče ni igral.</p><p class="muted-text"><a href="#zabava/kazino/ruleta">Zavrti ruleto ›</a></p></div>`;
+  const per = {};
+  for (const g of list) {
+    const p = (per[g.email] ||= { email: g.email, name: g.name, n: 0, wins: 0, net: 0, best: 0 });
+    p.n++; p.net += g.payout - g.stake; if (g.payout > g.stake) p.wins++; p.best = Math.max(p.best, g.payout - g.stake);
+  }
+  const players = Object.values(per).sort((a, b) => b.net - a.net || b.n - a.n);
+  const net = (v) => `<span class="${v > 0 ? "sv-log-won" : v < 0 ? "sv-log-lost" : "cz-even"}">${v > 0 ? "+" : v < 0 ? "−" : "±"}${Math.abs(v)}</span>`;
+  const betsText = (g) => String(g.bets || "").split(/\s+/).filter(Boolean).map((x) => { const [k, a] = x.split(":"); return `${czBetLabel(g.game, k)} ${a}`; }).join(" · ");
+  return `${filt}
+    <section class="sv-list"><h3>Igralci <span class="muted-text">· zadnjih ${list.length} iger</span></h3>
+      <ol class="wd-board-list cz-players">${players.map((p, i) => { const w = wdWho(p.email, p.name); return `<li><span class="wd-rank${i < 3 && p.net > 0 ? " medal" : ""}">${i < 3 && p.net > 0 ? ["🥇", "🥈", "🥉"][i] : `${i + 1}.`}</span>${w.av}<span class="wd-name" title="${esc(w.title)}">${esc(w.label)}</span><span class="wd-time muted-text">${p.n} ${p.n === 1 ? "igra" : p.n === 2 ? "igri" : p.n < 5 ? "igre" : "iger"} · ${p.wins} ${p.wins === 1 ? "zmaga" : p.wins === 2 ? "zmagi" : p.wins === 3 || p.wins === 4 ? "zmage" : "zmag"}</span>${net(p.net)}</li>`; }).join("")}</ol></section>
+    <section class="sv-list"><h3>Igre</h3><ul class="cz-games">${list.map((g) => {
+      const w = wdWho(g.email, g.name), d = g.payout - g.stake;
+      return `<li class="${d > 0 ? "is-win" : d < 0 ? "is-loss" : ""}">${w.av}<div class="cz-g-main"><div class="cz-g-top"><strong>${esc(w.label)}</strong><span class="cz-g-game">${g.game === "kocke" ? "🎲" : "🎡"} ${esc(g.result)}</span></div>
+        <div class="cz-g-bets muted-text">${esc(betsText(g))} → ${g.payout ? `izplačilo ${g.payout}` : "nič"}</div></div>
+        <div class="cz-g-end">${net(d)}<span class="muted-text cz-g-ago">${esc(svAgo(g.ts))}</span></div></li>`;
+    }).join("")}</ul></section>`;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest?.("#kazino [data-cz-filter]");
+  if (b) { sv.czFilter = b.dataset.czFilter; czRender(); }
+});
 function czAdd(k) {
   const game = czGame(), me = sv.state?.me;
   if (sv.cz.busy || !me) return;
