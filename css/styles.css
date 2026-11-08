@@ -2218,3 +2218,11 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .flag-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 1rem; border: 1px dashed #e5a00d; background: rgba(229,160,13,.1); font-size: .9rem; }
 .flag-bar[hidden] { display: none; }
 .flag-bar.is-on { border-style: solid; border-color: #6fbf67; background: rgba(111,191,103,.1); }
+
+/* Zadolžitve: saving spinner */
+.op-spin { display: inline-block; width: 1em; height: 1em; margin-right: .45em; vertical-align: -.15em; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: opspin .7s linear infinite; }
+@keyframes opspin { to { transform: rotate(360deg); } }
+.op-pick.is-saving { cursor: progress; opacity: .9; pointer-events: none; }
+.op-item.is-saving { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.op-saving { margin-left: auto; color: var(--gold-soft); font-weight: 700; font-size: .9rem; }
+.op-pick:disabled { opacity: .45; cursor: default; }
