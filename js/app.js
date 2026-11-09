@@ -213,6 +213,11 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
+/* The event is over: only Domov (a short goodbye) and Zabava (Wordle only) stay, for every role incl. admins.
+   Set EVENT_ENDED = false to bring every page and game back – nothing else was removed. */
+const EVENT_ENDED = true;
+const ENDED_PAGES = ["domov", "zabava"], ENDED_GAMES = ["wordle"];
+document.documentElement.classList.toggle("event-ended", EVENT_ENDED);
 const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika", "nadzor"];
 /* Zadolžitve and Trgovina: every role may see them, but only once an admin switches them on (apps-script/flags.gs,
    GET ?type=flags). Until then – and whenever the switches can't be loaded – only admins see them, with the switch on top. */
@@ -272,6 +277,7 @@ function pagesForRole(role) {
   return gatePages(set, role);
 }
 function allowedPages(email) {
+  if (EVENT_ENDED) return email ? new Set(ENDED_PAGES) : new Set();
   return email ? pagesForRole(effectiveRole(email)) : new Set();
 }
 function canSee(page) {
@@ -354,10 +360,10 @@ function applyAuth() {
   // Mobile bar next to Časovnica: SVOD/admin get Zabava, everyone else UU; roles that can see neither Časovnica nor UU
   // (UU participants) get Preverbe + Zabava. The rest sit in ≡ in their usual order.
   const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
-  const barTabs = u && !["casovnica", "uu"].some((x) => state.allowed.has(x)) ? ["preverbe", "zabava"]
+  const barTabs = EVENT_ENDED ? ["domov", "zabava"] : u && !["casovnica", "uu"].some((x) => state.allowed.has(x)) ? ["preverbe", "zabava"]
     : u && ["svod", "admin"].includes(effectiveRole(u.email)) ? ["zabava"] : ["uu"];
   const MORE_ORDER = ["domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "vprasanja", "analitika", "nadzor"];
-  ["uu", "preverbe", "zabava"].forEach((x) => {
+  ["domov", "uu", "preverbe", "zabava"].forEach((x) => {
     const b = $(`.tab[data-tab="${x}"]`, nav);
     if (!b || barTabs.includes(x)) return;
     const next = MORE_ORDER.slice(MORE_ORDER.indexOf(x) + 1).map((y) => $(`.tab[data-tab="${y}"]`, more)).find(Boolean);
@@ -398,6 +404,7 @@ function applyAuth() {
 
 let currentTab = "";
 function landingPage() {
+  if (EVENT_ENDED && canSee("domov")) return "domov";
   if (canSee("casovnica")) return "casovnica";
   return ALL_PAGES.find((p) => canSee(p)) || null;
 }
@@ -422,6 +429,7 @@ function setTab(name) {
   if (name === "opravila") renderOpravila();
   if (name === "trgovina") renderTrgovina();
   const zbm = /^zabava\/(wordle|stavnica|papiga|bumbar|rutke|kazino)(?:\/(.+))?$/.exec(location.hash.replace(/^#/, "")), zb = zbm?.[1] || null; // null = chooser
+  if (EVENT_ENDED && name === "zabava" && zb && !ENDED_GAMES.includes(zb)) { history.replaceState(null, "", "#zabava/wordle"); return setTab("zabava"); } // event over: only Wordle
   state.wordleActive = name === "zabava" && zb === "wordle";
   state.papigaActive = name === "zabava" && zb === "papiga";
   if (state.bumbarActive && !(name === "zabava" && zb === "bumbar")) bbLeave();
@@ -2188,7 +2196,7 @@ const SCRIPT_FETCH = {
 function prefetchScriptData() {
   if (!state.user) return;
   const want = [
-    ...(canSee("zabava") ? ["scores", "stavnica", "papiga", "bumbar", "rutke"] : []),
+    ...(canSee("zabava") ? (EVENT_ENDED ? ["scores"] : ["scores", "stavnica", "papiga", "bumbar", "rutke"]) : []),
     ...(canSeeOcene() ? ["ocene"] : []),
     ...(canSee("vprasanja") ? ["vprasanja"] : []),
     ...(canSee("analitika") ? ["analitika", "visitstats"] : []),
