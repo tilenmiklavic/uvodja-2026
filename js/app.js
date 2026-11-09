@@ -358,6 +358,10 @@ function applyAuth() {
   document.body.classList.toggle("auth-locked", !u);
   $("#auth-gate").hidden = !!u;
   $$(".tab[data-tab]").forEach((b) => { b.hidden = !!u && !state.allowed.has(b.dataset.tab); });
+  // remember the allowed tabs for the next start (index.html hides the others before the first paint), then drop that early rule
+  try { localStorage.setItem("uvodja.navTabs", JSON.stringify(u ? [...state.allowed] : [])); } catch {}
+  document.getElementById("nav-boot")?.remove();
+  document.documentElement.classList.remove("nav-pending");
   // Mobile bar next to Časovnica: SVOD/admin get Zabava, everyone else UU; roles that can see neither Časovnica nor UU
   // (UU participants) get Preverbe + Zabava. The rest sit in ≡ in their usual order.
   const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
