@@ -2247,3 +2247,13 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 .sv-state.is-cancelled { background: rgba(110,160,255,.16); color: #9ec5ff; }
 .sv-bet-item.is-cancelled { opacity: .85; }
 .sv-cancel-btn { border-color: rgba(229,72,77,.5); color: #ff8a8d; }
+
+/* —— Event over (EVENT_ENDED in js/app.js): Domov = just the goodbye, Zabava = Wordle only —— */
+.home-ended { display: none; }
+.event-ended #tab-domov > :not(.home-ended) { display: none !important; }
+.event-ended .home-ended { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; min-height: 55vh; padding: 2rem 1rem; text-align: center; }
+.home-ended-line { margin: 0; font-size: clamp(1.1rem, 4.5vw, 1.5rem); font-weight: 700; color: var(--ink-muted); }
+.home-ended-title { margin: 0; font-family: var(--serif); font-size: clamp(2.4rem, 11vw, 4.2rem); color: var(--gold-soft); letter-spacing: .02em; }
+.home-ended-heart { margin: 0; font-size: clamp(2.4rem, 10vw, 3.6rem); line-height: 1; }
+.event-ended #zb-pick .zb-choice:not([href="#zabava/wordle"]) { display: none; }
+.event-ended #zb-pick { grid-template-columns: minmax(0, 560px); justify-content: center; }
