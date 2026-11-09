@@ -217,6 +217,7 @@ const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.google
    Set EVENT_ENDED = false to bring every page and game back – nothing else was removed. */
 const EVENT_ENDED = true;
 const ENDED_PAGES = ["domov", "preverbe", "zabava"], ENDED_GAMES = ["wordle"]; // Preverbe: the final evaluation stays open for a week
+const ENDED_ADMIN_PAGES = ["ekipa", "analitika"]; // admins (effective role) also keep these for now
 document.documentElement.classList.toggle("event-ended", EVENT_ENDED);
 const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika", "nadzor"];
 /* Zadolžitve and Trgovina: every role may see them, but only once an admin switches them on (apps-script/flags.gs,
@@ -277,7 +278,7 @@ function pagesForRole(role) {
   return gatePages(set, role);
 }
 function allowedPages(email) {
-  if (EVENT_ENDED) return email ? new Set(ENDED_PAGES) : new Set();
+  if (EVENT_ENDED) return email ? new Set([...ENDED_PAGES, ...(effectiveRole(email) === "admin" ? ENDED_ADMIN_PAGES : [])]) : new Set();
   return email ? pagesForRole(effectiveRole(email)) : new Set();
 }
 function canSee(page) {
