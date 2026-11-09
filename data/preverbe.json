@@ -146,11 +146,48 @@
       "formId": "1NFYaq8NHhstLGDVKizMs9mvGQqCInq1Z-RbMECper80"
     },
     {
-      "window": {
-        "date": "2026-11-08",
-        "start": "14:00",
-        "end": "23:59"
-      },
+      "window": [
+        {
+          "date": "2026-11-08",
+          "start": "14:00",
+          "end": "23:59"
+        },
+        {
+          "date": "2026-11-09",
+          "start": "00:00",
+          "end": "23:59"
+        },
+        {
+          "date": "2026-11-10",
+          "start": "00:00",
+          "end": "23:59"
+        },
+        {
+          "date": "2026-11-11",
+          "start": "00:00",
+          "end": "23:59"
+        },
+        {
+          "date": "2026-11-12",
+          "start": "00:00",
+          "end": "23:59"
+        },
+        {
+          "date": "2026-11-13",
+          "start": "00:00",
+          "end": "23:59"
+        },
+        {
+          "date": "2026-11-14",
+          "start": "00:00",
+          "end": "23:59"
+        },
+        {
+          "date": "2026-11-15",
+          "start": "00:00",
+          "end": "23:59"
+        }
+      ],
       "name": "Vrednotenje U Vodja 2026",
       "title": "Vrednotenje U Vodja 2026",
       "formId": "1coV_Uf4cpgN2u559_BstLggbZJSn-y2M3FjoZpgQey0"

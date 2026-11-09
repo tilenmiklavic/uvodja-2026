@@ -213,10 +213,10 @@ function bindNavMore() {
 
 /* —— Google sign-in (account distinction only, NOT security) + page allowlist (data/access.json) —— */
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
-/* The event is over: only Domov (a short goodbye) and Zabava (Wordle only) stay, for every role incl. admins.
+/* The event is over: only Domov (a short goodbye), Preverbe (final evaluation, open a week) and Zabava (Wordle only) stay, for every role incl. admins.
    Set EVENT_ENDED = false to bring every page and game back – nothing else was removed. */
 const EVENT_ENDED = true;
-const ENDED_PAGES = ["domov", "zabava"], ENDED_GAMES = ["wordle"];
+const ENDED_PAGES = ["domov", "preverbe", "zabava"], ENDED_GAMES = ["wordle"]; // Preverbe: the final evaluation stays open for a week
 document.documentElement.classList.toggle("event-ended", EVENT_ENDED);
 const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika", "nadzor"];
 /* Zadolžitve and Trgovina: every role may see them, but only once an admin switches them on (apps-script/flags.gs,
@@ -360,7 +360,7 @@ function applyAuth() {
   // Mobile bar next to Časovnica: SVOD/admin get Zabava, everyone else UU; roles that can see neither Časovnica nor UU
   // (UU participants) get Preverbe + Zabava. The rest sit in ≡ in their usual order.
   const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
-  const barTabs = EVENT_ENDED ? ["domov", "zabava"] : u && !["casovnica", "uu"].some((x) => state.allowed.has(x)) ? ["preverbe", "zabava"]
+  const barTabs = EVENT_ENDED ? ["domov", "preverbe", "zabava"] : u && !["casovnica", "uu"].some((x) => state.allowed.has(x)) ? ["preverbe", "zabava"]
     : u && ["svod", "admin"].includes(effectiveRole(u.email)) ? ["zabava"] : ["uu"];
   const MORE_ORDER = ["domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "vprasanja", "analitika", "nadzor"];
   ["domov", "uu", "preverbe", "zabava"].forEach((x) => {
@@ -5135,14 +5135,14 @@ function renderPvTeme(box) {
   }
   if (box.dataset.day !== today) {
     box.dataset.day = today;
-    box.innerHTML = `<p class="muted-text pv-lede">Preverbe tem, ki so v teku ali so se končale v zadnjih 2 urah – izpolni po vsaki temi.</p><div class="pv-forms"></div>`;
+    box.innerHTML = `<p class="muted-text pv-lede">${EVENT_ENDED ? "Končno vrednotenje U Vodja 2026 – hvala, da si vzameš čas in ga izpolniš! 💛" : "Preverbe tem, ki so v teku ali so se končale v zadnjih 2 urah – izpolni po vsaki temi."}</p><div class="pv-forms"></div>`;
   }
   const list = $(".pv-forms", box);
   $$("[data-form-id]", list).forEach((el) => { if (!forms.some((f) => f.formId === el.dataset.formId)) el.remove(); });
   forms.forEach((f) => {
     if ($(`[data-form-id="${f.formId}"]`, list)) return;
     list.insertAdjacentHTML("beforeend", `<details class="card pv-form" data-form-id="${esc(f.formId)}"${forms.length === 1 ? " open" : ""}>
-      <summary><span class="pv-form-title">${esc(f.name)}</span><span class="muted-text">${f.window && f.occ.end >= "23:59" ? `od ${esc(f.occ.start)}` : `${esc(f.occ.start)}–${esc(f.occ.end)}`}</span></summary>
+      <summary><span class="pv-form-title">${esc(f.name)}</span><span class="muted-text">${f.window && [].concat(f.window).length > 1 ? `odprto do ${(([d]) => `${Number(d.slice(8))}. ${Number(d.slice(5, 7))}.`)([[].concat(f.window).map((w) => w.date).sort().pop()])}` : f.window && f.occ.end >= "23:59" ? `od ${esc(f.occ.start)}` : `${esc(f.occ.start)}–${esc(f.occ.end)}`}</span></summary>
       <iframe src="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform?embedded=true" title="${esc(f.title)}" loading="lazy">Nalagam …</iframe>
       <p class="pv-open"><a href="https://docs.google.com/forms/d/${encodeURIComponent(f.formId)}/viewform" target="_blank" rel="noopener">Odpri obrazec v novem oknu ↗</a></p>
     </details>`);
