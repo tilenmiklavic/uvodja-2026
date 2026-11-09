@@ -2262,3 +2262,6 @@ html.pp-full-open, html.pp-full-open body { overflow: hidden; }
 body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 body > main { width: 100%; } /* keep max-width + auto margins centring as before (a flex item would otherwise shrink to its content) */
 .site-footer { margin-top: auto; }
+
+/* First visit on a device: no tab shows until the script knows which ones are allowed (see the nav boot script in index.html) */
+.nav-pending .tabs .tab[data-tab] { display: none !important; }
