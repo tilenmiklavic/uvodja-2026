@@ -5026,13 +5026,17 @@ document.addEventListener("click", (e) => { if (e.target.closest("[data-pvc-relo
 /* —— Preverbe: Teme = today's tema feedback forms (embedded Google Forms), Generalno = 3 free-text forms → Apps Script → Preverbe/Vprašanja sheets —— */
 let pvData;
 /* Tabs per role: UU → Teme + Generalno, SVOD → Preverba SVODa, admin → all three (follows the admin "Pogled kot" switch) */
-function pvTabsFor(role) { return role === "admin" ? ["teme", "generalno", "svod"] : role === "svod" ? ["svod"] : ["teme", "generalno"]; }
+function pvTabsFor(role) {
+  if (EVENT_ENDED) return ["teme"]; // after the event only the final evaluation is left (Generalno / Preverba SVODa hidden)
+  return role === "admin" ? ["teme", "generalno", "svod"] : role === "svod" ? ["svod"] : ["teme", "generalno"];
+}
 async function renderPreverbe(sub = null) {
   const teme = $("#pv-teme"), gen = $("#pv-generalno"), svod = $("#pv-svod");
   if (!teme) return;
   const tabs = pvTabsFor(effectiveRole(state.user?.email));
   if (!tabs.includes(sub)) sub = tabs[0];
   $$("#tab-preverbe .pv-tab").forEach((t) => { t.hidden = !tabs.includes(t.dataset.pvTab); t.setAttribute("aria-selected", String(t.dataset.pvTab === sub)); });
+  const temeTab = $('#tab-preverbe .pv-tab[data-pv-tab="teme"]'); if (temeTab) temeTab.textContent = EVENT_ENDED ? "Vrednotenje" : "Teme";
   teme.hidden = sub !== "teme"; gen.hidden = sub !== "generalno"; svod.hidden = sub !== "svod";
   if (pvData === undefined) {
     try { const r = await fetch("data/preverbe.json", { cache: "no-store" }); pvData = r.ok ? await r.json() : null; } catch { pvData = null; }
