@@ -1,0 +1,42 @@
+# The site's web server: static files from the live release, plain HTTP on :80. HTTPS is done by the shared proxy.
+# The admin endpoint stays on (localhost inside the container) so deploy.sh can reload this file.
+{
+	auto_https off
+}
+
+:80 {
+	root * /srv/vodja/current
+	encode zstd gzip
+
+	# --- security headers ------------------------------------------------------------------------------------------
+	# No CSP on purpose: the app loads Google Sign-In, Google Fonts, Drive thumbnails and calls Apps Script; a wrong
+	# CSP would silently break sign-in. Add one only after testing every page.
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# Google Sign-In (FedCM / popup) needs this to stay "same-origin-allow-popups", not "same-origin"
+		Cross-Origin-Opener-Policy same-origin-allow-popups
+	}
+
+	# --- caching ---------------------------------------------------------------------------------------------------
+	# HTML, the service worker, the manifest and data/*.json are always revalidated (a deploy must show up right away).
+	@nocache path / /index.html /sw.js /manifest.webmanifest /data/*
+	header @nocache Cache-Control "no-cache"
+	# css/js are versioned with ?v=NNN in index.html; images never change under the same name.
+	@code {
+		path *.css *.js
+		not path /sw.js
+	}
+	header @code Cache-Control "public, max-age=86400"
+	@img path *.png *.jpg *.jpeg *.webp *.svg *.ico *.woff *.woff2
+	header @img Cache-Control "public, max-age=2592000"
+	@manifest path /manifest.webmanifest
+	header @manifest Content-Type application/manifest+json
+
+	# Repo files that are not part of the site (deploy.sh doesn't upload them either; belt and braces).
+	@hidden path /.git* /apps-script* /push-worker* /scripts* /deploy* /docs* /.*
+	respond @hidden 404
+
+	file_server
+}

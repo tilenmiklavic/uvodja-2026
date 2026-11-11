@@ -1,13 +1,19 @@
 # Migration: GitHub Pages → https://vodja.miklavic.si (netcup)
 
-The site is plain static files, so the server only needs nginx + a TLS certificate. Everything dynamic (Wordle and other
-results, Stavnica, Zadolžitve, Analitika, …) stays in Google Apps Script and is **not** touched by this migration.
+The site is plain static files. On the netcup server it runs like every other app there (KlinDom too): its own
+deploy user `vodja` and folder `/opt/vodja`, a small web container on the shared `proxy` network, and a route in the
+shared HTTPS proxy, which gets the certificate. The convention is described under "The server" in
+[`docs/deploy-netcup.md`](https://github.com/tilenmiklavic/klin-dom/blob/main/docs/deploy-netcup.md) of the
+klin-dom repo, whose `deploy/netcup/setup-server.sh` sets the server up.
+Everything dynamic (Wordle and other results, Stavnica, Zadolžitve, Analitika, …) stays in Google Apps Script and is
+**not** touched by this migration.
 
 | File | What it is |
 |---|---|
-| `server-setup.sh` | one-time server setup: nginx, Let's Encrypt, `deploy` user, release folders |
-| `nginx-vodja.miklavic.si.conf`, `vodja-headers.conf` | the nginx site (HTTPS, gzip, cache rules, security headers) |
-| `deploy.sh` | uploads a release with rsync and flips the `current` symlink (atomic, `--rollback` supported) |
+| `compose.yml` | the `web` container (Caddy) serving `/opt/vodja/current` as `vodja-web:80` on the `proxy` network |
+| `Caddyfile` | its config: cache rules, security headers, gzip (plain HTTP; the proxy does HTTPS) |
+| `site.caddy` | the route in the shared proxy: `vodja.miklavic.si` → `vodja-web:80` |
+| `deploy.sh` | uploads a release with rsync, flips the `current` symlink (atomic, `--rollback` supported), installs the route |
 | `../.github/workflows/deploy.yml` | runs `deploy.sh` on every push to `main` |
 | `../js/demo.js` | demo mode with mock data → see [Demo](#demo) |
 
@@ -28,54 +34,63 @@ At whoever hosts `miklavic.si` DNS, add (replace with the netcup server's addres
 
 ```
 vodja.miklavic.si.   A      <IPv4 of the netcup server>
-vodja.miklavic.si.   AAAA   <IPv6 of the netcup server>     (only if the server has one and nginx listens on it)
+vodja.miklavic.si.   AAAA   <IPv6 of the netcup server>     (the server has IPv6: 2a03:4000:15:1b34:68ba:ceff:fe89:22d5)
 ```
 
 Use a low TTL (300) until the cut-over is done. Check: `dig +short vodja.miklavic.si`.
 
 ## 2. Server (once)
 
-Debian/Ubuntu with root access:
+As root, from your laptop (needs SSH access as root; the script refuses to run without a root key):
 
 ```bash
-git clone https://github.com/tilenmiklavic/uvodja-2026.git && cd uvodja-2026
-sudo bash deploy/server-setup.sh
+curl -fsSL https://raw.githubusercontent.com/tilenmiklavic/klin-dom/main/deploy/netcup/setup-server.sh \
+  | ssh root@vodja.miklavic.si 'bash -s -- vodja'
 ```
 
-This installs nginx + certbot, creates the `deploy` user and `/var/www/vodja.miklavic.si/releases`, gets the
-certificate (needs the DNS record from step 1), installs the nginx site and enables automatic renewal.
-If the server already runs other sites, review `deploy/nginx-vodja.miklavic.si.conf` first – it only adds one `server`
-block and one snippet.
+It creates the deploy user `vodja` (SSH keys only, root's keys copied in, docker group) and `/opt/vodja`, and leaves
+the other apps and the shared proxy as they are. Safe to run again.
 
-Create a deploy key on your laptop and authorize it:
+Optional, in `~/.ssh/config` on your laptop:
 
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/vodja_deploy -C "vodja deploy" -N ""
-ssh-copy-id -i ~/.ssh/vodja_deploy.pub deploy@<server>      # or paste it into /home/deploy/.ssh/authorized_keys
+```
+Host vodja
+  HostName vodja.miklavic.si
+  User vodja
+  IdentityFile ~/.ssh/<your key>
 ```
 
 ## 3. First deploy (by hand)
 
 ```bash
-DEPLOY_HOST=<server> bash deploy/deploy.sh
+DEPLOY_HOST=vodja@vodja.miklavic.si bash deploy/deploy.sh
 curl -I https://vodja.miklavic.si/            # 200, Strict-Transport-Security present
 ```
 
 Open the site, sign in, click through Časovnica / Zabava / Preverbe. Roll back with
-`DEPLOY_HOST=<server> bash deploy/deploy.sh --rollback`.
+`DEPLOY_HOST=vodja@vodja.miklavic.si bash deploy/deploy.sh --rollback`.
 
 ## 4. GitHub Actions (automatic deploys)
 
-Repo → Settings → Secrets and variables → Actions → *New repository secret*:
+Make a key just for this repo's deploys and authorize it for `vodja` on the server:
 
-| Secret | Value |
-|---|---|
-| `DEPLOY_SSH_KEY` | contents of `~/.ssh/vodja_deploy` (the **private** key) |
-| `DEPLOY_HOST` | server name or IP |
-| `DEPLOY_KNOWN_HOSTS` | *(recommended)* output of `ssh-keyscan -t ed25519 <server>` |
+```bash
+ssh-keygen -t ed25519 -f ~/vodja-ci -C "github-actions vodja" -N ""
+cat ~/vodja-ci.pub | ssh vodja@vodja.miklavic.si 'cat >> ~/.ssh/authorized_keys'
+ssh-keyscan vodja.miklavic.si          # for NETCUP_KNOWN_HOSTS
+```
 
-From then on every push to `main` that touches the site deploys it (docs-only / Apps Script / `deploy/` changes are
-skipped). *Actions → Deploy to netcup → Run workflow* deploys manually.
+Repo → Settings → Secrets and variables → Actions (the same names as in the klin-dom repo):
+
+| Kind | Name | Value |
+|---|---|---|
+| Variable | `NETCUP_HOST` | `vodja.miklavic.si` (or the server IP) |
+| Secret | `NETCUP_SSH_KEY` | contents of `~/vodja-ci` (the **private** key) |
+| Secret | `NETCUP_KNOWN_HOSTS` | the output of `ssh-keyscan` above |
+
+Then delete `~/vodja-ci*` from the laptop. The workflow does nothing until `NETCUP_HOST` is set. From then on every
+push to `main` that touches the site deploys it (Apps Script / push worker / docs-only changes are skipped), and
+each run shows up under Code → Deployments as `netcup`. *Actions → Deploy to netcup → Run workflow* deploys by hand.
 
 ## 5. Cut-over
 
@@ -88,14 +103,16 @@ skipped). *Actions → Deploy to netcup → Run workflow* deploys manually.
 
 ## Operating notes
 
-- **Releases:** `releases/<UTC timestamp>`, the last 5 are kept, `current` points at the live one.
+- **Releases:** `/opt/vodja/releases/<UTC timestamp>`, the last 5 are kept, `current` points at the live one.
 - **Caching:** HTML, `sw.js`, `manifest.webmanifest` and `data/*.json` are always revalidated; CSS/JS for a day (they are
   versioned with `?v=` in `index.html`, bump it when you change them), images for 30 days. This replaces GitHub Pages'
   blanket 10 minutes.
-- **Not uploaded** (stay in git only): `apps-script/`, `push-worker/`, `scripts/`, `deploy/`, `.github/`.
-  `data/access.json` and the rest of `data/` are still public, exactly as before.
+- **Not uploaded** (stay in git only): `apps-script/`, `push-worker/`, `scripts/`, `deploy/` (except `compose.yml` and
+  `Caddyfile`, which go next to the releases), `.github/`. `data/access.json` and the rest of `data/` are still public,
+  exactly as before.
 - **Updating data/access.json etc.:** commit to `main`; the Action deploys it within a minute.
-- **Cert renewal:** `certbot.timer` renews automatically; `sudo certbot renew --dry-run` tests it.
+- **Certificate:** the shared proxy gets and renews it; its logs: `cd /opt/proxy && docker compose logs --tail=100`.
+- **Logs of the site's container:** `ssh vodja@vodja.miklavic.si 'cd /opt/vodja && docker compose logs --tail=100'`.
 
 ## Demo
 
@@ -109,6 +126,6 @@ to the real Apps Script, and the real site's login/storage is not touched. See t
   and Wordle results work but live in memory (a reload resets them). The account menu's *Pogled kot* switch shows the
   SVOD / UU views.
 - Turn it off with `?demo=0` (or the *Zapri demo* link in the yellow bar). The mode is remembered per browser tab.
-- Optional: give it its own address by adding `demo.vodja.miklavic.si` to DNS, `server_name` and the certificate – any
+- Optional: give it its own address by adding `demo.vodja.miklavic.si` to DNS and to the first line of `deploy/site.caddy` (`vodja.miklavic.si, demo.vodja.miklavic.si {`); the proxy gets the certificate itself – any
   host starting with `demo.` is always in demo mode, no query needed.
 - The Rutke scarf images and the real timeline/teme/ekipa content come from the repo and Google Drive, not from the mock.
