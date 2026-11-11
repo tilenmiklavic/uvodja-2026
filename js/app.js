@@ -215,7 +215,7 @@ function bindNavMore() {
 const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.googleusercontent.com";
 /* The event is over: only Domov (a short goodbye), Preverbe (final evaluation, open a week) and Zabava (Wordle only) stay, for every role incl. admins.
    Set EVENT_ENDED = false to bring every page and game back – nothing else was removed. */
-const EVENT_ENDED = true;
+const EVENT_ENDED = !window.UVODJA_DEMO; // demo mode (js/demo.js) brings every page and game back
 const ENDED_PAGES = ["domov", "preverbe", "zabava"], ENDED_GAMES = ["wordle"]; // Preverbe: the final evaluation stays open for a week
 const ENDED_ADMIN_PAGES = ["ekipa", "analitika"]; // admins (effective role) also keep these for now
 document.documentElement.classList.toggle("event-ended", EVENT_ENDED);

@@ -1,0 +1,33 @@
+# Deploys the site to the netcup server (https://vodja.miklavic.si) on every push to main.
+# One-time setup: see deploy/README.md → "GitHub Actions". Secrets needed:
+#   DEPLOY_SSH_KEY   private key whose public half is in the server's ~deploy/.ssh/authorized_keys
+#   DEPLOY_HOST      server name or IP
+#   DEPLOY_KNOWN_HOSTS (optional) output of `ssh-keyscan -t ed25519 <host>`; without it the host key is trusted on first use
+name: Deploy to netcup
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["apps-script/**", "push-worker/**", "deploy/**", "**/*.md"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "${{ secrets.DEPLOY_KNOWN_HOSTS }}" ]; then printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts; fi
+          printf 'Host *\n  IdentityFile ~/.ssh/id_deploy\n  IdentitiesOnly yes\n' > ~/.ssh/config
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: bash deploy/deploy.sh

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="js/demo.js"></script><!-- demo mode (?demo) – does nothing otherwise; see js/demo.js -->
   <title>U Vodja 2026 · Na lovu za zakladom</title>
   <meta name="description" content="Časovnica in gradivo usposabljanja U Vodja, jesen 2026 – ZSKSS · Pirati" />
   <meta name="theme-color" content="#0b1622" />
@@ -18,7 +19,7 @@
   <script>/* nav boot: hide tabs before the first paint – js/app.js applyAuth() saves the allowed list and removes this */try{var nt=JSON.parse(localStorage.getItem("uvodja.navTabs")||"null");if(Array.isArray(nt)){var ns=document.createElement("style");ns.id="nav-boot";ns.textContent=".tabs .tab[data-tab]"+nt.map(function(x){return ':not([data-tab="'+String(x).replace(/[^a-z]/g,"")+'"])';}).join("")+"{display:none!important}";document.head.appendChild(ns);}else{document.documentElement.classList.add("nav-pending");}}catch(e){document.documentElement.classList.add("nav-pending");}</script>
   <link rel="stylesheet" href="css/styles.css?v=121" />
   <link rel="stylesheet" href="features/temu-mode/temu-mode.css?v=3" /><!-- Temu Mode (parody, off by default) – features/temu-mode/README.md -->
-  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script>if(!window.UVODJA_DEMO){var g=document.createElement("script");g.src="https://accounts.google.com/gsi/client";g.async=true;document.head.appendChild(g);}</script><!-- Google sign-in (not loaded in demo mode) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;1,6..12,400&display=swap" rel="stylesheet" />
