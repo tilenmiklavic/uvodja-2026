@@ -8,6 +8,9 @@
 #   DEPLOY_HOST=vodja@vodja.miklavic.si bash deploy/deploy.sh --rollback    # `current` → the previous release
 # Optional: SSH_PORT (default 22), KEEP (releases to keep, default 5).
 #
+# The remote steps arrive on stdin (bash -s), so each is one { ... } block with stdin closed: bash reads it whole
+# before running it, and a command that reads stdin (docker compose exec) cannot swallow the rest.
+#
 # On the server, in /opt/vodja: compose.yml + Caddyfile (from deploy/), releases/<UTC timestamp>/ (the site files)
 # and `current` → the live release. Switching `current` is atomic, so a visitor never sees a half-uploaded release.
 set -euo pipefail
@@ -22,6 +25,8 @@ SSH="ssh -p ${SSH_PORT:-22} -o BatchMode=yes"
 
 if [ "${1:-}" = "--rollback" ]; then
   $SSH "$DEPLOY_HOST" bash -s -- "$DIR" <<'REMOTE'
+{
+exec </dev/null
 set -euo pipefail
 cd "$1/releases"
 cur="$(basename "$(readlink ../current)")"
@@ -29,6 +34,7 @@ prev="$(ls -1 | sort | grep -B1 -x "$cur" | head -1)"
 [ -n "$prev" ] && [ "$prev" != "$cur" ] || { echo "no older release" >&2; exit 1; }
 ln -sfn "releases/$prev" ../current.new && mv -Tf ../current.new ../current
 echo "current → $prev"
+}
 REMOTE
   exit 0
 fi
@@ -36,11 +42,14 @@ fi
 # Fail before changing anything if the server isn't set up for this app.
 echo "==> checking $DEPLOY_HOST"
 $SSH "$DEPLOY_HOST" bash -s -- "$APP" "$DIR" <<'REMOTE'
+{
+exec </dev/null
 if [ ! -w "$2" ] || [ ! -w /opt/proxy/sites ] || ! docker inspect proxy-caddy-1 >/dev/null 2>&1; then
   echo "error: the server is not set up for $1 (or the shared proxy is not running). As root, run once:" >&2
   echo "  curl -fsSL https://raw.githubusercontent.com/tilenmiklavic/klin-dom/main/deploy/netcup/setup-server.sh | ssh root@<server> 'bash -s -- $1'" >&2
   exit 1
 fi
+}
 REMOTE
 
 REL="$(date -u +%Y%m%d-%H%M%S)"
@@ -56,6 +65,8 @@ rsync -az -e "$SSH" deploy/compose.yml deploy/Caddyfile "$DEPLOY_HOST:$DIR/"
 
 echo "==> switching to $REL and restarting"
 $SSH "$DEPLOY_HOST" bash -s -- "$DIR" "$REL" "$KEEP" <<'REMOTE'
+{
+exec </dev/null
 set -euo pipefail
 cd "$1"
 chmod -R a+rX "releases/$2"
@@ -66,6 +77,7 @@ docker compose up -d --remove-orphans
 # (a restart if the running config can't be reloaded, e.g. right after the container was created).
 docker compose exec -T web caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || docker compose restart web
 echo "current → $(basename "$(readlink current)")"
+}
 REMOTE
 
 echo "==> routing $APP in the shared proxy"
