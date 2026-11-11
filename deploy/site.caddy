@@ -1,0 +1,5 @@
+# vodja's route in the shared proxy. deploy.sh installs it as /opt/proxy/sites/vodja.caddy and reloads the proxy,
+# which then gets the certificate itself. vodja-web is the `web` container of /opt/vodja (deploy/compose.yml).
+vodja.miklavic.si {
+	reverse_proxy vodja-web:80
+}

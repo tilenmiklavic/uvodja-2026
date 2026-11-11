@@ -1,33 +1,47 @@
-# Deploys the site to the netcup server (https://vodja.miklavic.si) on every push to main.
-# One-time setup: see deploy/README.md → "GitHub Actions". Secrets needed:
-#   DEPLOY_SSH_KEY   private key whose public half is in the server's ~deploy/.ssh/authorized_keys
-#   DEPLOY_HOST      server name or IP
-#   DEPLOY_KNOWN_HOSTS (optional) output of `ssh-keyscan -t ed25519 <host>`; without it the host key is trusted on first use
+# Deploys the site to the netcup server (https://vodja.miklavic.si) on every push to main, like every app there.
+# Does nothing until the NETCUP_HOST repository variable is set. Setup: deploy/README.md → "GitHub Actions".
+#   Variable NETCUP_HOST         the server (vodja.miklavic.si or its IP); NETCUP_USER defaults to `vodja`
+#   Secret   NETCUP_SSH_KEY      private key whose public half is in /home/vodja/.ssh/authorized_keys on the server
+#   Secret   NETCUP_KNOWN_HOSTS  output of `ssh-keyscan <NETCUP_HOST>`
 name: Deploy to netcup
 
 on:
   push:
     branches: [main]
-    paths-ignore: ["apps-script/**", "push-worker/**", "deploy/**", "**/*.md"]
+    paths-ignore: ["apps-script/**", "push-worker/**", "**/*.md"]
   workflow_dispatch:
 
 concurrency:
-  group: deploy
+  group: deploy-netcup
   cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
+    if: vars.NETCUP_HOST != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Records each run as a GitHub deployment (Code tab → Deployments) with a link to the site.
+    environment:
+      name: netcup
+      url: https://vodja.miklavic.si
     steps:
       - uses: actions/checkout@v4
       - name: SSH key
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
-          if [ -n "${{ secrets.DEPLOY_KNOWN_HOSTS }}" ]; then printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts; fi
-          printf 'Host *\n  IdentityFile ~/.ssh/id_deploy\n  IdentitiesOnly yes\n' > ~/.ssh/config
-      - name: Deploy
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-        run: bash deploy/deploy.sh
+          SSH_KEY: ${{ secrets.NETCUP_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NETCUP_KNOWN_HOSTS }}
+        run: |
+          : "${SSH_KEY:?secret NETCUP_SSH_KEY is not set}"
+          : "${KNOWN_HOSTS:?secret NETCUP_KNOWN_HOSTS is not set}"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519
+      - run: bash deploy/deploy.sh
+        env:
+          DEPLOY_HOST: ${{ vars.NETCUP_USER || 'vodja' }}@${{ vars.NETCUP_HOST }}
+      - name: Smoke test
+        run: curl -fsS --retry 10 --retry-delay 5 --retry-all-errors -o /dev/null https://vodja.miklavic.si/

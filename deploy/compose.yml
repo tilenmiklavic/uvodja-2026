@@ -1,0 +1,20 @@
+# vodja.miklavic.si on the netcup server, in /opt/vodja (deploy.sh puts this file there).
+# The site is static: deploy.sh uploads each release to releases/<timestamp> and points `current` at it.
+# This container serves `current` over plain HTTP; the shared proxy (/opt/proxy) does HTTPS and reaches it as
+# vodja-web:80 on the `proxy` network (route: site.caddy).
+name: vodja
+
+services:
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The whole folder, so the `current` symlink that deploy.sh flips is followed on every request.
+      - .:/srv/vodja:ro
+    networks:
+      proxy: { aliases: [vodja-web] }
+
+networks:
+  proxy:
+    external: true
