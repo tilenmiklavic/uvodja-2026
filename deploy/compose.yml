@@ -1,6 +1,6 @@
 # vodja.miklavic.si on the netcup server, in /opt/vodja (deploy.sh puts this file there).
 # The site is static: deploy.sh uploads each release to releases/<timestamp> and points `current` at it.
-# This container serves `current` over plain HTTP; the shared proxy (/opt/proxy) does HTTPS and reaches it as
+# The `web` container serves `current` over plain HTTP; the shared proxy (/opt/proxy) does HTTPS and reaches it as
 # vodja-web:80 on the `proxy` network (route: site.caddy).
 name: vodja
 
@@ -15,6 +15,31 @@ services:
     networks:
       proxy: { aliases: [vodja-web] }
 
+  # Small API next to the site (api/): which pages are visible on which address (Nadzor). Built on the server from
+  # /opt/vodja/api (deploy.sh uploads it). Reached by the proxy as vodja-api:3000 for /api/* (route: site.caddy).
+  # Optional /opt/vodja/.env: ADMIN_EMAILS=a@x.si,b@x.si (extra admins, besides role "admin" in data/access.json).
+  api:
+    build: ./api
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: "3000"
+    volumes:
+      - apidata:/data               # config.json – the page visibility per address
+      # The live release, only to read data/access.json (who is admin); the `current` symlink is followed.
+      - .:/srv/vodja:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/healthz || exit 1"]
+      interval: 10s
+      retries: 6
+    networks:
+      proxy: { aliases: [vodja-api] }
+
 networks:
   proxy:
     external: true
+
+volumes:
+  apidata:

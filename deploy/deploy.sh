@@ -62,6 +62,8 @@ rsync -az --delete --human-readable -e "$SSH" \
   --exclude='*' \
   ./ "$DEPLOY_HOST:$DIR/releases/$REL/"
 rsync -az -e "$SSH" deploy/compose.yml deploy/Caddyfile "$DEPLOY_HOST:$DIR/"
+# The API (api/, built on the server). No --delete of the folder itself: only its files are replaced.
+rsync -az --delete -e "$SSH" --rsync-path="mkdir -p $DIR/api && rsync" --exclude='test.js' api/ "$DEPLOY_HOST:$DIR/api/"
 
 echo "==> switching to $REL and restarting"
 $SSH "$DEPLOY_HOST" bash -s -- "$DIR" "$REL" "$KEEP" <<'REMOTE'
@@ -72,7 +74,7 @@ cd "$1"
 chmod -R a+rX "releases/$2"
 ln -sfn "releases/$2" current.new && mv -Tf current.new current
 (cd releases && ls -1 | sort | head -n -"$3" | xargs -r rm -rf)
-docker compose up -d --remove-orphans
+docker compose up -d --build --remove-orphans --wait
 # compose only recreates the container when its definition changed; this applies an edited Caddyfile too
 # (a restart if the running config can't be reloaded, e.g. right after the container was created).
 docker compose exec -T web caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || docker compose restart web

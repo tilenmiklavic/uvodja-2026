@@ -10,9 +10,9 @@ Everything dynamic (Wordle and other results, Stavnica, Zadolžitve, Analitika, 
 
 | File | What it is |
 |---|---|
-| `compose.yml` | the `web` container (Caddy) serving `/opt/vodja/current` as `vodja-web:80` on the `proxy` network |
+| `compose.yml` | the `web` container (Caddy) serving `/opt/vodja/current` as `vodja-web:80`, and the `api` container (`../api/`, built on the server) as `vodja-api:3000`, both on the `proxy` network |
 | `Caddyfile` | its config: cache rules, security headers, gzip (plain HTTP; the proxy does HTTPS) |
-| `site.caddy` | the route in the shared proxy: `vodja.miklavic.si` → `vodja-web:80` |
+| `site.caddy` | the route in the shared proxy: `/api/*` → `vodja-api:3000`, everything else → `vodja-web:80` |
 | `deploy.sh` | uploads a release with rsync, flips the `current` symlink (atomic, `--rollback` supported), installs the route |
 | `../.github/workflows/deploy.yml` | runs `deploy.sh` on every push to `main` |
 | `../js/demo.js` | demo mode with mock data → see [Demo](#demo) |
@@ -129,3 +129,25 @@ to the real Apps Script, and the real site's login/storage is not touched. See t
 - Optional: give it its own address by adding `demo.vodja.miklavic.si` to DNS and to the first line of `deploy/site.caddy` (`vodja.miklavic.si, demo.vodja.miklavic.si {`); the proxy gets the certificate itself – any
   host starting with `demo.` is always in demo mode, no query needed.
 - The Rutke scarf images and the real timeline/teme/ekipa content come from the repo and Google Drive, not from the mock.
+
+## Page visibility per address (Nadzor + `api/`)
+
+Admins decide in **Nadzor → Vidnost strani po naslovu** which page is visible on which address
+(`vodja.miklavic.si`, `tilenmiklavic.github.io/uvodja-2026`). Per page and address: **Privzeto** (as coded, incl. the
+"event is over" lockdown), **Vidno** (visible to the roles allowed to see it, even after the event) or **Skrito**
+(hidden from everyone but admins). Admins always see every page and Nadzor itself; *Pogled kot* in the account menu
+shows what SVOD / UU see.
+
+- The settings live in the `api` container (`/data/config.json` in the `apidata` volume), **not** in Apps Script.
+  The github.io copy reads them from `https://vodja.miklavic.si/api/site-config` (CORS is allowed for that origin), so
+  both addresses are controlled from the same panel. Clients re-check every minute and keep a copy on the device, so
+  if the API is down the site behaves as it did last time (or as before this feature on a first visit).
+- Who is admin: role `admin` in `data/access.json` of the live release, plus optional `ADMIN_EMAILS=a@x.si,b@x.si` in
+  `/opt/vodja/.env` on the server. The API checks the user's Google sign-in token itself (audience = the site's OAuth
+  client), so it cannot be used without signing in as an admin. If the sign-in has expired, use *Osveži prijavo* in the
+  account menu and try again.
+- The Apps Script on/off switches (Zadolžitve, Trgovina, Temu Mode) are still there below the matrix; for Zadolžitve and
+  Trgovina an explicit Vidno/Skrito for an address beats the switch.
+- Deploys: `deploy.sh` uploads `api/` and runs `docker compose up -d --build --wait`. API tests: `node --test api/test.js`.
+- Limits: the matrix controls pages, not the individual Zabava games (after the event only Wordle stays); the lists of
+  addresses and pages are constants in `api/server.js` (`SITES`, `PAGES`).

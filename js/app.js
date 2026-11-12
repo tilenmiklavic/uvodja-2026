@@ -217,7 +217,7 @@ const GSI_CLIENT_ID = "431900595687-0t02avmv6enmgrr0dv29p1f3gkppa818.apps.google
    Set EVENT_ENDED = false to bring every page and game back – nothing else was removed. */
 const EVENT_ENDED = !window.UVODJA_DEMO; // demo mode (js/demo.js) brings every page and game back
 const ENDED_PAGES = ["domov", "preverbe", "zabava"], ENDED_GAMES = ["wordle"]; // Preverbe: the final evaluation stays open for a week
-const ENDED_ADMIN_PAGES = ["ekipa", "analitika"]; // admins (effective role) also keep these for now
+const ENDED_ADMIN_PAGES = ["ekipa", "analitika", "nadzor"]; // admins (effective role) also keep these (Nadzor: page visibility per address)
 document.documentElement.classList.toggle("event-ended", EVENT_ENDED);
 const ALL_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika", "nadzor"];
 /* Zadolžitve and Trgovina: every role may see them, but only once an admin switches them on (apps-script/flags.gs,
@@ -227,7 +227,10 @@ const PAGE_FLAGS_KEY = "uvodja.pageFlags";
 state.pageFlags = (() => { try { return JSON.parse(localStorage.getItem(PAGE_FLAGS_KEY)) || {}; } catch { return {}; } })();
 const ADMIN_PAGES = ["nadzor"]; // Nadzor (page switches) – admins only, whatever data/access.json says
 function gatePages(set, role) {
-  GATED_PAGES.forEach((p) => (role === "admin" || state.pageFlags?.[p] === true ? set.add(p) : set.delete(p)));
+  GATED_PAGES.forEach((p) => {
+    const here = state.siteConfig?.pages?.[p]; // Nadzor → per address (api/); when set it beats the Apps Script switch
+    (role === "admin" || here === true || (here === undefined && state.pageFlags?.[p] === true) ? set.add(p) : set.delete(p));
+  });
   ADMIN_PAGES.forEach((p) => (role === "admin" ? set.add(p) : set.delete(p)));
   return set;
 }
@@ -278,8 +281,47 @@ function pagesForRole(role) {
   return gatePages(set, role);
 }
 function allowedPages(email) {
-  if (EVENT_ENDED) return email ? new Set([...ENDED_PAGES, ...(effectiveRole(email) === "admin" ? ENDED_ADMIN_PAGES : [])]) : new Set();
-  return email ? pagesForRole(effectiveRole(email)) : new Set();
+  if (!email) return new Set();
+  const role = effectiveRole(email);
+  const set = EVENT_ENDED ? new Set([...ENDED_PAGES, ...(role === "admin" ? ENDED_ADMIN_PAGES : [])]) : pagesForRole(role);
+  return applySiteConfig(set, role);
+}
+/* —— Page visibility per address (Nadzor → api/): https://vodja.miklavic.si and the github.io copy can show different pages.
+   pages[page] === false → hidden for everyone but admins; === true → visible to the roles that may see it (even after
+   the event is over); missing → the default above. The config is cached on the device, so a slow/unreachable API changes nothing. —— */
+const SITE_HOST = location.hostname;
+const SITE_API = ["vodja.miklavic.si", "localhost", "127.0.0.1"].includes(SITE_HOST) ? "" : "https://vodja.miklavic.si"; // the API lives on the server
+const SITE_CONFIG_KEY = `uvodja.siteConfig.${SITE_HOST}`;
+function applySiteConfig(set, role) {
+  const pages = state.siteConfig?.pages;
+  if (!pages) return set;
+  const canByRole = EVENT_ENDED ? pagesForRole(role) : set;
+  for (const [page, v] of Object.entries(pages)) {
+    if (!ALL_PAGES.includes(page) || page === "nadzor") continue;
+    if (v === false && role !== "admin") set.delete(page);
+    else if (v === true && !set.has(page) && canByRole.has(page)) set.add(page);
+  }
+  return set;
+}
+state.siteConfig = (() => { try { return JSON.parse(localStorage.getItem(SITE_CONFIG_KEY)); } catch { return null; } })();
+async function loadSiteConfig() {
+  try {
+    const r = await fetch(`${SITE_API}/api/site-config?host=${encodeURIComponent(SITE_HOST)}&t=${Date.now()}`, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+    const j = r.ok ? await r.json() : null;
+    if (!j?.ok || typeof j.pages !== "object") return;
+    const cfg = { pages: j.pages };
+    if (JSON.stringify(cfg) === JSON.stringify(state.siteConfig)) return;
+    state.siteConfig = cfg;
+    try { localStorage.setItem(SITE_CONFIG_KEY, JSON.stringify(cfg)); } catch {}
+    siteConfigChanged();
+  } catch {} // offline / API down: keep what we have
+}
+function siteConfigChanged() {
+  if (!state.user || !currentTab) return;
+  applyAuth();
+  if (currentTab !== "noaccess" && !canSee(currentTab)) applyHash(); // switched off while open → back to a page that is allowed
+  else if (currentTab === "noaccess") applyHash();               // switched on while the "no access" page was showing
+  if (currentTab === "nadzor") renderNadzor();
 }
 function canSee(page) {
   if (page === "noaccess") return true;
@@ -3697,10 +3739,69 @@ const NZ_ITEMS = [
   { key: "trgovina", icon: "🛒", name: "Trgovina", href: "#trgovina", on: "Stran vidijo vsi (v meniju ≡).", off: "Stran vidiš le ti (admin)." },
   { key: "temu", icon: "🎪", name: "Temu Mode", href: "#trgovina", on: "Na Trgovini je gumb »🎪 Temu Mode« – vsak uporabnik ga vklopi sam.", off: "Gumba »🎪 Temu Mode« ni nikjer (šaljivi način je izklopljen za vse)." },
 ];
+/* Nadzor → "Vidnost strani po naslovu": which pages are visible on which address (api/ on the server) */
+const nz = { data: null, busy: null, error: "", loading: false };
+async function siteAdmin(body) {
+  // The API checks a Google ID token itself (the site session is Apps Script's own and means nothing to it): use the
+  // one from sign-in while it is still valid, else force a fresh one (One Tap; "Osveži prijavo" in the account menu).
+  const u = state.user;
+  const credential = u?.credential && u.credExp > Date.now() + 60000 ? u.credential : await silentToken(15000, true);
+  if (!credential) throw new Error("prijava je potekla – osveži prijavo v meniju");
+  const r = await fetch(`${SITE_API}/api/admin/site-config`, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...body, credential }), signal: AbortSignal.timeout(15000) });
+  let j = null; try { j = await r.json(); } catch {}
+  if (!j?.ok) throw new Error(j?.error || `strežnik ne odgovarja (${r.status})`);
+  return j;
+}
+async function nzLoad() {
+  if (nz.loading) return;
+  nz.loading = true; nz.error = "";
+  try { nz.data = await siteAdmin({ action: "get" }); } catch (err) { nz.error = err?.message || String(err); }
+  nz.loading = false;
+  if (currentTab === "nadzor") renderNadzor();
+}
+function nzDefaultText(page) {
+  if (GATED_PAGES.includes(page)) return "odvisno od stikala spodaj";
+  if (EVENT_ENDED) return ENDED_PAGES.includes(page) ? "vidno" : "skrito (dogodek je končan)";
+  return "vidno (po vlogah)";
+}
+function nzSitesHtml() {
+  const head = `<h3 class="nz-h">Vidnost strani po naslovu</h3>
+    <p class="muted-text nz-note">Za vsak naslov posebej: <strong>Vidno</strong> pokaže stran vsem, ki jo po vlogi smejo videti (tudi po koncu dogodka), <strong>Skrito</strong> jo skrije pred vsemi razen adminov, <strong>Privzeto</strong> pusti, kot je v kodi. Nastavitve so na strežniku (vodja.miklavic.si) in veljajo v približno minuti. Za preizkus uporabi »Pogled kot« v meniju računa.</p>`;
+  if (!nz.data) return `${head}<p class="muted-text">${nz.error ? `Nastavitev ni bilo mogoče naložiti: ${esc(nz.error)} <button type="button" class="link-btn" data-nz-reload>Poskusi znova</button>` : "Nalagam …"}</p>`;
+  const d = nz.data, fmt = (t) => new Date(t).toLocaleString("sl-SI", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+  const rows = d.pages.map((page) => `<li class="card nz-page"><div class="nz-page-head"><strong>${esc(NZ_LABEL(page))}</strong> <span class="muted-text">privzeto: ${esc(nzDefaultText(page))}</span></div>
+    ${d.sites.map((site) => {
+      const v = d.config[site.host]?.[page], cur = v === true ? "on" : v === false ? "off" : "def", here = site.host === SITE_HOST, busy = nz.busy === `${site.host}|${page}`;
+      return `<div class="nz-site-row"><span class="nz-host${here ? " is-here" : ""}" title="${here ? "naslov, na katerem si zdaj" : ""}">${esc(site.label)}${here ? " <em>· tu</em>" : ""}</span>
+        <span class="nz-seg" role="group" aria-label="${esc(NZ_LABEL(page))} na ${esc(site.label)}">${[["def", "Privzeto"], ["on", "Vidno"], ["off", "Skrito"]].map(([k, l]) =>
+          `<button type="button" class="nz-opt nz-${k}" data-nz-site="${esc(site.host)}" data-nz-page="${page}" data-nz-val="${k}" aria-pressed="${cur === k}" ${nz.busy ? "disabled" : ""}>${busy && cur !== k ? "…" : l}</button>`).join("")}</span></div>`;
+    }).join("")}</li>`).join("");
+  const last = d.sites.map((s) => d.updated?.[s.host] ? `${esc(s.label)}: ${fmt(d.updated[s.host].at)} · ${esc(d.updated[s.host].by)}` : "").filter(Boolean);
+  const log = (d.log || []).slice(0, 8).map((l) => `<li>${fmt(l.at)} · ${esc(l.by)} · ${esc(SITE_LABEL_OF(d, l.host))} · ${esc(NZ_LABEL(l.page))}: ${l.from === null ? "privzeto" : l.from ? "vidno" : "skrito"} → ${l.to === null ? "privzeto" : l.to ? "vidno" : "skrito"}</li>`).join("");
+  return `${head}${nz.error ? `<p class="op-msg" role="status">Ni uspelo: ${esc(nz.error)}</p>` : ""}<ul class="nz-list nz-sites">${rows}</ul>
+    ${last.length ? `<p class="muted-text nz-note">Zadnja sprememba – ${last.join(" · ")}</p>` : ""}${log ? `<details class="nz-log"><summary>Zadnje spremembe</summary><ul>${log}</ul></details>` : ""}`;
+}
+const NZ_LABEL = (page) => PAGE_LABEL[page] || ({ gradiva: "Gradiva", uu: "UU", zabava: "Zabava", os: "OS" }[page]) || page.charAt(0).toUpperCase() + page.slice(1);
+const SITE_LABEL_OF = (d, host) => d.sites.find((s) => s.host === host)?.label || host;
+document.addEventListener("click", async (e) => {
+  if (e.target.closest?.("[data-nz-reload]")) { nzLoad(); return; }
+  const b = e.target.closest?.("[data-nz-val]");
+  if (!b || b.disabled || nz.busy) return;
+  const host = b.dataset.nzSite, page = b.dataset.nzPage, value = { def: null, on: true, off: false }[b.dataset.nzVal];
+  nz.busy = `${host}|${page}`; nz.error = ""; renderNadzor();
+  try {
+    nz.data = await siteAdmin({ action: "set", host, page, value });
+    if (host === SITE_HOST) { state.siteConfig = { pages: { ...(nz.data.config[host] || {}) } }; try { localStorage.setItem(SITE_CONFIG_KEY, JSON.stringify(state.siteConfig)); } catch {} }
+  } catch (err) { nz.error = err?.message || String(err); }
+  nz.busy = null;
+  if (host === SITE_HOST) siteConfigChanged(); else renderNadzor();
+});
+
 function renderNadzor() {
   const box = $("#nz-body");
   if (!box) return;
-  box.innerHTML = `<ul class="nz-list">${NZ_ITEMS.map((it) => {
+  if (!nz.data && !nz.loading && !nz.error) nzLoad();
+  box.innerHTML = `${nzSitesHtml()}<h3 class="nz-h">Stikala funkcij</h3><ul class="nz-list">${NZ_ITEMS.map((it) => {
     const on = state.pageFlags?.[it.key] === true, busy = state.nzBusy === it.key;
     return `<li class="card nz-item${on ? " is-on" : ""}"><span class="nz-icon" aria-hidden="true">${it.icon}</span>
       <div class="nz-main"><strong>${esc(it.name)}</strong> <a class="link-btn" href="${it.href}">odpri ›</a><span class="muted-text">${esc(on ? it.on : it.off)}</span></div>
@@ -3724,8 +3825,8 @@ document.addEventListener("click", async (e) => {
   pageFlagsChanged();
   renderNadzor();
 });
-setInterval(loadPageFlags, 60 * 1000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) loadPageFlags(); });
+setInterval(() => { loadPageFlags(); loadSiteConfig(); }, 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { loadPageFlags(); loadSiteConfig(); } });
 
 async function init() {
   await loadData();
@@ -3735,6 +3836,7 @@ async function init() {
   state.user = loadUser();
   try { state.simRole = sessionStorage.getItem("uvodja.simRole"); } catch { state.simRole = null; }
   const wantGated = location.hash.replace(/^#/, ""); if (GATED_PAGES.includes(wantGated)) state.flagWanted = wantGated; // a link to a page that may be switched on
+  if (state.siteConfig) loadSiteConfig(); else await Promise.race([loadSiteConfig(), new Promise((r) => setTimeout(r, 1500))]); // first visit: don't flash pages that are switched off here
   loadPageFlags(); // Zadolžitve / Trgovina switches (async; re-applies the nav when they differ from the saved ones)
   bindControls();
   applyTheme(document.documentElement.dataset.theme === "cgp" ? "cgp" : "default");
