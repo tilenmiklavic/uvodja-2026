@@ -389,6 +389,49 @@ function initGsi(tries = 0) {
     g.prompt(); // One Tap / silent auto-select
   }
 }
+/* Header tabs → bar + ≡ menu.
+   Mobile (≤ 700 px): only Časovnica and Zabava stay in the bar, everything else is in ≡ (the account chip is in the menu).
+   Desktop: all tabs in ONE row next to the logo; the ones that do not fit (taken from the end) move into ≡, which only
+   appears then. The account chip stays in the bar. Re-run on resize, font load and whenever the allowed tabs change. */
+const NAV_ORDER = ["opravila", "domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "vprasanja", "analitika", "nadzor"]; // desktop order (see css .tabs [data-tab] order)
+const NAV_BAR_MOBILE = ["casovnica", "zabava"];
+let navSig = "";
+function layoutNav(force = false) {
+  const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle"), nu = $("#nav-user");
+  if (!nav || !more || !toggle || !nu) return;
+  const mobile = window.matchMedia("(max-width: 700px)").matches;
+  const tabs = NAV_ORDER.map((x) => $(`.tab[data-tab="${x}"]`, nav)).filter(Boolean), shown = tabs.filter((b) => !b.hidden);
+  const sig = [mobile, nav.clientWidth, shown.map((b) => b.dataset.tab).join(","), nu.hidden, document.documentElement.dataset.theme].join("|");
+  if (!force && sig === navSig) return; // nothing that matters changed (also keeps the header's own resize observer from looping)
+  navSig = sig;
+  more.classList.remove("open"); toggle.setAttribute("aria-expanded", "false");
+  // the row is right-aligned, so an overflow spills to the LEFT, which scrollWidth ignores: measure first → last child
+  const overflows = () => {
+    const kids = [...nav.children].filter((c) => c !== more && c.offsetParent !== null);
+    return kids.length > 1 && kids[kids.length - 1].getBoundingClientRect().right - kids[0].getBoundingClientRect().left > nav.clientWidth + 1;
+  };
+  if (mobile) {
+    nav.classList.remove("nav-overflow");
+    tabs.forEach((b) => { if (NAV_BAR_MOBILE.includes(b.dataset.tab)) nav.insertBefore(b, toggle); else more.append(b); });
+    more.append(nu); // account chip at the bottom of the menu
+  } else {
+    nav.classList.remove("nav-overflow");
+    tabs.forEach((b) => nav.insertBefore(b, toggle));
+    nav.append(nu);
+    if (overflows()) {
+      nav.classList.add("nav-overflow");
+      for (const b of [...shown].reverse()) {
+        if (!overflows()) break;
+        more.prepend(b);
+      }
+    }
+  }
+  toggle.classList.toggle("has-active", !!$(`.tab[aria-selected="true"]`, more));
+  syncHeaderHeight();
+}
+let navResizeT = 0;
+window.addEventListener("resize", () => { cancelAnimationFrame(navResizeT); navResizeT = requestAnimationFrame(() => layoutNav()); });
+document.fonts?.ready?.then(() => layoutNav(true));
 function applyAuth() {
   const u = state.user;
   checkVisitAdmin(u);
@@ -404,18 +447,7 @@ function applyAuth() {
   try { localStorage.setItem("uvodja.navTabs", JSON.stringify(u ? [...state.allowed] : [])); } catch {}
   document.getElementById("nav-boot")?.remove();
   document.documentElement.classList.remove("nav-pending");
-  // Mobile bar: only Časovnica and Zabava (whatever the role may see of them); every other tab sits in the ≡ menu in its
-  // usual order. On desktop both containers are laid out as one row (CSS display: contents + order), so nothing changes there.
-  const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
-  const barTabs = ["casovnica", "zabava"];
-  const MORE_ORDER = ["opravila", "domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "trgovina", "vprasanja", "analitika", "nadzor"];
-  MORE_ORDER.forEach((x) => {
-    const b = $(`.tab[data-tab="${x}"]`, nav);
-    if (!b || b.parentElement === more) return;
-    const next = MORE_ORDER.slice(MORE_ORDER.indexOf(x) + 1).map((y) => $(`.tab[data-tab="${y}"]`, more)).find(Boolean);
-    more.insertBefore(b, next || $("#nav-user"));
-  });
-  barTabs.forEach((x) => { const b = $(`.tab[data-tab="${x}"]`, nav); if (b) nav.insertBefore(b, toggle); });
+  layoutNav(); requestAnimationFrame(layoutNav); // again once the account chip below has its real width
   $$("[data-tab-link]").forEach((a) => { if (a.dataset.tabLink !== "domov") a.hidden = !!u && !state.allowed.has(a.dataset.tabLink); });
   const nu = $("#nav-user"), ar = $("#account-row");
   const nw = $("#noaccess-who");
