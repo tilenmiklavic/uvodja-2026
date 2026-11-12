@@ -466,6 +466,25 @@
     });
   }
 
+  /* ───────── site-config API (Nadzor → page visibility per address), in memory ───────── */
+  var DEMO_SITES = [{ host: "vodja.miklavic.si", label: "vodja.miklavic.si" }, { host: "tilenmiklavic.github.io", label: "tilenmiklavic.github.io/uvodja-2026" }];
+  var DEMO_PAGES = ["domov", "casovnica", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "opravila", "vprasanja", "analitika"];
+  var SITE_CFG = { "vodja.miklavic.si": {}, "tilenmiklavic.github.io": { trgovina: false, opravila: false, analitika: false } };
+  var SITE_UPD = {}, SITE_LOG = [];
+  function siteAdminView() { return { ok: true, sites: DEMO_SITES, pages: DEMO_PAGES, config: SITE_CFG, updated: SITE_UPD, log: SITE_LOG.slice(-20).reverse() }; }
+  function siteConfigApi(u, method, init) {
+    if (u.pathname.indexOf("/admin/") < 0) { var h = u.searchParams.get("host") || ""; return { ok: true, host: h, pages: Object.assign({}, SITE_CFG[h] || {}), updatedAt: null }; }
+    var b = {}; try { b = JSON.parse((init && init.body) || "{}"); } catch (e) {}
+    if (b.action === "set") {
+      if (!SITE_CFG[b.host] || DEMO_PAGES.indexOf(b.page) < 0 || [true, false, null].indexOf(b.value) < 0) return { ok: false, error: "neveljavna vrednost" };
+      var before = b.page in SITE_CFG[b.host] ? SITE_CFG[b.host][b.page] : null;
+      if (b.value === null) delete SITE_CFG[b.host][b.page]; else SITE_CFG[b.host][b.page] = b.value;
+      SITE_UPD[b.host] = { at: nowMs(), by: ME };
+      if (before !== b.value) SITE_LOG.push({ at: nowMs(), by: ME, host: b.host, page: b.page, from: before, to: b.value });
+    }
+    return siteAdminView();
+  }
+
   window.fetch = function (input, init) {
     var url = typeof input === "string" ? input : (input && input.url) || String(input);
     var method = ((init && init.method) || (input && input.method) || "GET").toUpperCase();
@@ -475,6 +494,7 @@
         a = a || {}; a.users = Object.assign({}, a.users, (function () { var o = {}; o[ME] = "admin"; return o; })()); return jsonRes(a);
       }).catch(function () { return jsonRes({ defaultRole: "admin", roles: { admin: { allow: ["*"], deny: [] } }, users: {} }); });
     }
+    if (/\/api\/(admin\/)?site-config/.test(url)) return Promise.resolve(jsonRes(siteConfigApi(new URL(url, location.href), method, init)));
     if (url.indexOf("sheets.googleapis.com/v4/spreadsheets/") >= 0) return fakeContacts().then(jsonRes);
     if (url.indexOf("oauth2.googleapis.com/tokeninfo") >= 0) return Promise.resolve(jsonRes({ email: ME, scope: "https://www.googleapis.com/auth/spreadsheets.readonly" }));
     if (url.indexOf(API) === 0 || url.indexOf("script.google.com/macros") >= 0) {
