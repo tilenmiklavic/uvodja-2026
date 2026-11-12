@@ -98,6 +98,25 @@ body {
   .tabs [data-tab="uu"] { order: 7; } .tabs [data-tab="preverbe"] { order: 8; } .tabs [data-tab="zabava"] { order: 9; }
   .tabs [data-tab="vprasanja"] { order: 10; } .tabs [data-tab="analitika"] { order: 11; } .tabs .nav-user { order: 12; }
   .tabs [data-tab="trgovina"] { order: 9; } .tabs [data-tab="nadzor"] { order: 11; } /* after Zabava / at the end (same order → markup order) */
+  /* One row next to the logo; what does not fit moves into the ≡ menu (layoutNav() in app.js sets .nav-overflow) */
+  .tabs { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; justify-content: flex-end; align-items: center; }
+  .tabs > .tab, .tabs > .nav-more-toggle { flex: none; white-space: nowrap; }
+  .tabs .nav-more-toggle { order: 12; } .tabs .nav-user { order: 13; }
+  .tabs.nav-overflow .nav-more-toggle {
+    display: inline-grid; place-items: center; width: 44px; height: 44px;
+    border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,0.06);
+    color: var(--ink); font-size: 1.35rem; line-height: 1; cursor: pointer;
+  }
+  .tabs.nav-overflow .nav-more-toggle[aria-expanded="true"], .tabs.nav-overflow .nav-more-toggle.has-active { border-color: var(--gold); color: var(--gold); }
+  .tabs.nav-overflow .nav-more {
+    display: none; position: absolute; right: max(1.25rem, calc((100% - 1200px) / 2 + 1.25rem)); top: calc(100% + .35rem);
+    flex-direction: column; gap: .25rem; min-width: 190px; padding: .5rem;
+    background: rgba(12,22,32,0.98); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); z-index: 50;
+    max-height: calc(100vh - 5rem); overflow-y: auto; overscroll-behavior: contain;
+  }
+  .tabs.nav-overflow .nav-more.open { display: flex; }
+  .tabs.nav-overflow .nav-more > * { flex-shrink: 0; }
+  .tabs.nav-overflow .nav-more .tab { text-align: left; border-radius: 10px; min-height: 44px; }
 }
 @media (max-width: 700px) {
   .header-inner { flex-wrap: nowrap; gap: .5rem; padding: .5rem .75rem; }
@@ -126,6 +145,8 @@ body {
   .nav-more.open { display: flex; }
   .nav-more > * { flex-shrink: 0; }
   .nav-more .tab { text-align: left; border-radius: 10px; }
+  /* Only Časovnica + Zabava stay in the bar; applyAuth() moves the rest into ≡ – this hides them until it has run (no flash) */
+  .tabs > .tab[data-tab]:not([data-tab="casovnica"]):not([data-tab="zabava"]) { display: none; }
 }
 
 main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }

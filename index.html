@@ -17,7 +17,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script>try{if(localStorage.getItem("uvodja.theme")==="cgp"){document.documentElement.setAttribute("data-theme","cgp");document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Alegreya:wght@500;700;800&display=swap" id="cgp-fonts">');}}catch(e){}</script>
   <script>/* nav boot: hide tabs before the first paint – js/app.js applyAuth() saves the allowed list and removes this */try{var nt=JSON.parse(localStorage.getItem("uvodja.navTabs")||"null");if(Array.isArray(nt)){var ns=document.createElement("style");ns.id="nav-boot";ns.textContent=".tabs .tab[data-tab]"+nt.map(function(x){return ':not([data-tab="'+String(x).replace(/[^a-z]/g,"")+'"])';}).join("")+"{display:none!important}";document.head.appendChild(ns);}else{document.documentElement.classList.add("nav-pending");}}catch(e){document.documentElement.classList.add("nav-pending");}</script>
-  <link rel="stylesheet" href="css/styles.css?v=122" />
+  <link rel="stylesheet" href="css/styles.css?v=124" />
   <link rel="stylesheet" href="features/temu-mode/temu-mode.css?v=3" /><!-- Temu Mode (parody, off by default) – features/temu-mode/README.md -->
   <script>if(!window.UVODJA_DEMO){var g=document.createElement("script");g.src="https://accounts.google.com/gsi/client";g.async=true;document.head.appendChild(g);}</script><!-- Google sign-in (not loaded in demo mode) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -478,7 +478,7 @@
     <img class="footer-logo" src="assets/logos/pirati-wordmark.webp" alt="Pirati" width="220" height="82" loading="lazy" />
     <p>U Vodja 2026 · Na lovu za zakladom · ZSKSS</p>
   </footer>
-  <script src="js/app.js?v=145" type="module"></script>
+  <script src="js/app.js?v=147" type="module"></script>
   <script src="features/temu-mode/temu-mode.js?v=4" type="module"></script><!-- Temu Mode (parody, off by default) -->
 </body>
 </html>
