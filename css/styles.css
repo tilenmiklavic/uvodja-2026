@@ -126,6 +126,8 @@ body {
   .nav-more.open { display: flex; }
   .nav-more > * { flex-shrink: 0; }
   .nav-more .tab { text-align: left; border-radius: 10px; }
+  /* Only Časovnica + Zabava stay in the bar; applyAuth() moves the rest into ≡ – this hides them until it has run (no flash) */
+  .tabs > .tab[data-tab]:not([data-tab="casovnica"]):not([data-tab="zabava"]) { display: none; }
 }
 
 main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }

@@ -404,15 +404,14 @@ function applyAuth() {
   try { localStorage.setItem("uvodja.navTabs", JSON.stringify(u ? [...state.allowed] : [])); } catch {}
   document.getElementById("nav-boot")?.remove();
   document.documentElement.classList.remove("nav-pending");
-  // Mobile bar next to Časovnica: SVOD/admin get Zabava, everyone else UU; roles that can see neither Časovnica nor UU
-  // (UU participants) get Preverbe + Zabava. The rest sit in ≡ in their usual order.
+  // Mobile bar: only Časovnica and Zabava (whatever the role may see of them); every other tab sits in the ≡ menu in its
+  // usual order. On desktop both containers are laid out as one row (CSS display: contents + order), so nothing changes there.
   const nav = $("#main-nav"), more = $("#nav-more"), toggle = $("#nav-more-toggle");
-  const barTabs = EVENT_ENDED ? ["domov", "preverbe", "zabava"] : u && !["casovnica", "uu"].some((x) => state.allowed.has(x)) ? ["preverbe", "zabava"]
-    : u && ["svod", "admin"].includes(effectiveRole(u.email)) ? ["zabava"] : ["uu"];
-  const MORE_ORDER = ["domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "zabava", "trgovina", "vprasanja", "analitika", "nadzor"];
-  ["domov", "uu", "preverbe", "zabava"].forEach((x) => {
+  const barTabs = ["casovnica", "zabava"];
+  const MORE_ORDER = ["opravila", "domov", "teme", "gradiva", "ekipa", "os", "uu", "preverbe", "trgovina", "vprasanja", "analitika", "nadzor"];
+  MORE_ORDER.forEach((x) => {
     const b = $(`.tab[data-tab="${x}"]`, nav);
-    if (!b || barTabs.includes(x)) return;
+    if (!b || b.parentElement === more) return;
     const next = MORE_ORDER.slice(MORE_ORDER.indexOf(x) + 1).map((y) => $(`.tab[data-tab="${y}"]`, more)).find(Boolean);
     more.insertBefore(b, next || $("#nav-user"));
   });
