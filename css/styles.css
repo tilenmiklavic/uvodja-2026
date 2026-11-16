@@ -2304,3 +2304,8 @@ body > main { width: 100%; } /* keep max-width + auto margins centring as before
 
 /* First visit on a device: no tab shows until the script knows which ones are allowed (see the nav boot script in index.html) */
 .nav-pending .tabs .tab[data-tab] { display: none !important; }
+
+/* Old github.io address: "moved to vodja.miklavic.si" banner (index.html shows it only on *.github.io) */
+.move-banner { padding: .65rem 1rem; padding-top: max(.65rem, env(safe-area-inset-top)); background: var(--gold); color: #1b1b1f; font-weight: 800; font-size: .92rem; line-height: 1.35; text-align: center; }
+.move-banner[hidden] { display: none; }
+.move-banner a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
